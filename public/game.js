@@ -337,3 +337,220 @@
   });
   reset();
 }
+
+{
+  const dialog = document.getElementById("mines");
+  const board = document.getElementById("mine-board");
+  const status = document.getElementById("mine-status");
+  const flagCount = document.getElementById("mine-flags");
+  const clock = document.getElementById("mine-time");
+  const toggle = document.getElementById("mine-toggle");
+  const size = 9;
+  const mineCount = 10;
+  const safeCount = size * size - mineCount;
+  const initialMessage = "첫 칸은 어디를 골라도 안전해요.";
+  let state, flagMode, flags, opened, detonated, focusIndex;
+  let elapsed = 0;
+  let clockStart = null;
+  let tick;
+
+  const cells = Array.from({ length: size * size }, (_, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "mine-cell";
+    button.dataset.index = index;
+    const row = Math.floor(index / size);
+    const col = index % size;
+    const neighbors = [];
+    for (let y = Math.max(0, row - 1); y <= Math.min(size - 1, row + 1); y++) {
+      for (let x = Math.max(0, col - 1); x <= Math.min(size - 1, col + 1); x++) {
+        if (y !== row || x !== col) neighbors.push(y * size + x);
+      }
+    }
+    return { button, row, col, neighbors, index };
+  });
+  board.append(...cells.map(({ button }) => button));
+
+  function drawTime() {
+    const seconds = Math.floor((elapsed + (clockStart === null ? 0 : performance.now() - clockStart)) / 1000);
+    clock.textContent = [Math.floor(seconds / 60), seconds % 60]
+      .map((value) => String(value).padStart(2, "0")).join(":");
+  }
+
+  function syncClock() {
+    if (state === "playing" && dialog.open && !document.hidden) {
+      if (clockStart === null) {
+        clockStart = performance.now();
+        tick = setInterval(drawTime, 250);
+      }
+    } else if (clockStart !== null) {
+      elapsed += performance.now() - clockStart;
+      clockStart = null;
+      clearInterval(tick);
+    }
+    drawTime();
+  }
+
+  function draw() {
+    flagCount.textContent = mineCount - flags;
+    toggle.setAttribute("aria-pressed", String(flagMode));
+    toggle.disabled = state === "lost" || state === "won";
+    board.dataset.state = state;
+    for (const cell of cells) {
+      const { button, row, col, count } = cell;
+      let visual = "closed";
+      let label = "닫힌 칸";
+      let marker = "";
+      if (cell.index === detonated) {
+        visual = "hit"; label = "터진 지뢰"; marker = "✹";
+      } else if (cell.flag && state === "lost" && !cell.mine) {
+        visual = "wrong"; label = "잘못 꽂은 깃발"; marker = "×";
+      } else if (cell.flag || (state === "won" && cell.mine)) {
+        visual = "flag"; label = "깃발"; marker = "⚑";
+      } else if (state === "lost" && cell.mine) {
+        visual = "mine"; label = "지뢰"; marker = "✹";
+      } else if (cell.open) {
+        visual = "open"; label = count ? "주변 지뢰 " + count + "개" : "빈 칸"; marker = count || "";
+      }
+      button.dataset.cell = visual;
+      button.dataset.number = visual === "open" ? count : "";
+      button.textContent = marker;
+      button.setAttribute("aria-label", (row + 1) + "행 " + (col + 1) + "열, " + label);
+    }
+  }
+
+  function focusCell(index, moveFocus) {
+    if (focusIndex !== undefined) cells[focusIndex].button.tabIndex = -1;
+    focusIndex = index;
+    cells[index].button.tabIndex = 0;
+    if (moveFocus) cells[index].button.focus();
+  }
+
+  function plantMines(first) {
+    // The first click opens an empty patch, even when it lands on an edge.
+    const safe = new Set([first.index, ...first.neighbors]);
+    const candidates = cells.filter(({ index }) => !safe.has(index));
+    for (let i = 0; i < mineCount; i++) {
+      const pick = i + Math.floor(Math.random() * (candidates.length - i));
+      [candidates[i], candidates[pick]] = [candidates[pick], candidates[i]];
+      candidates[i].mine = true;
+    }
+    for (const cell of cells) {
+      cell.count = cell.neighbors.filter((index) => cells[index].mine).length;
+    }
+  }
+
+  function finish(next, message) {
+    state = next;
+    status.textContent = message;
+    syncClock();
+    window.recordCafeStamp("game");
+  }
+
+  function play(cell, mark) {
+    if (cell.open || state === "won" || state === "lost") return;
+    if (mark) {
+      if (!cell.flag && flags === mineCount) {
+        status.textContent = "깃발 10개를 모두 썼어요. 표시한 칸을 다시 누르면 깃발을 뺄 수 있어요.";
+        return;
+      }
+      cell.flag = !cell.flag;
+      flags += cell.flag ? 1 : -1;
+      status.textContent = cell.flag ? "깃발을 꽂았어요." : "깃발을 뺐어요.";
+    } else if (cell.flag) {
+      status.textContent = "깃발이 있는 칸이에요. 먼저 깃발을 빼 주세요.";
+      return;
+    } else {
+      if (state === "ready") {
+        plantMines(cell);
+        state = "playing";
+        status.textContent = "주변 숫자를 단서로 안전한 칸을 찾아보세요.";
+        syncClock();
+      }
+      if (cell.mine) {
+        detonated = cell.index;
+        finish("lost", "지뢰를 밟았어요. 새 게임으로 다시 도전해 보세요.");
+      } else {
+        const pending = [cell.index];
+        while (pending.length) {
+          const current = cells[pending.pop()];
+          if (current.open || current.flag || current.mine) continue;
+          current.open = true;
+          opened++;
+          if (current.count === 0) pending.push(...current.neighbors);
+        }
+        if (opened === safeCount) {
+          flags = mineCount;
+          finish("won", "성공! 안전한 칸 71개를 모두 열었어요.");
+        } else {
+          status.textContent = "안전한 칸 " + opened + " / " + safeCount + "개를 열었어요.";
+        }
+      }
+    }
+    draw();
+  }
+
+  function reset() {
+    state = "ready";
+    syncClock();
+    elapsed = 0;
+    flagMode = false;
+    flags = 0;
+    opened = 0;
+    detonated = null;
+    for (const cell of cells) {
+      cell.button.tabIndex = -1;
+      cell.mine = cell.open = cell.flag = false;
+      cell.count = 0;
+    }
+    status.textContent = initialMessage;
+    focusCell(0, false);
+    drawTime();
+    draw();
+  }
+
+  board.addEventListener("click", (event) => {
+    const button = event.target.closest(".mine-cell");
+    if (!button) return;
+    const index = Number(button.dataset.index);
+    focusCell(index, false);
+    play(cells[index], flagMode);
+  });
+  board.addEventListener("contextmenu", (event) => {
+    const button = event.target.closest(".mine-cell");
+    if (!button) return;
+    event.preventDefault();
+    const index = Number(button.dataset.index);
+    focusCell(index, true);
+    play(cells[index], true);
+  });
+  const directions = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+  board.addEventListener("keydown", (event) => {
+    const button = event.target.closest(".mine-cell");
+    if (!button || event.ctrlKey || event.metaKey || event.altKey) return;
+    const cell = cells[Number(button.dataset.index)];
+    if (event.key.toLowerCase() === "f") {
+      event.preventDefault();
+      if (!event.repeat) play(cell, true);
+      return;
+    }
+    const direction = directions[event.key];
+    if (!direction) return;
+    event.preventDefault();
+    const row = cell.row + direction[0];
+    const col = cell.col + direction[1];
+    if (row >= 0 && row < size && col >= 0 && col < size) focusCell(row * size + col, true);
+  });
+  toggle.addEventListener("click", () => {
+    flagMode = !flagMode;
+    toggle.setAttribute("aria-pressed", String(flagMode));
+    status.textContent = flagMode ? "깃발 모드예요. 칸을 누르면 깃발을 꽂거나 빼요." : "열기 모드예요. 칸을 누르면 열려요.";
+  });
+  document.getElementById("mine-reset").addEventListener("click", () => {
+    reset();
+    focusCell(0, true);
+  });
+  new MutationObserver(syncClock).observe(dialog, { attributes: true, attributeFilter: ["open"] });
+  document.addEventListener("visibilitychange", syncClock);
+  reset();
+}

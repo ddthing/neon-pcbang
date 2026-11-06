@@ -169,6 +169,11 @@
             <span><strong>오락실</strong><small>모퉁이 벽돌깨기 한 판</small></span>
             <svg class="chevron" aria-hidden="true"><use href="./icons.svg#chevron"/></svg>
           </button>
+          <button type="button" class="activity" data-open="mines">
+            <span class="activity-icon peach"><svg aria-hidden="true"><use href="./icons.svg#mine"/></svg></span>
+            <span><strong>지뢰찾기</strong><small>숫자를 읽고 지뢰 10개를 피해요</small></span>
+            <svg class="chevron" aria-hidden="true"><use href="./icons.svg#chevron"/></svg>
+          </button>
           <button type="button" class="activity" data-open="focus">
             <span class="activity-icon mint"><svg aria-hidden="true"><use href="./icons.svg#clock"/></svg></span>
             <span><strong>집중 모드</strong><small id="focus-subtitle">25분 타이머 켜기</small></span>
@@ -285,10 +290,11 @@
         <button class="pc-end" id="pc-end" type="button">사용 종료</button>
       </section>
       <section class="pc-launcher" aria-labelledby="pc-launcher-title">
-        <div class="pc-panel-heading"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg><h3 id="pc-launcher-title" tabindex="-1">게임 런처</h3><span class="mono">02 GAMES</span></div>
+        <div class="pc-panel-heading"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg><h3 id="pc-launcher-title" tabindex="-1">게임 런처</h3><span class="mono">03 GAMES</span></div>
         <div class="pc-apps">
           <button class="pc-app" type="button" data-open="arcade"><span class="pc-app-icon lilac" aria-hidden="true">▦</span><span><strong>모퉁이 벽돌깨기</strong><small>공을 튕겨 벽돌을 깨요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
           <button class="pc-app" type="button" data-open="pairs"><span class="pc-app-icon sage" aria-hidden="true">◆</span><span><strong>픽셀 짝맞추기</strong><small>같은 그림 8쌍을 찾아요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="mines"><span class="pc-app-icon cream" aria-hidden="true"><svg><use href="./icons.svg#mine"/></svg></span><span><strong>지뢰찾기</strong><small>안전한 칸을 모두 열어요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
         </div>
       </section>
     </div>
@@ -353,6 +359,24 @@
       <div class="pair-grid" id="pair-grid" role="group" aria-label="짝맞추기 카드"></div>
       <p class="game-status" id="pair-status" role="status">카드를 한 장 골라주세요.</p>
       <button class="secondary dialog-action" id="pair-reset" type="button">새 게임</button>
+    </div>
+  </dialog>
+  <dialog id="mines" aria-labelledby="mines-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>03</span> / ARCADE</span><button class="close" type="button" data-close aria-label="지뢰찾기 닫기">×</button></div>
+      <h2 id="mines-title">지뢰찾기</h2>
+      <p class="panel-copy">숫자는 주변 8칸에 있는 지뢰 개수예요. 안전한 칸을 모두 열어보세요.</p>
+      <div class="mine-toolbar">
+        <div class="mine-hud mono">
+          <span>남은 깃발 <strong id="mine-flags">10</strong></span>
+          <span>시간 <span role="timer" id="mine-time">00:00</span></span>
+        </div>
+        <button class="walk-button mine-toggle" id="mine-toggle" type="button" aria-pressed="false">깃발 모드</button>
+      </div>
+      <div class="mine-board" id="mine-board" role="group" aria-label="지뢰찾기 9행 9열" aria-describedby="mine-help"></div>
+      <p class="game-status" id="mine-status" role="status">첫 칸은 어디를 골라도 안전해요.</p>
+      <button class="secondary dialog-action" id="mine-reset" type="button">새 게임</button>
+      <p class="dialog-note" id="mine-help">클릭이나 터치로 열고, 우클릭이나 깃발 모드로 표시해요. 키보드는 방향키로 이동, Enter로 열기, F로 깃발이에요.</p>
     </div>
   </dialog>
   <dialog id="focus" aria-labelledby="focus-title">
