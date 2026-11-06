@@ -36,11 +36,3 @@ CREATE TABLE IF NOT EXISTS invite_settings (
 );
 --> statement-breakpoint
 INSERT OR IGNORE INTO invite_settings(key, value) VALUES ('site_access', 'invite');
-
---> statement-breakpoint
-CREATE TABLE IF NOT EXISTS invite_settings (
-  key TEXT PRIMARY KEY NOT NULL,
-  value TEXT NOT NULL
-);
---> statement-breakpoint
-INSERT OR IGNORE INTO invite_settings (key, value) VALUES ('site_access', 'invite');
