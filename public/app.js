@@ -87,6 +87,10 @@ const floorOptions = [];
 const desktop = $("#pc-desktop");
 const monitorLayer = $("#monitor-layer");
 const roomsArtwork = $("#rooms-art");
+const journeyProgress = $("#seat-journey");
+const journeyLabel = $("#seat-journey-label");
+const journeyStatus = $("#seat-journey-status");
+const journeySteps = [...journeyProgress.querySelectorAll("[data-phase]")];
 let selectedSeat = null;
 let poweredMonitor = null;
 let desktopReturnFocus;
@@ -138,21 +142,9 @@ function openDesktop(fromSeat = false) {
   if (seatJourney || !poweredMonitor || desktop.open) return;
   if (fromSeat) poweredMonitor.scrollIntoView({ block: "nearest" });
   desktopReturnFocus = fromSeat ? $("#seat-marker") : document.activeElement;
-  const origin = poweredMonitor.getBoundingClientRect();
   window.prepareCafeWallpaper?.();
-  desktop.showModal();
+  openCafeWindow(desktop, poweredMonitor);
   $("#pc-title").focus({ preventScroll: true });
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !desktop.animate) return;
-
-  const target = desktop.getBoundingClientRect();
-  const visible = origin.top < window.innerHeight && origin.bottom > 0;
-  const x = visible ? origin.x + (origin.width - target.width) / 2 - target.x : 0;
-  const y = visible ? origin.y + (origin.height - target.height) / 2 - target.y : 14;
-  const scale = visible ? Math.max(.045, origin.width / target.width) : .94;
-  desktop.animate([
-    { opacity: .4, transform: `translate(${x}px, ${y}px) scale(${scale})` },
-    { opacity: 1, transform: "none" }
-  ], { duration: 440, easing: "cubic-bezier(.2,.8,.2,1)" });
 }
 
 function notify(message, kind = "info") {
@@ -164,6 +156,23 @@ function updateSessionTime() {
   const elapsed = formatTime(Math.max(0, Math.floor((Date.now() - room.since) / 1000)));
   $("#session-time").textContent = elapsed;
   $("#pc-session-time").textContent = elapsed;
+}
+
+function renderSeatJourney() {
+  const phase = seatJourney?.phase ?? "";
+  if (journeyProgress.dataset.phase === phase) return;
+  journeyProgress.dataset.phase = phase;
+  const active = journeySteps.findIndex((step) => step.dataset.phase === phase);
+  journeyProgress.hidden = active < 0;
+  journeyProgress.style.setProperty("--p", Math.max(0, active) / (journeySteps.length - 1));
+  journeySteps.forEach((step, index) => {
+    step.classList.toggle("cur", index === active);
+    step.classList.toggle("done", index < active);
+  });
+  const label = active === 0 ? seatJourney.seat.code + " 자리로 이동 중"
+    : active === 1 ? "자리에 앉는 중" : active === 2 ? "PC 켜는 중" : "";
+  journeyLabel.textContent = label;
+  journeyStatus.textContent = label;
 }
 
 function renderRoom() {
@@ -190,11 +199,7 @@ function renderRoom() {
   for (const button of document.querySelectorAll("#open-floor, #kiosk-pin, #game-view-floor, #open-monitor, #leave")) {
     button.disabled = Boolean(seatJourney);
   }
-  const progress = $("#seat-journey");
-  progress.textContent = seatJourney
-    ? seatJourney.phase === "walking" ? seatJourney.seat.code + " 자리로 이동 중"
-      : seatJourney.phase === "sitting" ? "자리에 앉는 중" : "PC 켜는 중"
-    : "";
+  renderSeatJourney();
   renderMonitorPower(inRoom ? view : "hall");
 
   const marker = $("#seat-marker");
@@ -315,15 +320,16 @@ function showFloorView(roomId) {
   selectedSeat = null;
   $("#floor-feedback").textContent = "";
   renderFloorSelection();
+  if (floor.open) revealCafeView($(inside ? "#floor-room-view" : "#floor-overview"), inside ? 1 : -1);
 }
 
-function openFloor(roomId = null) {
+function openFloor(roomId, origin) {
   if (seatJourney || floor.open) return;
+  const source = cafeWindowOrigin(origin);
   if (hub.open) hub.close();
-  const inside = typeof roomId === "string";
-  showFloorView(inside ? roomId : null);
-  floor.showModal();
-  $(inside ? "#floor-room-title" : "#floor-title").focus({ preventScroll: true });
+  showFloorView(roomId);
+  openCafeWindow(floor, origin, source);
+  $(roomId ? "#floor-room-title" : "#floor-title").focus({ preventScroll: true });
 }
 for (const region of document.querySelectorAll(".floor-room-target")) {
   const openRoom = () => {
@@ -350,9 +356,10 @@ $("#floor-back").addEventListener("click", () => {
 floor.addEventListener("cancel", (event) => {
   if (bookingSeat) event.preventDefault();
 });
-$("#kiosk-pin").addEventListener("click", openFloor);
-$("#open-floor").addEventListener("click", openFloor);
-$("#cafe-menu-open").addEventListener("click", () => { if (!hub.open) hub.showModal(); });
+for (const button of document.querySelectorAll("#kiosk-pin, #open-floor, #game-view-floor")) {
+  button.addEventListener("click", () => openFloor(null, button));
+}
+$("#cafe-menu-open").addEventListener("click", (event) => { if (!hub.open) openCafeWindow(hub, event.currentTarget); });
 $("#open-monitor").addEventListener("click", () => openDesktop());
 $("#seat-marker").addEventListener("click", () => openDesktop());
 desktop.addEventListener("close", () => desktopReturnFocus?.focus({ preventScroll: true }));
@@ -476,11 +483,15 @@ const requestedGames = new Set();
 
 document.querySelectorAll("[data-open]").forEach((button) => {
   button.addEventListener("click", () => {
+    const source = cafeWindowOrigin(button);
     if (hub.contains(button) && hub.open) hub.close();
     const next = document.getElementById(button.dataset.open);
     const origin = button.closest("dialog");
     if (origin?.matches("#snacks, #snack-board, #snack-coupon")) origin.close();
-    if (!next.open) next.showModal();
+    if (!next.open) {
+      openCafeWindow(next, button, source);
+      if (next.id === "focus") renderTimer();
+    }
     const load = gameLoaders[next.id];
     if (!load || requestedGames.has(next.id)) return;
     requestedGames.add(next.id);
@@ -491,11 +502,13 @@ document.querySelectorAll("[data-open]").forEach((button) => {
   });
 });
 document.querySelectorAll("[data-close]").forEach((button) => {
-  button.addEventListener("click", () => button.closest("dialog").close());
+  button.addEventListener("click", () => closeCafeWindow(button.closest("dialog")));
 });
 function remainingTime() {
   return focus.end ? Math.max(0, focus.end - Date.now()) : focus.remaining;
 }
+
+const paintFocusMotion = createCafeFocusMotion($("#focus"));
 
 function renderTimer() {
   const remaining = remainingTime();
@@ -505,7 +518,7 @@ function renderTimer() {
     notify("25분 집중이 끝났어요. 잠깐 쉬어가요.");
   }
   const display = formatTime(Math.ceil(remaining / 1000));
-  $("#timer").textContent = display;
+  paintFocusMotion(display, remaining / focusDuration, Boolean(focus.end));
   $("#timer-toggle").textContent = focus.end ? "일시 정지" : remaining === 0 ? "다시 시작" : remaining < focusDuration ? "이어서 집중" : "집중 시작";
   $("#timer-note").textContent = remaining === 0 ? "집중 완료. 잠깐 쉬어가요." : "창을 닫아도 타이머는 계속 돌아가요.";
 }
@@ -609,7 +622,7 @@ window.cafeSeating = {
       door.setAttribute("aria-label", spaces[id].label + " 입구");
       door.style.setProperty("--x", point.x + "%");
       door.style.setProperty("--y", point.y + "%");
-      door.addEventListener("click", () => openFloor(id));
+      door.addEventListener("click", () => openFloor(id, door));
       $("#room-doors").append(door);
     }
   },

@@ -16,7 +16,6 @@
   color: #e5dfcf; background: #38332ced; font-size: 12px; white-space: nowrap;
   pointer-events: none;
 }
-.seat-journey:empty { padding: 0; border: 0; }
 .cafe-nickname {
   position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); white-space: nowrap;
   padding: 2px 4px; border: 1px solid #ded3bf; border-radius: 3px; color: #f7efe1; background: #393432ed;
