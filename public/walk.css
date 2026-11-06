@@ -4,6 +4,14 @@
 .cafe-visitor::before { content: ""; position: absolute; width: 76%; height: 5px; bottom: 1px; left: 12%; border-radius: 50%; background: #201b1b65; }
 .cafe-visitor svg { position: absolute; width: 100%; height: auto; bottom: 2px; transform: scaleX(var(--facing, 1)); filter: drop-shadow(0 1px 1px #221c1a80); }
 .cafe-visitor.seated svg { height: 25px; width: 20px; left: 2.5px; }
+.scene-viewport { position: relative; }
+.seat-journey {
+  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 3;
+  padding: 6px 10px; border: 1px solid #b8b39e; border-radius: 4px;
+  color: #e5dfcf; background: #38332ced; font-size: 12px; white-space: nowrap;
+  pointer-events: none;
+}
+.seat-journey:empty { padding: 0; border: 0; }
 .cafe-nickname {
   position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); white-space: nowrap;
   padding: 2px 4px; border: 1px solid #ded3bf; border-radius: 3px; color: #f7efe1; background: #393432ed;
@@ -62,11 +70,17 @@ body.cafe-fullscreen { overflow: hidden; background: #2c2926; }
 
 @media (prefers-reduced-motion: no-preference) {
   .cafe-visitor.walking svg { animation: cafe-steps .28s steps(2, end) infinite; }
+  .cafe-visitor.mine.sitting svg { transform-origin: bottom center; animation: cafe-sit .30s steps(4, end); }
   .cafe-wave:not([hidden]) { animation: cafe-hello .35s ease-out both; }
 }
 @media (prefers-reduced-motion: reduce) {
   .cafe-visitor:not(.mine) { transition: none; }
 }
 @keyframes cafe-steps { 50% { transform: translateY(-2px) scaleX(var(--facing, 1)); } }
+@keyframes cafe-sit {
+  0% { transform: translateY(-3px) scale(var(--facing, 1), 1.38); }
+  67% { transform: translateY(1px) scale(var(--facing, 1), .9); }
+  100% { transform: scaleX(var(--facing, 1)); }
+}
 @keyframes cafe-hello { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 

@@ -93,6 +93,12 @@ let poweredMonitor = null;
 let desktopReturnFocus;
 let occupiedSeats = new Set();
 let bookingSeat = false;
+let seatJourney = null;
+const reduceSeatMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+function isSeated() {
+  return Boolean(room.space) && (!seatJourney || seatJourney.phase === "booting");
+}
 
 function renderMonitorPower(spaceId) {
   if (monitorLayer.dataset.space !== spaceId) {
@@ -111,14 +117,14 @@ function renderMonitorPower(spaceId) {
       return screen;
     }));
   }
-  poweredMonitor = room.space === spaceId ? monitorLayer.children[room.seat] : null;
+  poweredMonitor = isSeated() && room.space === spaceId ? monitorLayer.children[room.seat] : null;
   for (const [index, screen] of Array.from(monitorLayer.children).entries()) {
     screen.classList.toggle("is-on", screen === poweredMonitor || occupiedSeats.has(spaceId + ":" + index));
   }
 }
 
 function openDesktop(fromSeat = false) {
-  if (!poweredMonitor || desktop.open) return;
+  if (seatJourney || !poweredMonitor || desktop.open) return;
   if (fromSeat) poweredMonitor.scrollIntoView({ block: "nearest" });
   desktopReturnFocus = fromSeat ? $("#seat-marker") : document.activeElement;
   const origin = poweredMonitor.getBoundingClientRect();
@@ -149,15 +155,16 @@ function updateSessionTime() {
 }
 
 function renderRoom() {
-  const space = spaces[room.space];
-  const seated = Boolean(space);
-  const inRoom = seated && room.space !== "hall";
-  $(".scene").dataset.space = room.space ?? "lobby";
+  const view = seatJourney?.space ?? room.space ?? "lobby";
+  const space = spaces[view];
+  const seated = isSeated();
+  const inRoom = Boolean(space) && view !== "hall";
+  $(".scene").dataset.space = view;
   $("#lobby-art").hidden = inRoom;
   $("#rooms-art").hidden = !inRoom;
   $("#rooms-art").alt = inRoom ? space.alt : "";
   $("#kiosk-pin").hidden = inRoom;
-  $("#room-title").textContent = seated ? space.label : "PC방 입구";
+  $("#room-title").textContent = space?.label ?? "PC방 입구";
   $("#room-count").textContent = inRoom ? "정원 " + space.positions.length + "명" : "102석";
   $("#kiosk-title").textContent = seated ? "자리를 잡았어요!" : "어디에 앉을까요?";
   $("#kiosk-copy").textContent = seated ? "빗소리 들으며 편히 쉬어가세요." : "전체 좌석도에서 앉고 싶은 자리를 골라요.";
@@ -165,10 +172,18 @@ function renderRoom() {
   $("#stage-seated").hidden = !seated;
   $("#leave").hidden = !seated;
   $("#open-floor span").textContent = seated ? "좌석도에서 자리 바꾸기" : "전체 좌석도 열기";
-  renderMonitorPower(inRoom ? room.space : "hall");
+  for (const button of document.querySelectorAll("#open-floor, #kiosk-pin, #game-view-floor, #open-monitor, #leave, .activities [data-open]")) {
+    button.disabled = Boolean(seatJourney);
+  }
+  const progress = $("#seat-journey");
+  progress.textContent = seatJourney
+    ? seatJourney.phase === "walking" ? seatJourney.seat.code + " 자리로 이동 중"
+      : seatJourney.phase === "sitting" ? "자리에 앉는 중" : "PC 켜는 중"
+    : "";
+  renderMonitorPower(inRoom ? view : "hall");
 
   const marker = $("#seat-marker");
-  marker.hidden = !seated;
+  marker.hidden = !seated || Boolean(seatJourney);
   if (seated) {
     const seat = floorSeats.get(room.space + ":" + room.seat);
     const [x, y] = space.positions[room.seat];
@@ -261,6 +276,7 @@ for (const id of ["solo", "duo", "team", "squad"]) {
 }
 
 function openFloor() {
+  if (seatJourney || floor.open) return;
   selectedSeat = null;
   $("#floor-feedback").textContent = "";
   renderFloorSelection();
@@ -304,6 +320,8 @@ $("#floor-zoom").addEventListener("click", (event) => {
 $("#enter").addEventListener("click", async () => {
   if (bookingSeat || !selectedSeat || isMySeat(selectedSeat)) return;
   const seat = selectedSeat;
+  const previous = window.cafeSeating.current();
+  let journey;
   bookingSeat = true;
   $("#floor-feedback").textContent = "좌석을 확인하고 있어요.";
   renderFloorSelection();
@@ -313,22 +331,57 @@ $("#enter").addEventListener("click", async () => {
       $("#floor-feedback").textContent = "다른 손님이 먼저 앉았어요. 다른 자리를 골라주세요.";
       return;
     }
+    journey = { seat, space: room.space ?? "lobby", phase: "walking" };
+    seatJourney = journey;
     room.space = seat.space;
     room.seat = seat.index;
     room.since ??= Date.now();
     saveState(roomKey, room);
-    renderRoom();
     floor.close();
+    renderRoom();
+    const scene = $(".scene");
+    if (!document.body.classList.contains("cafe-fullscreen")) {
+      scene.parentElement.scrollIntoView({ block: "center", behavior: "instant" });
+    }
+    scene.focus({ preventScroll: true });
+    await window.cafeWorld.walkToSeat(seat.key, previous, (space) => {
+      journey.space = space;
+      renderRoom();
+    });
+    if (seatJourney !== journey) return;
+    journey.space = seat.space;
+    if (!reduceSeatMotion.matches) {
+      journey.phase = "sitting";
+      renderRoom();
+      await new Promise((resolve) => setTimeout(resolve, 310));
+      if (seatJourney !== journey) return;
+      journey.phase = "booting";
+      renderRoom();
+      await new Promise((resolve) => setTimeout(resolve, 290));
+      if (seatJourney !== journey) return;
+    }
+    seatJourney = null;
+    renderRoom();
     openDesktop(true);
     if (!desktop.open) $("#kiosk-title").focus();
   } catch {
-    $("#floor-feedback").textContent = "매장에 연결되지 않았어요. 잠시 뒤 다시 눌러주세요.";
+    if (!journey) {
+      $("#floor-feedback").textContent = "매장에 연결되지 않았어요. 잠시 뒤 다시 눌러주세요.";
+    } else if (seatJourney === journey) {
+      seatJourney = null;
+      window.cafeWorld.cancelWalk();
+      renderRoom();
+      $("#seat-marker").focus({ preventScroll: true });
+      notify("자리 예약은 완료됐어요. 내 PC를 눌러 열어주세요.");
+    }
   } finally {
     bookingSeat = false;
     renderFloorSelection();
   }
 });
 function clearSeat() {
+  seatJourney = null;
+  window.cafeWorld?.cancelWalk();
   desktopReturnFocus = null;
   if (desktop.open) desktop.close();
   Object.assign(room, { space: null, seat: null, since: null, snack: "", order: null });
@@ -524,18 +577,20 @@ connectCafeSwitch(document.querySelector(".top-actions .u013"), async (enabled) 
 
 window.cafeSeating = {
   current: () => room.space ? room.space + ":" + room.seat : null,
+  phase: () => seatJourney?.phase ?? null,
   position(key) {
     const seat = floorSeats.get(key);
     if (!seat) return null;
     const [x, y] = spaces[seat.space].positions[seat.index];
     return seat.space === "hall"
       ? { x: x + (seat.index % 2 ? 2 : -2), y: y + 2.6 }
-      : { x, y: y + 18 };
+      : { x, y: { solo: 74, duo: 70, team: 68, squad: seat.index < 3 ? 33 : 76 }[seat.space] };
   },
   refresh(keys) {
     if (keys.length === occupiedSeats.size && keys.every((key) => occupiedSeats.has(key))) return;
     occupiedSeats = new Set(keys);
-    renderMonitorPower(room.space && room.space !== "hall" ? room.space : "hall");
+    const space = $(".scene").dataset.space;
+    renderMonitorPower(space === "lobby" ? "hall" : space);
     if (floor.open) renderFloorSelection();
   },
   lose(key) {

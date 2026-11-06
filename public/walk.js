@@ -1,4 +1,4 @@
-import { canWalk, entrance, kiosk, pathTo } from "./world.js";
+import { canWalk, entrance, kiosk, pathTo, routeToSeat } from "./world.js";
 import { createCafeCamera } from "./camera.js";
 
 const scene = document.querySelector(".scene");
@@ -44,6 +44,8 @@ let connected = false;
 let pendingSeatChanges = 0;
 let pulseTimer;
 let pulsing = false;
+let journey;
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
 function displayedSpace() {
   return scene.dataset.space === "lobby" ? "hall" : scene.dataset.space;
@@ -89,9 +91,14 @@ function paint(key, data, point, walking) {
 
 function drawSelf(walking = false) {
   const mine = seating.current();
-  const point = mine ? seating.position(mine) : location;
-  if (point) paint("mine", { name: name || "나", color, facing, waveUntil, seat: mine }, point, walking);
-  camera.follow(point, mine);
+  const phase = seating.phase();
+  const seat = phase === "walking" ? null : mine;
+  const point = seat ? seating.position(seat) : location;
+  if (point) {
+    const sprite = paint("mine", { name: name || "나", color, facing, waveUntil, seat }, point, walking);
+    sprite.node.classList.toggle("sitting", phase === "sitting");
+  }
+  camera.follow(point, phase ? null : mine);
 }
 
 function draw() {
@@ -172,7 +179,64 @@ async function changeSeat(action, seat) {
 window.cafeWorld = {
   async reserve(seat) { return (await changeSeat("reserve", seat)).mine === seat; },
   release() { changeSeat("release").catch(() => {}); },
+  walkToSeat(seat, previous, showSpace) {
+    if (reducedMotion.matches) return Promise.resolve();
+    const legs = routeToSeat(location, previous, seat, seating.position);
+    if (!legs.length) return Promise.resolve();
+    pressed.clear();
+    path = [];
+    return new Promise((resolve) => {
+      journey = { legs, showSpace, resolve, leg: null };
+      startLeg();
+    });
+  },
+  cancelWalk() {
+    if (!journey) return;
+    const { resolve } = journey;
+    journey = null;
+    resolve();
+  },
 };
+
+function startLeg() {
+  const leg = journey.legs.shift();
+  if (!leg) {
+    window.cafeWorld.cancelWalk();
+    return;
+  }
+  let total = 0;
+  let last = leg.start;
+  for (const point of leg.points) {
+    total += Math.hypot(point.x - last.x, (point.y - last.y) * .67);
+    last = point;
+  }
+  journey.leg = leg;
+  journey.speed = Math.max(29, total / 2.8);
+  Object.assign(location, leg.start);
+  journey.showSpace(leg.space);
+  draw();
+}
+
+function advanceJourney(dt) {
+  let remaining = journey.speed * dt;
+  const points = journey.leg.points;
+  while (remaining > 0 && points.length) {
+    const point = points[0];
+    const dx = point.x - location.x;
+    const dy = point.y - location.y;
+    const length = Math.hypot(dx, dy * .67);
+    if (Math.abs(dx) > .02) facing = dx < 0 ? -1 : 1;
+    if (length > remaining) {
+      location.x += dx * remaining / length;
+      location.y += dy * remaining / length;
+      break;
+    }
+    Object.assign(location, point);
+    points.shift();
+    remaining -= length;
+  }
+  if (!points.length) startLeg();
+}
 
 async function pulse() {
   if (pulsing) return;
@@ -210,7 +274,7 @@ document.getElementById("cafe-name-form").addEventListener("submit", (event) => 
 });
 
 function canMove() {
-  return !seating.current() && !document.querySelector("dialog[open]");
+  return !seating.current() && !seating.phase() && !document.querySelector("dialog[open]");
 }
 
 scene.addEventListener("click", (event) => {
@@ -244,6 +308,7 @@ document.addEventListener("visibilitychange", () => {
 let lastFrame = performance.now();
 let wasWalking = false;
 let wasWaving = false;
+let lastPhase = seating.phase();
 function animate(time) {
   const dt = Math.min((time - lastFrame) / 1000, .04);
   lastFrame = time;
@@ -252,7 +317,10 @@ function animate(time) {
   if (seat !== lastSeat) path = [];
 
   let walking = false;
-  if (canMove()) {
+  if (journey) {
+    advanceJourney(dt);
+    walking = Boolean(journey);
+  } else if (canMove()) {
     let dx = 0;
     let dy = 0;
     for (const key of pressed) {
@@ -276,7 +344,8 @@ function animate(time) {
     if (path.length && Math.hypot(path[0].x - location.x, path[0].y - location.y) < .06) path.shift();
   }
   const waving = waveUntil > Date.now();
-  if (seat !== lastSeat) draw();
+  const phase = seating.phase();
+  if (seat !== lastSeat || phase !== lastPhase) draw();
   else if (walking || walking !== wasWalking || waving !== wasWaving) drawSelf(walking);
   for (const [id, sprite] of visitors) {
     if (id !== "mine" && sprite.until && sprite.until <= time) {
@@ -286,6 +355,7 @@ function animate(time) {
   }
   wasWalking = walking;
   wasWaving = waving;
+  lastPhase = phase;
   lastSeat = seat;
   requestAnimationFrame(animate);
 }
