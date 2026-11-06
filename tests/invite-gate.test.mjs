@@ -95,6 +95,20 @@ test("beta invitation and public launch work end to end with real SQLite", async
     body: new URLSearchParams({ password, csrf: csrfToken }).toString(),
   });
   assert.equal((await gate(missingCookie, env)).status, 403);
+  // Some browsers omit a partitioned or blocked CSRF cookie, while their
+  // Origin or Fetch Metadata still prove a same-origin HTML form submission.
+  const withOrigin = new Request(origin + "/auth/admin-login", {
+    method: "POST",
+    headers: { Origin: origin, "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ password: "incorrect" }).toString(),
+  });
+  assert.equal((await gate(withOrigin, env)).headers.get("Location"), "/admin/login?error=1");
+  const withFetchMetadata = new Request(origin + "/auth/admin-login", {
+    method: "POST",
+    headers: { "Sec-Fetch-Site": "same-origin", "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ password: "incorrect" }).toString(),
+  });
+  assert.equal((await gate(withFetchMetadata, env)).headers.get("Location"), "/admin/login?error=1");
 
   const wrongPassword = await gate(post("/auth/admin-login", { password: "incorrect" }), env);
   assert.equal(wrongPassword.headers.get("Location"), "/admin/login?error=1");

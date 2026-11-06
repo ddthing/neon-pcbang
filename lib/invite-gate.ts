@@ -90,25 +90,31 @@ async function accessMode(db: DB): Promise<"invite" | "public"> {
     .first<{ value: string }>();
   return setting?.value === "public" ? "public" : "invite";
 }
-function permittedPost(request: Request) {
+type FormResult = { params: URLSearchParams; error?: never } | { params?: never; error: string };
+async function form(request: Request): Promise<FormResult> {
+  const expectedOrigin = new URL(request.url).origin;
   const origin = request.headers.get("Origin");
-  // Some browsers omit Origin on same-site HTML form submissions. A matching
-  // server-issued form token is mandatory in addition to these origin checks.
-  if (origin && origin !== new URL(request.url).origin) return false;
-  const fetchSite = request.headers.get("Sec-Fetch-Site");
-  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "none") return false;
-  return request.headers.get("Content-Type")?.toLowerCase().startsWith("application/x-www-form-urlencoded") === true;
-}
-async function form(request: Request) {
-  if (!permittedPost(request)) return null;
+  const site = request.headers.get("Sec-Fetch-Site");
+  // A browser-generated Origin or Fetch Metadata header is a reliable
+  // same-origin signal, even if its separate CSRF cookie was rejected.
+  const originMatches = origin === expectedOrigin;
+  if (origin && !originMatches) return { error: "ORIGIN" };
+  if (site && !["same-origin", "none"].includes(site) &&
+      !(site === "same-site" && originMatches)) return { error: "SITE" };
+  if (!request.headers.get("Content-Type")?.toLowerCase().startsWith("application/x-www-form-urlencoded")) {
+    return { error: "CONTENT_TYPE" };
+  }
   const input = await request.text();
-  if (input.length > 2048) return null;
+  if (input.length > 2048) return { error: "SIZE" };
   const params = new URLSearchParams(input);
   const submitted = params.get("csrf") || "";
   const cookie = csrfCookieValue(request);
-  if (!/^[a-f0-9]{64}$/.test(submitted) || !/^[a-f0-9]{64}$/.test(cookie) || !equal(submitted, cookie)) return null;
+  const csrfMatches = /^[a-f0-9]{64}$/.test(submitted) && /^[a-f0-9]{64}$/.test(cookie) && equal(submitted, cookie);
+  // Keep protecting all POST actions if both browser headers are unavailable:
+  // they must then supply the server-issued double-submit cookie and form token.
+  if (!csrfMatches && !originMatches && site !== "same-origin") return { error: "FORM_TOKEN" };
   params.delete("csrf");
-  return params;
+  return { params };
 }
 function invitePage(message = "", request?: Request) {
   return page("초대코드 입장", `<p class="hint">GILMOTUNGI PC BANG · PRIVATE ENTRY</p><h1>길모퉁이PC방</h1>
@@ -228,8 +234,16 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
     if (path === "/admin") return admin ? adminPanel(db, "", request) : go("/admin/login");
     if (path.startsWith("/auth/")) {
       if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
-      const input = await form(request);
-      if (!input) return page("요청 오류", "<h1>잘못된 요청입니다</h1>", 403);
+      const parsed = await form(request);
+      if (!parsed.params) {
+        // Codes indicate which browser request validation failed without
+        // printing passwords, tokens, cookies, or other sensitive values.
+        const reason = parsed.error || "UNKNOWN";
+        return page("요청 확인", `<h1>로그인 요청을 확인할 수 없습니다</h1>
+          <p>관리자 비밀번호가 틀렸다는 뜻은 아닙니다. 페이지를 새로 연 뒤 다시 제출해주세요.</p>
+          <p class="hint">요청 확인 코드: ${esc(reason)}</p><p><a href="/admin/login">관리자 로그인으로 돌아가기</a></p>`, 403);
+      }
+      const input = parsed.params;
       if (path === "/auth/redeem") {
         if (mode === "public") return go("/");
         const code = (input.get("code") || "").trim().toUpperCase();
