@@ -1,5 +1,5 @@
 import handler from "vinext/server/fetch-handler";
-import { gate } from "../lib/invite-gate";
+import { gate, renewUserCookie } from "../lib/invite-gate";
 import { runWithConnectorBinding } from "../lib/connector-context";
 import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 
@@ -31,7 +31,19 @@ const worker = {
         },
       };
     }
-    return runWithConnectorBinding(binding, () => handler.fetch(request, env, ctx));
+    const response = await runWithConnectorBinding(binding, () => handler.fetch(request, env, ctx));
+    // Refresh the long-lived admission cookie when the member actually visits the PC bang.
+    // The session remains revocable in D1; cookie renewal does not extend a revoked session.
+    if (request.method === "GET" && pathname === "/" && response.status === 200) {
+      const renewed = renewUserCookie(request);
+      if (renewed) {
+        const headers = new Headers(response.headers);
+        headers.append("Set-Cookie", renewed);
+        headers.set("Cache-Control", "private, no-store");
+        return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+      }
+    }
+    return response;
   },
 };
 
