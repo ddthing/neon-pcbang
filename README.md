@@ -1,9 +1,11 @@
-# 네온 PC방
+# 길모퉁이PC방
 
 서울의 날씨가 창밖으로 흐르는 픽셀 아트 온라인 PC방입니다. 같은 매장에 들어온 손님은 서로의 캐릭터와 좌석 상태를 볼 수 있어요.
 
 - **이동:** 방향키, WASD, 또는 바닥 누르기.
-- **전체화면:** 매장 오른쪽 상단 버튼을 누르면 카메라가 내 캐릭터를 따라옵니다. 좌석도와 내 PC는 화면 아래에서 열 수 있어요.
+- **화면:** 기본 화면은 비율을 유지하면서 창을 채우고 내 캐릭터를 따라갑니다. 오른쪽 위의 전체 지도 버튼으로 매장을 한 번에 볼 수 있어요.
+- **매점:** 메뉴 검색과 카테고리로 먹거리를 찾아 주문하세요. 실시간 주문표에는 닉네임과 좌석 없이 주문번호와 메뉴, 준비 상태만 보여요.
+- **단골 쿠폰:** 한국 시간 기준 하루 착석 시간 30분을 채우면 도장 1개를 받을 수 있어요. 10개를 모아 매점의 단골 메뉴로 바꿀 수 있습니다. 이 브라우저에 저장된 손님 정보로 쿠폰을 이어서 사용해요.
 - **창밖:** [Open-Meteo](https://open-meteo.com/)의 서울 날씨와 서울의 일출·일몰 시각을 씁니다. 날씨를 가져오지 못하면 한국 시간에 맞춘 풍경을 보여줍니다.
 - **제목 글꼴**은 귀댕이의 [뚝딱감자체](https://blog.naver.com/guidang2/224435435470)이며, [눈누의 웹폰트 주소](https://noonnu.cc/font_page/1969)를 사용합니다.
 
@@ -23,7 +25,7 @@ GitHub에 소스를 올리고 **Actions**에서 Cloudflare Workers로 배포합�
    | Variables | `NEON_D1_NAME` | 만든 D1 데이터베이스 이름 |
    | Variables | `NEON_D1_ID` | 만든 D1 데이터베이스 ID |
 
-4. 기본 브랜치에서 **Actions → Deploy Neon PC Bang → Run workflow**를 누르세요. 워크플로가 테이블을 준비하고 배포합니다. 실행 로그 마지막에 새 주소가 표시됩니다.
+4. 기본 브랜치에서 **Actions → Deploy Gilmotungi PC Bang → Run workflow**를 누르세요. 워크플로가 테이블을 준비하고 배포합니다. 실행 로그 마지막에 새 주소가 표시됩니다.
 
 이 절차로 만든 `workers.dev` 주소는 공개됩니다. 기존 Sites 주소나 그곳의 좌석 데이터는 연결되지 않습니다.
 
@@ -35,5 +37,8 @@ Node.js 24에서 다음을 실행하고 `http://127.0.0.1:8787`로 접속하세�
 npm ci
 npm run build
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_strange_moira_mactaggert.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_corner_snacks.sql
 npm start
 ```
+
+매점 메뉴는 [snack-menu.json](public/snack-menu.json)에서 관리합니다. 새 항목은 고유한 `id`를 사용하고, 품절은 `"available": false`로 표시합니다. 메뉴를 변경한 뒤 다시 배포하면 화면과 주문 검증에 함께 적용됩니다.

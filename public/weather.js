@@ -6,10 +6,10 @@ const hallPanes = [[277, 35], [319, 70], [397, 62], [469, 73], [550, 64], [622, 
   [693, 60], [761, 70], [839, 61], [908, 50], [966, 67], [1041, 61], [1109, 59], [1176, 45], [1228, 34]];
 const lamps = [355, 548, 789, 965, 1157];
 const roomPanes = {
-  solo: "M0 12L92 49V451l-20-22-28-4-21 20L0 450z M114 57l66 22v400l-66 72z",
-  duo: "M0 12l63 36v377L0 434z M78 51l88 29v328l-64 63-24-54z",
-  team: "M0 45l50 20v396L0 478z M73 72l41 15v204l-41 32z",
-  squad: "M0 40l60 22v382L0 472z M76 69l35 13v202l-35 26z",
+  solo: "M0 7L88 25V245L75 238L68 221L51 209L35 213L27 238L13 237L0 244Z M113 32L187 47V237L113 283Z",
+  duo: "M0 6L65 24V203L53 209L41 202L26 210L12 215L0 231Z M82 28L173 47V202L100 250L96 235L82 224Z",
+  team: "M0 23L55 45V220L18 242L0 246Z M73 48L108 63V188L73 208Z",
+  squad: "M0 17L67 42V228L53 213L38 204L27 211L27 235L0 247Z M84 46L115 58V200L84 220Z",
 };
 
 let buildings = "";
@@ -39,7 +39,7 @@ layer.innerHTML = `<svg viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/sv
         M1024 131v-11h8v-8h10v4h6v-7h8v10h8v13z M1251 131v-13h9v-10h8v23z"/>
     </mask>
     ${Object.entries(roomPanes).map(([space, path]) =>
-      `<clipPath id="panes-${space}"><path d="${path}" transform="scale(2 1)"/></clipPath>`).join("")}
+      `<clipPath id="panes-${space}"><path d="${path}" transform="scale(2)"/></clipPath>`).join("")}
     <pattern id="cafe-rain-pattern" width="67" height="32" patternUnits="userSpaceOnUse">
       <path fill="#e3e9ea" d="M8 3h1v5H8z M22 22h1v8h-1z M40 12h1v6h-1z M55 3h1v9h-1z M64 24h1v6h-1z"/>
     </pattern>
@@ -80,9 +80,9 @@ layer.innerHTML = `<svg viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/sv
   <g class="hall-sky" mask="url(#hall-panes)">
     <svg x="275" y="43" width="1005" height="90" viewBox="0 0 1040 90" preserveAspectRatio="none"><use href="#cafe-sky"/></svg>
   </g>
-  <image class="hall-sky" href="./pcbang-hall-pastel.webp" width="1536" height="1024" clip-path="url(#cafe-pendant-glass)"/>
+  <image class="hall-sky" href="./corner-hall.webp" width="1536" height="1024" clip-path="url(#cafe-pendant-glass)"/>
   ${Object.keys(roomPanes).map(space => `<g class="room-sky ${space}" clip-path="url(#panes-${space})">
-    <svg x="0" y="0" width="370" height="555" viewBox="38 0 218 90" preserveAspectRatio="none"><use href="#cafe-sky"/></svg>
+    <svg x="0" y="-18" width="380" height="580" viewBox="38 0 218 90" transform="skewY(14)" preserveAspectRatio="none"><use href="#cafe-sky"/></svg>
   </g>`).join("")}
 </svg>`;
 

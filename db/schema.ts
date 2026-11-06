@@ -14,3 +14,27 @@ export const visitors = sqliteTable("cafe_visitors", {
   uniqueIndex("cafe_visitors_seat").on(table.seat),
   index("cafe_visitors_expires").on(table.expires),
 ]);
+
+export const loyalty = sqliteTable("cafe_loyalty", {
+  memberId: text("member_id").primaryKey().notNull(),
+  day: text().notNull(),
+  dayMs: integer("day_ms").notNull().default(0),
+  totalMs: integer("total_ms").notNull().default(0),
+  activeAt: integer("active_at").notNull().default(0),
+  claimDay: text("claim_day").notNull().default(""),
+  stamps: integer().notNull().default(0),
+});
+
+export const orders = sqliteTable("cafe_orders", {
+  id: text().primaryKey().notNull(),
+  memberId: text("member_id").notNull(),
+  seat: text().notNull(),
+  items: text().notNull(),
+  quantity: integer().notNull(),
+  coupon: integer().notNull().default(0),
+  createdAt: integer("created_at").notNull(),
+  readyAt: integer("ready_at").notNull(),
+}, (table) => [
+  index("cafe_orders_recent").on(table.createdAt),
+  index("cafe_orders_member").on(table.memberId, table.coupon, table.readyAt),
+]);

@@ -1,0 +1,20 @@
+{
+  "categories": [
+    {"id":"meals","name":"식사","items":[
+      {"id":"ramyeon","name":"컵라면","icon":"🍜","copy":"김이 모락모락 나는 야식"},
+      {"id":"rice","name":"김치볶음밥","icon":"🍚","copy":"반숙 달걀을 올린 든든한 한 접시"},
+      {"id":"dumplings","name":"군만두","icon":"🥟","copy":"겉은 바삭하고 속은 촉촉하게"}
+    ]},
+    {"id":"bites","name":"간식","items":[
+      {"id":"skewer","name":"소떡소떡","icon":"🍢","copy":"달콤매콤한 한 꼬치"},
+      {"id":"fries","name":"감자튀김","icon":"🍟","copy":"바삭하게 튀긴 감자"},
+      {"id":"toast","name":"버터 토스트","icon":"🍞","copy":"노릇하게 구운 두 조각"}
+    ]},
+    {"id":"drinks","name":"음료","items":[
+      {"id":"cola","name":"캔콜라","icon":"🥤","copy":"톡 쏘는 한 모금"},
+      {"id":"tea","name":"아이스티","icon":"🧋","copy":"시원하게 마시는 복숭아 홍차"},
+      {"id":"coffee","name":"아메리카노","icon":"☕","copy":"구수한 원두 한 잔"}
+    ]}
+  ],
+  "reward": {"id":"corner-ade","name":"단골 복숭아 에이드","icon":"🍑"}
+}

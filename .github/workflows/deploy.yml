@@ -1,4 +1,4 @@
-name: Deploy Neon PC Bang
+name: Deploy Gilmotungi PC Bang
 
 on:
   workflow_dispatch:

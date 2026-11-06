@@ -1,127 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 1024" shape-rendering="crispEdges">
-  <defs>
-    <path id="solo-shape" d="M63 155H197L221 179V252L198 275H61L43 256V176Z"/>
-    <path id="duo-shape" d="M59 284H218V391H235V531H57L43 517V302Z"/>
-    <path id="team-shape" d="M1341 95H1514V402H1343V361H1317V120Z"/>
-    <path id="squad-shape" d="M1331 439H1497L1516 458V774L1496 794H1329L1308 773V460Z"/>
-    <pattern id="room-tile" width="24" height="24" patternUnits="userSpaceOnUse">
-      <path d="M0 0H24V24H0Z" fill="#e5cbaa" opacity=".12"/>
-      <path d="M0 23H24V24H0ZM23 0H24V24H23Z" fill="#2c261f" opacity=".36"/>
-      <path d="M0 1H22V2H0Z" fill="#f1dfc1" opacity=".19"/>
-    </pattern>
-    <g id="monitor">
-      <path d="M0 0H43V24H0ZM17 23H25V29H17Z" fill="#312a29"/>
-      <path d="M2 2H41V21H2Z" fill="#635a58"/>
-      <path d="M4 4H39V18H4Z" fill="#1c2528"/>
-      <path d="M35 6H37V8H35Z" fill="#aabda7"/>
-      <path d="M11 29H31V31H11Z" fill="#d0b8a1"/>
-    </g>
-    <g id="chair">
-      <path d="M8 1H28L35 8V25L28 33H8L1 25V8Z" fill="#403833"/>
-      <path d="M8 4H27L31 9V23L26 28H9L5 24V10Z" fill="currentColor"/>
-      <path d="M8 5H26V8H8Z" fill="#e8dbc6" opacity=".5"/>
-      <path d="M15 30H22V36H29V39H8V36H15Z" fill="#463d37"/>
-    </g>
-    <g id="plant">
-      <path d="M6 19H24L21 32H9Z" fill="#b49b79"/>
-      <path d="M7 20H23V23H7Z" fill="#e8cfaa"/>
-      <path d="M13 2H17V8H23V4H28V12H22V18H17V22H13V18H7V14H2V7H8V10H13Z" fill="#849372"/>
-      <path d="M14 4H17V11H14ZM4 9H8V12H4ZM24 6H27V10H24Z" fill="#bdc392"/>
-    </g>
-    <g id="wall-lamp">
-      <path d="M0 0H11V21H0Z" fill="#66504a"/>
-      <path d="M2 2H9V19H2Z" fill="#fff0bc"/>
-      <path d="M4 4H7V17H4Z" fill="#fff9df"/>
-    </g>
-  </defs>
-
-  <g id="rendered-rooms">
-    <!-- Backboards cover the identical booths in the base hall art. -->
-    <path d="M43 151H226V283H43ZM43 277H232V538H43ZM1318 92H1515V431H1318ZM1311 430H1517V801H1311Z" fill="#4c4039"/>
-    <path d="M48 156H220V278H48ZM48 282H226V533H48ZM1323 97H1510V426H1323ZM1316 435H1512V796H1316Z" fill="#776456"/>
-    <path d="M50 280H224V288H50ZM1325 410H1505V426H1325Z" fill="#99806a" opacity=".54"/>
-
-    <!-- 1P booth: short, chamfered and warm. -->
-    <g>
-      <use href="#solo-shape" fill="#a28366" stroke="#322725" stroke-width="5"/>
-      <use href="#solo-shape" fill="url(#room-tile)"/>
-      <path d="M60 179L70 165H194L211 183V196H60Z" fill="#57463c"/>
-      <path d="M68 171H191V175H68Z" fill="#e0bc88"/>
-      <path d="M80 194H182V218H80Z" fill="#695149" stroke="#4a3932" stroke-width="3"/>
-      <path d="M82 195H179V198H82Z" fill="#d2a77f"/>
-      <use href="#monitor" x="109" y="184"/>
-      <use href="#chair" x="112" y="221" color="#c6ad90"/>
-      <use href="#plant" x="51" y="227"/>
-      <path d="M212 199H222V227H212Z" fill="#ead2a3"/>
-      <path d="M215 202H219V224H215Z" fill="#fff1c9"/>
-    </g>
-
-    <!-- 2P lounge: a stepped floor plan, two facing bays and a bench. -->
-    <g>
-      <use href="#duo-shape" fill="#7a8a72" stroke="#302a28" stroke-width="5"/>
-      <use href="#duo-shape" fill="url(#room-tile)"/>
-      <path d="M55 304L65 293H208V312H55Z" fill="#465348"/>
-      <path d="M67 299H201V304H67Z" fill="#c0ccac"/>
-      <path d="M65 331H200V355H65ZM65 415H209V440H65Z" fill="#66564c" stroke="#443b32" stroke-width="3"/>
-      <path d="M69 333H196V337H69ZM69 417H206V421H69Z" fill="#ae9b7c"/>
-      <use href="#monitor" x="114" y="322"/>
-      <use href="#monitor" x="127" y="406"/>
-      <use href="#chair" x="117" y="357" color="#c2c8a7"/>
-      <use href="#chair" x="131" y="444" color="#bac9b2"/>
-      <path d="M64 486H119V516H64Z" fill="#4b594a" stroke="#303c32" stroke-width="3"/>
-      <path d="M68 490H114V500H68ZM68 503H114V512H68Z" fill="#a8b497"/>
-      <use href="#plant" x="182" y="477"/>
-      <path d="M226 486H237V518H226Z" fill="#d4e1b8"/>
-    </g>
-
-    <!-- 5P party room: five positions on a single long desk. -->
-    <g>
-      <use href="#team-shape" fill="#8e7988" stroke="#352a31" stroke-width="5"/>
-      <use href="#team-shape" fill="url(#room-tile)"/>
-      <path d="M1332 123L1348 104H1507V131H1332Z" fill="#53444f"/>
-      <path d="M1353 112H1497V117H1353Z" fill="#d8b8d0"/>
-      <path d="M1428 137H1497V380H1428Z" fill="#6b555d" stroke="#42313e" stroke-width="4"/>
-      <path d="M1431 139H1437V376H1431Z" fill="#c6a19d"/>
-      <path d="M1431 181H1496M1431 229H1496M1431 277H1496M1431 325H1496" stroke="#42313e" stroke-width="3"/>
-      <use href="#monitor" x="1444" y="142"/><use href="#chair" x="1382" y="141" color="#cab3c8"/>
-      <use href="#monitor" x="1444" y="190"/><use href="#chair" x="1382" y="189" color="#c2aab8"/>
-      <use href="#monitor" x="1444" y="238"/><use href="#chair" x="1382" y="237" color="#d0bbc6"/>
-      <use href="#monitor" x="1444" y="286"/><use href="#chair" x="1382" y="285" color="#c2aab8"/>
-      <use href="#monitor" x="1444" y="334"/><use href="#chair" x="1382" y="333" color="#cab3c8"/>
-      <use href="#plant" x="1343" y="146"/><use href="#wall-lamp" x="1325" y="342"/>
-      <path d="M1337 364H1351V397H1337Z" fill="#dbc4d5"/>
-    </g>
-
-    <!-- 6P squad room: two parallel rows and cool edge lighting. -->
-    <g>
-      <use href="#squad-shape" fill="#657a80" stroke="#2d3034" stroke-width="5"/>
-      <use href="#squad-shape" fill="url(#room-tile)"/>
-      <path d="M1322 462L1339 449H1493L1507 463V483H1322Z" fill="#42535c"/>
-      <path d="M1340 457H1492V463H1340Z" fill="#b8d2d0"/>
-      <path d="M1337 502H1490V541H1337ZM1337 589H1490V628H1337ZM1337 676H1490V715H1337Z" fill="#685b57" stroke="#3f3b3c" stroke-width="4"/>
-      <path d="M1342 506H1486V510H1342ZM1342 593H1486V597H1342ZM1342 680H1486V684H1342Z" fill="#b09c90"/>
-      <use href="#monitor" x="1349" y="496"/><use href="#monitor" x="1436" y="496"/>
-      <use href="#monitor" x="1349" y="583"/><use href="#monitor" x="1436" y="583"/>
-      <use href="#monitor" x="1349" y="670"/><use href="#monitor" x="1436" y="670"/>
-      <use href="#chair" x="1353" y="541" color="#aec1c1"/><use href="#chair" x="1440" y="541" color="#b5b9cc"/>
-      <use href="#chair" x="1353" y="628" color="#b5b9cc"/><use href="#chair" x="1440" y="628" color="#aec1c1"/>
-      <use href="#chair" x="1353" y="715" color="#aec1c1"/><use href="#chair" x="1440" y="715" color="#b5b9cc"/>
-      <path d="M1408 491H1417V745H1408Z" fill="#49616a"/>
-      <path d="M1411 496H1414V741H1411Z" fill="#93b7bd"/>
-      <path d="M1307 613H1320V650H1307Z" fill="#c4dddb"/>
-      <use href="#wall-lamp" x="1496" y="739"/>
-    </g>
-  </g>
-
-  <g id="floor-footprints">
-    <path d="M35 40H1503L1525 72V813L1491 862H43L15 820V74Z" fill="#26312c" stroke="#758175" stroke-width="5"/>
-    <path d="M28 170H1514M28 783H1514" fill="none" stroke="#49574c" stroke-width="4" stroke-dasharray="14 9"/>
-    <path d="M43 564H278V832H43Z" fill="#634e3d" stroke="#a48766" stroke-width="4"/>
-    <path d="M242 275H368V510H242Z" fill="#414a40" stroke="#697265" stroke-width="4"/>
-    <use href="#solo-shape" fill="#66543d" stroke="#cbb388" stroke-width="5"/>
-    <use href="#duo-shape" fill="#425b4c" stroke="#a4bda6" stroke-width="5"/>
-    <use href="#team-shape" fill="#554459" stroke="#bea6c3" stroke-width="5"/>
-    <use href="#squad-shape" fill="#3d555e" stroke="#a5c5c7" stroke-width="5"/>
-    <path d="M633 845H861V883H633Z" fill="#38584c" stroke="#9ab39f" stroke-width="5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 1024">
+  <g id="floor-footprints" stroke-width="5" stroke-linejoin="round">
+    <path d="M52 36H1485L1514 123V821L1481 864H52L21 820V145Z" fill="#26312c" stroke="#758175"/>
+    <path d="M253 163H1301M27 783H1302" fill="none" stroke="#49574c" stroke-width="4" stroke-dasharray="14 9"/>
+    <path d="M52 622H297V773H263V831H52Z" fill="#634e3d" stroke="#a48766"/>
+    <path d="M255 320H361V505H255Z" fill="#414a40" stroke="#697265"/>
+    <path d="M40 215L76 176H205L224 224V240H206V273H224V331H40Z" fill="#66543d" stroke="#cbb388"/>
+    <path d="M29 386L61 352H231V551H208V581H231V596H48L29 577Z" fill="#425b4c" stroke="#a4bda6"/>
+    <path d="M1329 103H1490L1510 139V454H1313V407H1331V365H1313V126Z" fill="#554459" stroke="#bea6c3"/>
+    <path d="M1322 476H1480L1511 506V800L1480 838H1322L1295 807V682H1315V647H1295V525Z" fill="#3d555e" stroke="#a5c5c7"/>
+    <path d="M633 843H871V883H633Z" fill="#38584c" stroke="#9ab39f"/>
   </g>
 </svg>

@@ -94,7 +94,7 @@ function connectCafeSwitch(root, requestChange) {
     if (k === 'err') el.setAttribute('role', 'alert');
     el.innerHTML = '<span class="u070-ic" aria-hidden="true">' + ICON[k] + '</span><span class="u070-tx"><b></b><small></small></span>' + '<button class="u070-x" type="button" aria-label="알림 닫기"><svg viewBox="0 0 14 14"><path d="M3.5 3.5l7 7M10.5 3.5l-7 7"/></svg></button><span class="u070-bar" aria-hidden="true"></span>';
     el.querySelector('b').textContent = message;
-    el.querySelector('small').textContent = '네온 PC방';
+    el.querySelector('small').textContent = '길모퉁이PC방';
     var t = { el: el, left: DUR };
     zone.appendChild(el);
     list.unshift(t);

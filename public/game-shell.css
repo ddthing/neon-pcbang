@@ -88,8 +88,7 @@ body {
 .stage-room-door[data-room="duo"], .room-map-door[data-room="duo"] { border-color: #a4bda6; }
 .stage-room-door[data-room="team"], .room-map-door[data-room="team"] { border-color: #bea6c3; }
 .stage-room-door[data-room="squad"], .room-map-door[data-room="squad"] { border-color: #a5c5c7; }
-.room-bays, .kiosk-footprints { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.scene:not([data-space="lobby"], [data-space="hall"]) .room-bays { display: none; }
+.kiosk-footprints { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .cafe-fullscreen .hub-menu[open] {
   display: grid; gap: 10px; width: min(440px, calc(100% - 24px)); padding: 15px;
   border-color: #9e896c; background: #302b25;

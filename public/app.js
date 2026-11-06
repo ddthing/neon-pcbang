@@ -41,6 +41,13 @@ const hallBanks = [
   { letter: "D", x: [1133, 1196] }
 ];
 const hallRows = [196, 244, 291, 338, 386, 434, 481, 529, 577, 626, 675];
+// Screen centers in the hall painting; the room interiors use their own atlas coordinates.
+const hallRoomScreens = {
+  solo: [[149, 244]],
+  duo: [[108, 434], [168, 434]],
+  team: [148, 204, 260, 317, 373].map((y) => [1447, y]),
+  squad: [562, 650, 736].flatMap((y) => [[1367, y], [1448, y]]),
+};
 const bankSize = hallRows.length * 2;
 const spaces = {
   hall: {
@@ -105,12 +112,20 @@ function prepareRoomArt() {
 function renderMonitorPower(spaceId) {
   if (monitorLayer.dataset.space !== spaceId) {
     monitorLayer.dataset.space = spaceId;
-    const positions = spaces[spaceId].positions;
     const dimensions = { hall: [1.92, 1.83], solo: [21.9, 17.1], duo: [18.3, 14.7], team: [10.6, 9.7], squad: [13.5, 9.9] };
-    monitorLayer.replaceChildren(...positions.map(([x, y], index) => {
+    const positions = spaces[spaceId].positions.map(([x, y], index) => {
+      const size = spaceId === "squad" && index >= 3 ? [15.6, 12.4] : dimensions[spaceId];
+      return [spaceId + ":" + index, x, y, ...size];
+    });
+    if (spaceId === "hall") {
+      for (const [id, screens] of Object.entries(hallRoomScreens)) {
+        positions.push(...screens.map(([x, y], index) => [id + ":" + index, x / 15.36, y / 10.24, 2.1, 1.72]));
+      }
+    }
+    monitorLayer.replaceChildren(...positions.map(([key, x, y, width, height], index) => {
       const screen = document.createElement("span");
-      const [width, height] = spaceId === "squad" && index >= 3 ? [15.6, 12.4] : dimensions[spaceId];
       screen.className = "pc-screen";
+      screen.dataset.seat = key;
       screen.style.setProperty("--x", x + "%");
       screen.style.setProperty("--y", y + "%");
       screen.style.setProperty("--screen-width", width + "%");
@@ -120,8 +135,8 @@ function renderMonitorPower(spaceId) {
     }));
   }
   poweredMonitor = isSeated() && room.space === spaceId ? monitorLayer.children[room.seat] : null;
-  for (const [index, screen] of Array.from(monitorLayer.children).entries()) {
-    screen.classList.toggle("is-on", screen === poweredMonitor || occupiedSeats.has(spaceId + ":" + index));
+  for (const screen of monitorLayer.children) {
+    screen.classList.toggle("is-on", screen === poweredMonitor || occupiedSeats.has(screen.dataset.seat));
   }
 }
 
@@ -204,7 +219,6 @@ function renderRoom() {
   } else {
     $("#room-hint").textContent = "입구 왼쪽의 민트색 키오스크를 눌러보세요.";
   }
-  renderOrder();
   updateSessionTime();
   document.dispatchEvent(new Event("cafe-seat-phase"));
 }
@@ -410,8 +424,6 @@ function clearSeat() {
   desktopReturnFocus = null;
   if (desktop.open) desktop.close();
   Object.assign(room, { space: null, seat: null, since: null, snack: "", order: null });
-  orderCart.fill(0);
-  clearTimeout(orderTimer);
   saveState(roomKey, room);
   renderRoom();
   $("#open-floor").focus();
@@ -428,96 +440,15 @@ $("#pc-end").addEventListener("click", leaveSeat);
 document.querySelectorAll("[data-open]").forEach((button) => {
   button.addEventListener("click", () => {
     if (hub.contains(button) && hub.open) hub.close();
-    document.getElementById(button.dataset.open).showModal();
+    const next = document.getElementById(button.dataset.open);
+    const origin = button.closest("dialog");
+    if (origin?.matches("#snacks, #snack-board, #snack-coupon")) origin.close();
+    if (!next.open) next.showModal();
   });
 });
 document.querySelectorAll("[data-close]").forEach((button) => {
   button.addEventListener("click", () => button.closest("dialog").close());
 });
-const snackMenu = [
-  { icon: "🍜", name: "컵라면", copy: "김이 모락모락 나는 야식" },
-  { icon: "🥤", name: "캔콜라", copy: "톡 쏘는 한 모금" },
-  { icon: "🍢", name: "소떡소떡", copy: "달콤매콤한 한 꼬치" },
-  { icon: "🍟", name: "감자튀김", copy: "바삭하게 튀긴 감자" }
-];
-const orderCart = snackMenu.map(() => 0);
-let orderTimer;
-const orderControls = snackMenu.map((item, index) => {
-  const row = document.createElement("div");
-  row.className = "order-row";
-  row.innerHTML = '<span class="activity-icon cream" aria-hidden="true"></span><span class="order-product"><strong></strong><small></small></span><div class="order-quantity"><button type="button">−</button><output>0</output><button type="button">＋</button></div>';
-  row.querySelector(".activity-icon").textContent = item.icon;
-  row.querySelector("strong").textContent = item.name;
-  row.querySelector("small").textContent = item.copy;
-  const [minus, plus] = row.querySelectorAll("button");
-  const count = row.querySelector("output");
-  count.setAttribute("aria-label", item.name + " 수량");
-  minus.setAttribute("aria-label", item.name + " 빼기");
-  plus.setAttribute("aria-label", item.name + " 추가");
-  minus.addEventListener("click", () => {
-    orderCart[index] = Math.max(0, orderCart[index] - 1);
-    renderOrder();
-  });
-  plus.addEventListener("click", () => {
-    orderCart[index] = Math.min(9, orderCart[index] + 1);
-    renderOrder();
-  });
-  $("#order-menu").append(row);
-  return { minus, plus, count };
-});
-
-function renderOrder() {
-  const seat = floorSeats.get(room.space + ":" + room.seat);
-  const order = room.order;
-  const preparing = order && order.readyAt > Date.now();
-  const total = orderCart.reduce((sum, count) => sum + count, 0);
-  $("#order-location").textContent = seat
-    ? spaces[room.space].label + " · " + seat.code + " 자리로 가져다드려요."
-    : "자리에 앉으면 주문할 수 있어요.";
-  for (const [index, controls] of orderControls.entries()) {
-    const count = orderCart[index];
-    controls.count.textContent = count;
-    controls.minus.disabled = count === 0;
-    controls.plus.disabled = count === 9;
-  }
-  $("#place-order").disabled = !seat || !total || Boolean(preparing);
-  $("#place-order").textContent = total ? "내 자리로 " + total + "개 주문하기" : "내 자리로 주문하기";
-  $("#order-receipt").hidden = !order;
-  if (order) {
-    $("#order-status").textContent = preparing ? "주문 접수 · 준비 중" : "간식이 도착했어요";
-    $("#order-items").textContent = order.items.map(({ name, count }) => name + " × " + count).join(" · ");
-  }
-  const summary = order ? preparing ? "주문 준비 중" : "간식 도착" : "";
-  $("#pc-order-summary").textContent = summary || "내 자리로 간식 보내기";
-  $("#snack-subtitle").textContent = summary || (room.snack ? "고른 간식 · " + room.snack : "내 자리로 간식 주문하기");
-}
-
-function watchOrder() {
-  clearTimeout(orderTimer);
-  if (!room.order) return;
-  if (room.order.readyAt <= Date.now()) {
-    window.recordCafeStamp("snack");
-    return;
-  }
-  orderTimer = setTimeout(() => {
-    renderOrder();
-    window.recordCafeStamp("snack");
-    if (!desktop.open && !$("#snacks").open) notify("매점에서 간식이 도착했어요.", "ok");
-  }, room.order.readyAt - Date.now());
-}
-
-$("#place-order").addEventListener("click", () => {
-  if ($("#place-order").disabled) return;
-  const items = snackMenu.flatMap(({ name }, index) => orderCart[index] ? [{ name, count: orderCart[index] }] : []);
-  room.order = { items, readyAt: Date.now() + 4500 };
-  room.snack = "";
-  saveState(roomKey, room);
-  orderCart.fill(0);
-  renderOrder();
-  $("#order-receipt").focus();
-  watchOrder();
-});
-
 function remainingTime() {
   return focus.end ? Math.max(0, focus.end - Date.now()) : focus.remaining;
 }
@@ -639,6 +570,7 @@ window.cafeSeating = {
   },
   current: () => room.space ? room.space + ":" + room.seat : null,
   phase: () => seatJourney?.phase ?? null,
+  label(key) { return floorSeats.get(key)?.code ?? null; },
   position(key) {
     const seat = floorSeats.get(key);
     if (!seat) return null;
@@ -662,7 +594,6 @@ window.cafeSeating = {
 };
 renderRoom();
 if (room.space) window.recordCafeStamp("seat");
-watchOrder();
 renderTimer();
 tick();
 setInterval(tick, 1000);

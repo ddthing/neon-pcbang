@@ -4,7 +4,7 @@ export function createCafeCamera(scene) {
   const overviewButton = document.getElementById("cafe-overview");
   const floorButton = document.getElementById("game-view-floor");
   const pcButton = document.getElementById("game-view-pc");
-  let overview = true;
+  let overview = false;
   let busy = false;
   let position;
   let bounds;
@@ -41,6 +41,7 @@ export function createCafeCamera(scene) {
     if (value === overview) return;
     overview = value;
     scene.classList.toggle("camera-ready", !overview);
+    overviewButton.setAttribute("aria-pressed", String(overview));
     overviewButton.textContent = overview ? "가까이 보기" : "전체 지도";
     resize();
   }
@@ -57,7 +58,6 @@ export function createCafeCamera(scene) {
       else await document.documentElement.requestFullscreen();
       scene.focus({ preventScroll: true });
     } catch {
-      setOverview(!overview);
       scene.focus({ preventScroll: true });
     }
     finally { busy = false; }
@@ -70,7 +70,7 @@ export function createCafeCamera(scene) {
   });
   if (!document.fullscreenEnabled) button.hidden = true;
   new ResizeObserver(resize).observe(viewport);
-  if (matchMedia("(orientation: portrait)").matches) setOverview(false);
+  scene.classList.add("camera-ready");
   floorButton.addEventListener("click", () => document.getElementById("open-floor").click());
   pcButton.addEventListener("click", () => document.getElementById("open-monitor").click());
   return { follow, track: () => setOverview(false) };

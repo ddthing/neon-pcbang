@@ -432,5 +432,6 @@ document.addEventListener("cafe-seat-phase", requestFrame);
 document.addEventListener("cafe-regular", () => drawSelf(wasWalking));
 seating.placeRoomDoors(roomPortals);
 draw();
+document.dispatchEvent(new Event("cafe-ready"));
 pulse();
 
