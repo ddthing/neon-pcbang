@@ -1,9 +1,17 @@
 import handler from "vinext/server/fetch-handler";
+import { gate } from "../lib/invite-gate";
 import { runWithConnectorBinding } from "../lib/connector-context";
 import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 
 const worker = {
-  fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
+  async fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
+    const access = await gate(request, env);
+    if (access) return access;
+    // When Worker-first static asset routing is enabled, explicitly forward assets.
+    const pathname = new URL(request.url).pathname;
+    if (pathname !== "/" && !pathname.startsWith("/api/") && /\.[a-z0-9]+$/i.test(pathname) && env.ASSETS) {
+      return env.ASSETS.fetch(request);
+    }
     let binding = ctx.props?.CONNECTORS;
     // Local preview emulates the same request-scoped capability. This branch and
     // the auxiliary service binding are absent from production builds.
