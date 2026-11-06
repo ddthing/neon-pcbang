@@ -75,8 +75,24 @@ body.cafe-fullscreen { overflow: hidden; background: #2c2926; }
 
 @media (prefers-reduced-motion: no-preference) {
   .cafe-visitor.walking svg { animation: cafe-steps .28s steps(2, end) infinite; }
+  .scene[data-ambience-active] .cafe-visitor.mine.walking:not(.seated)::after {
+    content: "";
+    position: absolute;
+    left: 46%;
+    bottom: 2%;
+    width: clamp(2px, .28cqw, 5px);
+    aspect-ratio: 1;
+    background: #e9cfac;
+    box-shadow: .55cqw -.18cqw #c6ad90, -.42cqw .12cqw #d4bb9e;
+    animation: step-dust .52s steps(5, end) infinite;
+  }
   .cafe-visitor.mine.sitting svg { transform-origin: bottom center; animation: cafe-sit .30s steps(4, end); }
   .cafe-wave:not([hidden]) { animation: cafe-hello .35s ease-out both; }
+}
+@keyframes step-dust {
+  0% { opacity: 0; }
+  28% { opacity: .64; }
+  100% { opacity: 0; transform: translate(calc(-1.1cqw * var(--facing, 1)), -.5cqw); }
 }
 @media (prefers-reduced-motion: reduce) {
   .cafe-visitor:not(.mine) { transition: none; }

@@ -19,9 +19,12 @@ body[data-cafe-light="night"] .cafe-night-veil { opacity: .22; }
 body[data-cafe-light="night"] :is(.ambient-lamp, .counter-neon) { opacity: .72; }
 .entry-reflections { opacity: .19; }
 .counter-steam use, .ambient-floor-light, .ambient-mote, .ambient-leaf-tip,
-.counter-cat-eyes, .counter-tail-shine { opacity: 0; }
+.counter-cat-eyes, .counter-tail-shine, .ambient-loose-leaf, .counter-steam-dots path { opacity: 0; }
 .ambient-mote { fill: #f5e4bd; }
 .ambient-leaf-tip { fill: #f4e9ab; }
+.ambient-loose-leaf { fill: #b7bd84; }
+.ambient-mote:nth-of-type(3n) { fill: #e3c29c; }
+body[data-cafe-light="night"] .ambient-mote { fill: #f0cf9e; }
 .room-strip-light { fill: #dcf2d3; opacity: .12; }
 .ambient-floor-light { mix-blend-mode: screen; }
 
@@ -51,7 +54,9 @@ body[data-cafe-light="night"] :is(.ambient-lamp, .counter-neon) { opacity: .72; 
   .kiosk-glass-scan { animation: kiosk-glass-scan 8s ease-in-out infinite; }
   .counter-steam use { animation: cafe-steam 6s var(--offset) steps(14, end) infinite; }
   .entry-reflections { animation: entry-glimmer 7.7s ease-in-out infinite alternate; }
-  .ambient-mote { animation: room-air 13s var(--offset) steps(38,end) infinite; }
+  .ambient-mote { animation: room-air var(--duration) var(--offset) steps(30,end) infinite; }
+  .ambient-loose-leaf { animation: loose-leaf 19s var(--offset) steps(45,end) infinite; }
+  .counter-steam-dots path { animation: steam-pixel 7s var(--offset) steps(18,end) infinite; }
   .ambient-leaf-tip { animation: leaf-light 5.2s var(--offset) steps(13,end) infinite alternate; }
   .counter-cat-eyes { animation: counter-peek 17.3s -4s steps(1,end) infinite; }
   .counter-tail-shine { animation: tail-gleam 7.8s steps(12,end) infinite; }
@@ -82,9 +87,23 @@ body[data-cafe-light="night"] :is(.ambient-lamp, .counter-neon) { opacity: .72; 
   80% { opacity: .63; }
 }
 @keyframes room-air {
-  0%,100% { opacity: 0; }
-  25%,66% { opacity: .58; }
-  92%,100% { transform: translate(28px,-48px); opacity: 0; }
+  0% { opacity: 0; transform: translate(0, 8px); }
+  18% { opacity: .67; }
+  40% { opacity: .34; }
+  68% { opacity: .66; }
+  100% { opacity: 0; transform: translate(var(--drift), -57px); }
+}
+@keyframes loose-leaf {
+  0%, 43% { opacity: 0; transform: none; }
+  52% { opacity: .68; }
+  65% { transform: translate(-11px, 27px); }
+  79% { opacity: .55; transform: translate(13px, 48px); }
+  90%, 100% { opacity: 0; transform: translate(5px, 65px); }
+}
+@keyframes steam-pixel {
+  0%, 100% { opacity: 0; }
+  18% { opacity: .6; }
+  75%, 100% { opacity: 0; transform: translate(11px, -36px); }
 }
 @keyframes leaf-light {
   15% { opacity: .09; }

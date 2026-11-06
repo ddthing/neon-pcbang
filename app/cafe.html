@@ -29,6 +29,7 @@
   <script src="./walk.js" type="module"></script>
   <script src="./weather.js" type="module"></script>
   <script src="./ambience.js" type="module"></script>
+  <script src="./sudoku.js" type="module"></script>
   <script src="./corner-shop.js" type="module"></script>
   <title>길모퉁이PC방 · 우리 동네 PC방</title>
 </head>
@@ -281,11 +282,12 @@
         <button class="pc-end" id="pc-end" type="button">사용 종료</button>
       </section>
       <section class="pc-launcher" aria-labelledby="pc-launcher-title">
-        <div class="pc-panel-heading"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg><h3 id="pc-launcher-title" tabindex="-1">게임 런처</h3><span class="mono">03 GAMES</span></div>
+        <div class="pc-panel-heading"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg><h3 id="pc-launcher-title" tabindex="-1">게임 런처</h3><span class="mono">04 GAMES</span></div>
         <div class="pc-apps">
           <button class="pc-app" type="button" data-open="arcade"><span class="pc-app-icon lilac" aria-hidden="true">▦</span><span><strong>모퉁이 벽돌깨기</strong><small>공을 튕겨 벽돌을 깨요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
           <button class="pc-app" type="button" data-open="pairs"><span class="pc-app-icon sage" aria-hidden="true">◆</span><span><strong>픽셀 짝맞추기</strong><small>같은 그림 8쌍을 찾아요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
           <button class="pc-app" type="button" data-open="mines"><span class="pc-app-icon cream" aria-hidden="true"><svg><use href="./icons.svg#mine"/></svg></span><span><strong>지뢰찾기</strong><small>안전한 칸을 모두 열어요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="sudoku"><span class="pc-app-icon sage mono" aria-hidden="true">9</span><span><strong>스도쿠</strong><small>빈칸에 숫자 1~9를 채워요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
         </div>
       </section>
     </div>
@@ -368,6 +370,25 @@
       <p class="game-status" id="mine-status" role="status">첫 칸은 어디를 골라도 안전해요.</p>
       <button class="secondary dialog-action" id="mine-reset" type="button">새 게임</button>
       <p class="dialog-note" id="mine-help">클릭이나 터치로 열고, 우클릭이나 깃발 모드로 표시해요. 키보드는 방향키로 이동, Enter로 열기, F로 깃발이에요.</p>
+    </div>
+  </dialog>
+  <dialog id="sudoku" aria-labelledby="sudoku-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>04</span> / ARCADE</span><button class="close" type="button" data-close aria-label="스도쿠 닫기">×</button></div>
+      <h2 id="sudoku-title">스도쿠</h2>
+      <p class="panel-copy">가로·세로 줄과 3×3 구역마다 1부터 9까지 한 번씩 채워요.</p>
+      <div class="sudoku-toolbar">
+        <label>난이도 <select id="sudoku-level"><option value="42">쉬움</option><option value="34">보통</option></select></label>
+        <button class="walk-button" id="sudoku-new" type="button">새 퍼즐</button>
+      </div>
+      <div class="sudoku-board" id="sudoku-board" role="group" aria-label="스도쿠 9행 9열" aria-describedby="sudoku-help"></div>
+      <div class="sudoku-keys mono" id="sudoku-keys" role="group" aria-label="숫자 입력"></div>
+      <div class="sudoku-toolbar">
+        <button class="walk-button" id="sudoku-notes" type="button" aria-pressed="false">메모</button>
+        <button class="walk-button" id="sudoku-erase" type="button">지우기</button>
+      </div>
+      <p id="sudoku-status" class="game-status" role="status"></p>
+      <p id="sudoku-help" class="dialog-note">칸을 고르고 숫자 버튼을 누르세요. 키보드는 방향키, 1~9, Backspace로 조작할 수 있어요.</p>
     </div>
   </dialog>
   <dialog id="focus" aria-labelledby="focus-title">
