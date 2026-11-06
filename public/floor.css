@@ -16,41 +16,57 @@
 .floor-toolbar p { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 9px; }
 .floor-toolbar strong { font-size: 14px; }
 .floor-toolbar p span { color: var(--sub); font-size: 11px; }
-#floor-zoom { flex-shrink: 0; border: 1px solid #6b6259; border-radius: 4px; padding: 5px 8px; background: #4d4640; font-size: 11px; }
+.floor-control { flex-shrink: 0; border: 1px solid #6b6259; border-radius: 4px; padding: 6px 9px; background: #4d4640; font-size: 12px; }
 .floor-scroll { max-width: 100%; overflow: auto; border: 1px solid #72685d; border-radius: 5px; background: #2e2b28; }
 .floor-scroll:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
-.floor-plan {
-  min-width: 414px; display: grid; grid-template-columns: minmax(48px, .85fr) minmax(238px, 4.5fr) minmax(96px, 1.6fr);
-  gap: 6px 9px; padding: 9px 7px; background: repeating-linear-gradient(90deg, transparent 0 19px, #e6d6c607 19px 20px), #2e2b28;
-  --seat-height: clamp(20px, 3.3dvh, 32px);
+.floor-plan { min-width: 475px; padding: 6px; }
+.floor-scroll.zoomed .floor-plan { min-width: 960px; }
+.hall-seat-map {
+  position: relative; isolation: isolate; aspect-ratio: 3 / 2; border: 1px solid #96836c;
+  background: repeating-linear-gradient(0deg, #8d9b8a16 0 1px, transparent 1px 22px), #212922;
 }
-.floor-scroll.zoomed .floor-plan { min-width: 960px; --seat-height: 36px; }
-.floor-service { display: flex; flex-direction: column; gap: 5px; }
-.floor-fixture { display: grid; place-items: center; padding: 8px 2px; border: 1px solid #84766b; background: #51473f; color: #ecdcc9; font-size: 11px; text-align: center; }
-.floor-fixture.counter { min-height: 74px; align-content: center; gap: 4px; }
-.floor-fixture svg { width: 16px; height: 16px; color: var(--peach); }
-.floor-here { margin: auto 0 4px; text-align: center; color: #e5d4b5; font-weight: 800; font-size: 11px; white-space: nowrap; }
-.floor-here small { color: #d7c4ad; font-size: 9px; font-weight: 500; }
-.floor-here i { display: block; width: 11px; height: 11px; margin: 0 auto 5px; background: #d9c4a0; border: 2px solid #8f785a; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
-.floor-banks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(6px, 1.3vw, 18px); }
-.floor-bank { min-width: 0; }
-.floor-bank h3, .floor-room h3 { margin: 0 0 4px; color: #e5d9df; font-size: 10px; font-weight: 750; text-align: center; white-space: nowrap; }
+.kiosk-footprints { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.floor-room-target use { pointer-events: visiblePainted; stroke-width: 5; stroke-linejoin: round; cursor: pointer; }
+.floor-room-target:is(:hover, :focus-visible) use { filter: brightness(1.28); stroke-width: 9; }
+.floor-room-target text {
+  fill: #fff0d9; font-weight: 800; font-size: 25px; text-anchor: middle; dominant-baseline: central;
+}
+.floor-map-marker, .floor-bank h3 {
+  width: max-content; margin: 0; padding: 2px 5px; border: 1px solid #a89479; border-radius: 3px;
+  background: #2a241e; color: #fff0d9; white-space: nowrap; font-size: clamp(8px, 1vw, 11px);
+}
+.floor-map-marker { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); }
+.floor-bank {
+  position: absolute; z-index: 1; left: var(--x); top: 13.5%; bottom: 32%;
+  width: 8%; transform: translateX(-50%); display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 4px;
+}
+.floor-bank h3 { justify-self: center; }
 .floor-seat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; }
+.floor-bank .floor-seat-grid { grid-template-rows: repeat(11, minmax(0, 1fr)); }
 .floor-seat {
-  min-width: 0; min-height: var(--seat-height); padding: 0; border: 1px solid #748278; border-radius: 2px;
-  color: #eff1ed; background: #4e6157; font-size: clamp(7px, 1vw, 11px); font-weight: 750;
+  min-width: 0; min-height: 0; padding: 0; border: 1px solid #748278; border-radius: 2px;
+  color: #eff1ed; background: #4e6157; font-size: clamp(8px, 1vw, 11px); font-weight: 750; line-height: 1;
 }
 .floor-seat:hover { background: #61776a; border-color: #b8ccbd; }
 .floor-seat.my-seat { color: #352d38; background: #cdbbd5; border-color: #e7dce9; }
 .floor-seat[aria-pressed="true"] { color: #2e3931; background: #d3e0c9; border-color: #eaf0e4; box-shadow: inset 0 0 0 1px #8a9f85; }
-.floor-rooms { display: flex; flex-direction: column; gap: 5px; }
-.floor-room { border: 1px solid #786a7a; padding: 4px; background: #423a46; }
-.floor-room[data-space="solo"] .floor-seat-grid { grid-template-columns: 1fr; }
-.floor-room[data-space="team"] .floor-seat-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.floor-room[data-space="squad"] .floor-seat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.floor-room {
+  display: grid; place-items: center; min-height: 184px; padding: 16px 12px;
+  border: 1px solid var(--room-rim); border-radius: 5px;
+  background: linear-gradient(#181c1833, #181c1855), var(--room-floor);
+}
+.floor-room[data-space="solo"] { --columns: 1; --room-rim: #cbb388; --room-floor: #66543d; }
+.floor-room[data-space="duo"] { --columns: 2; --room-rim: #a4bda6; --room-floor: #425b4c; }
+.floor-room[data-space="team"] { --columns: 5; --room-rim: #bea6c3; --room-floor: #554459; }
+.floor-room[data-space="squad"] { --columns: 3; --room-rim: #a5c5c7; --room-floor: #3d555e; }
+.floor-room .floor-seat-grid {
+  display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  width: min(100%, calc(var(--columns) * 66px + 12px)); gap: 5px;
+  padding: 8px; border: 1px solid var(--room-rim); border-radius: 4px; background: #261f2285;
+}
+.floor-room .floor-seat { min-height: 42px; font-size: 13px; }
 .floor-room .floor-seat:not(.my-seat):not([aria-pressed="true"]) { background: #5f5465; border-color: #877990; }
 .floor-room .floor-seat:not(.my-seat):not([aria-pressed="true"]):hover { background: #74657e; }
-.floor-entrance { grid-column: 2; border: 1px solid #77867a; background: #425348; padding: 4px; color: #ccdbc9; font-size: 11px; font-weight: 750; text-align: center; }
 .floor-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 13px; padding: 0; margin: 8px 0 0; list-style: none; }
 .floor-legend li { display: flex; gap: 4px; align-items: center; color: var(--sub); font-size: 10px; }
 .floor-legend i { width: 9px; height: 9px; border-radius: 1px; }

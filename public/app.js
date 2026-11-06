@@ -83,6 +83,7 @@ const floor = $("#floor-kiosk");
 const hub = $("#cafe-menu");
 const floorSelect = $("#floor-select");
 const floorSeats = new Map();
+const floorOptions = [];
 const desktop = $("#pc-desktop");
 const monitorLayer = $("#monitor-layer");
 const roomsArtwork = $("#rooms-art");
@@ -175,7 +176,7 @@ function renderRoom() {
   if (inRoom) prepareRoomArt();
   roomsArtwork.hidden = !inRoom;
   roomsArtwork.alt = inRoom ? space.alt : "";
-  $("#touch-pad").hidden = Boolean(room.space);
+  $("#cafe-joystick").hidden = Boolean(room.space || seatJourney);
   $("#kiosk-pin").hidden = inRoom;
   $("#room-doors").hidden = inRoom || Boolean(seatJourney);
   $("#room-title").textContent = space?.label ?? "PC방 입구";
@@ -186,7 +187,7 @@ function renderRoom() {
   $("#stage-seated").hidden = !seated;
   $("#leave").hidden = !seated;
   $("#open-floor span").textContent = seated ? "좌석도에서 자리 바꾸기" : "전체 좌석도 열기";
-  for (const button of document.querySelectorAll("#open-floor, #kiosk-pin, #game-view-floor, #open-monitor, #leave, .activities [data-open]")) {
+  for (const button of document.querySelectorAll("#open-floor, #kiosk-pin, #game-view-floor, #open-monitor, #leave")) {
     button.disabled = Boolean(seatJourney);
   }
   const progress = $("#seat-journey");
@@ -236,7 +237,7 @@ function renderFloorSelection() {
   $("#floor-selection").textContent = selectedSeat?.code ?? "선택 대기";
   $("#floor-detail").textContent = selectedSeat
     ? selectedSeat.label + (mine ? " · 내 자리" : taken ? " · 이용 중" : " · 이용 가능")
-    : "좌석도에서 자리를 눌러주세요.";
+    : floor.dataset.room ? "이 룸에서 자리를 눌러주세요." : "일반석 또는 룸 영역을 눌러주세요.";
   $("#enter span").textContent = mine ? "현재 이용 중" : room.space ? "이 자리로 이동" : "이 자리로 입장";
   $("#enter").disabled = bookingSeat || !selectedSeat || mine || taken;
   floor.querySelector("[data-close]").disabled = bookingSeat;
@@ -248,10 +249,12 @@ function appendSeatGroup(parent, label, spaceId, count, first = 0, letter = "") 
   group.className = letter ? "floor-bank" : "floor-room";
   group.dataset.space = spaceId;
   const heading = document.createElement("h3");
-  heading.textContent = label;
+  heading.textContent = letter ? letter + "열" : label;
   if (letter) {
     const [left, right] = hallBanks[first / bankSize].x;
-    heading.style.setProperty("--x", (left + right) / 30.72 + "%");
+    group.style.setProperty("--x", (left + right) / 30.72 + "%");
+  } else {
+    heading.className = "pc-sr-only";
   }
   group.append(heading);
   const grid = document.createElement("div");
@@ -261,7 +264,7 @@ function appendSeatGroup(parent, label, spaceId, count, first = 0, letter = "") 
 
   const options = document.createElement("optgroup");
   options.label = label;
-  floorSelect.append(options);
+  floorOptions.push({ spaceId, options });
   for (let i = 0; i < count; i++) {
     const index = first + i;
     const code = letter + seatId(i);
@@ -269,10 +272,7 @@ function appendSeatGroup(parent, label, spaceId, count, first = 0, letter = "") 
     const button = document.createElement("button");
     button.type = "button";
     button.className = "floor-seat mono";
-    const [x, y] = spaces[spaceId].positions[index];
-    button.style.setProperty("--x", x + "%");
-    button.style.setProperty("--y", y + "%");
-    button.tabIndex = -1;
+    if (letter) button.tabIndex = -1;
     button.textContent = code;
     grid.append(button);
     const option = document.createElement("option");
@@ -296,21 +296,56 @@ for (const id of ["solo", "duo", "team", "squad"]) {
   appendSeatGroup($("#floor-rooms"), spaces[id].label, id, spaces[id].positions.length);
 }
 
+function showFloorView(roomId) {
+  const inside = Boolean(roomId);
+  floor.dataset.room = roomId ?? "";
+  $("#floor-overview").hidden = inside;
+  $("#floor-room-view").hidden = !inside;
+  for (const panel of $("#floor-rooms").children) panel.hidden = panel.dataset.space !== roomId;
+  if (inside) {
+    $("#floor-room-title").textContent = spaces[roomId].label;
+    $("#floor-room-count").textContent = "좌석 " + spaces[roomId].positions.length + "개";
+  }
+  $("#floor-instruction").textContent = inside
+    ? "이 룸에서 이용할 자리를 골라주세요."
+    : "일반석을 고르거나 룸 영역을 눌러 내부 좌석을 보세요.";
+  floorSelect.replaceChildren(floorSelect.options[0],
+    ...floorOptions.filter(({ spaceId }) => spaceId === (roomId ?? "hall")).map(({ options }) => options));
+  selectedSeat = null;
+  $("#floor-feedback").textContent = "";
+  renderFloorSelection();
+}
+
 function openFloor(roomId = null) {
   if (seatJourney || floor.open) return;
   if (hub.open) hub.close();
-  selectedSeat = typeof roomId === "string"
-    ? [...floorSeats.values()].find((seat) => seat.space === roomId && !occupiedSeats.has(seat.key)) ?? null
-    : null;
-  floor.dataset.room = typeof roomId === "string" ? roomId : "";
-  $("#floor-feedback").textContent = "";
-  renderFloorSelection();
+  const inside = typeof roomId === "string";
+  showFloorView(inside ? roomId : null);
   floor.showModal();
-  $("#floor-title").focus({ preventScroll: true });
-  if (typeof roomId === "string") {
-    document.querySelector('.floor-room[data-space="' + roomId + '"]')?.scrollIntoView({ block: "nearest" });
-  }
+  $(inside ? "#floor-room-title" : "#floor-title").focus({ preventScroll: true });
 }
+for (const region of document.querySelectorAll(".floor-room-target")) {
+  const openRoom = () => {
+    if (bookingSeat) return;
+    showFloorView(region.dataset.room);
+    $("#floor-room-title").focus({ preventScroll: true });
+  };
+  region.addEventListener("click", (event) => {
+    event.preventDefault();
+    openRoom();
+  });
+  region.addEventListener("keydown", (event) => {
+    if (event.key !== " ") return;
+    event.preventDefault();
+    openRoom();
+  });
+}
+$("#floor-back").addEventListener("click", () => {
+  if (bookingSeat) return;
+  const previousRoom = floor.dataset.room;
+  showFloorView(null);
+  $('.floor-room-target[data-room="' + previousRoom + '"]')?.focus();
+});
 floor.addEventListener("cancel", (event) => {
   if (bookingSeat) event.preventDefault();
 });
@@ -457,7 +492,6 @@ function renderTimer() {
   $("#timer").textContent = display;
   $("#timer-toggle").textContent = focus.end ? "일시 정지" : remaining === 0 ? "다시 시작" : remaining < focusDuration ? "이어서 집중" : "집중 시작";
   $("#timer-note").textContent = remaining === 0 ? "집중 완료. 잠깐 쉬어가요." : "창을 닫아도 타이머는 계속 돌아가요.";
-  $("#focus-subtitle").textContent = focus.end ? "집중 중 · " + display : remaining === 0 ? "25분 집중 완료" : remaining < focusDuration ? "일시 정지 · " + display : "25분 타이머 켜기";
 }
 
 $("#timer-toggle").addEventListener("click", () => {
@@ -540,25 +574,16 @@ connectCafeSwitch(document.querySelector(".top-actions .u013"), async (enabled) 
 window.cafeSeating = {
   placeRoomDoors(portals) {
     for (const [id, point] of Object.entries(portals)) {
-      for (const [target, onMap] of [[$("#room-doors"), false], [$("#floor-room-doors"), true]]) {
-        const door = document.createElement("button");
-        door.type = "button";
-        door.className = onMap ? "floor-map-marker room-map-door" : "stage-room-door";
-        door.dataset.room = id;
-        door.textContent = spaces[id].label;
-        door.setAttribute("aria-label", spaces[id].label + (onMap ? " 내부 배치 보기" : " 입구"));
-        door.style.setProperty("--x", point.x + "%");
-        door.style.setProperty("--y", point.y + "%");
-        door.addEventListener("click", () => {
-          if (!onMap) openFloor(id);
-          else {
-            const plan = document.querySelector('.floor-room[data-space="' + id + '"]');
-            plan.scrollIntoView({ block: "nearest" });
-            plan.querySelector(".floor-seat:not(:disabled)")?.focus({ preventScroll: true });
-          }
-        });
-        target.append(door);
-      }
+      const door = document.createElement("button");
+      door.type = "button";
+      door.className = "stage-room-door";
+      door.dataset.room = id;
+      door.textContent = spaces[id].label;
+      door.setAttribute("aria-label", spaces[id].label + " 입구");
+      door.style.setProperty("--x", point.x + "%");
+      door.style.setProperty("--y", point.y + "%");
+      door.addEventListener("click", () => openFloor(id));
+      $("#room-doors").append(door);
     }
   },
   current: () => room.space ? room.space + ":" + room.seat : null,

@@ -2,6 +2,7 @@ import { canWalk, entrance, kiosk, pathTo, routeToSeat, roomPortals } from "./wo
 import { createCafeCamera } from "./camera.js";
 
 const scene = document.querySelector(".scene");
+const joystick = document.getElementById("cafe-joystick");
 const avatars = document.getElementById("cafe-avatars");
 const status = document.getElementById("cafe-connection");
 const guests = document.getElementById("cafe-guests");
@@ -14,7 +15,10 @@ const directions = new Map([
   ["ArrowUp", [0, -1]], ["KeyW", [0, -1]], ["ArrowDown", [0, 1]], ["KeyS", [0, 1]],
 ]);
 const pressed = new Set();
-const touchPressed = new Map();
+let joystickPointer = null;
+let joystickOrigin;
+let joystickX = 0;
+let joystickY = 0;
 const visitors = new Map();
 
 function read(storage, key) {
@@ -213,7 +217,7 @@ window.cafeWorld = {
     const legs = routeToSeat(location, previous, seat, seating.position);
     if (!legs.length) return Promise.resolve();
     pressed.clear();
-    touchPressed.clear();
+    stopJoystick();
     path = [];
     camera.track();
     return new Promise((resolve) => {
@@ -341,29 +345,61 @@ document.addEventListener("keydown", (event) => {
   startMovement();
 });
 document.addEventListener("keyup", (event) => pressed.delete(event.code));
-const touchPad = document.getElementById("touch-pad");
-touchPad.addEventListener("pointerdown", (event) => {
-  const button = event.target.closest("button[data-direction]");
-  if (!button || !canMove() || event.button !== 0) return;
-  button.setPointerCapture(event.pointerId);
-  touchPressed.set(event.pointerId, button.dataset.direction);
+function moveJoystick(event) {
+  const { x, y, radius, travel } = joystickOrigin;
+  const dx = event.clientX - x;
+  const dy = event.clientY - y;
+  const distance = Math.hypot(dx, dy);
+  const visual = Math.min(1, travel / (distance || 1));
+  joystick.style.setProperty("--stick-x", dx * visual + "px");
+  joystick.style.setProperty("--stick-y", dy * visual + "px");
+
+  const deadZone = .16;
+  const pull = Math.max(0, (Math.min(1, distance / radius) - deadZone) / (1 - deadZone));
+  const strength = pull * (.3 + .7 * pull);
+  joystickX = dx / (distance || 1) * strength;
+  joystickY = dy / (distance || 1) * strength;
+  if (strength) startMovement();
+}
+
+function stopJoystick() {
+  const pointer = joystickPointer;
+  if (pointer === null) return;
+  joystickPointer = null;
+  joystickX = joystickY = 0;
+  joystick.removeAttribute("data-active");
+  joystick.style.removeProperty("--stick-x");
+  joystick.style.removeProperty("--stick-y");
+  if (joystick.hasPointerCapture(pointer)) joystick.releasePointerCapture(pointer);
+}
+
+joystick.addEventListener("pointerdown", (event) => {
+  if (joystickPointer !== null || event.button !== 0 || !canMove()) return;
+  event.preventDefault();
+  const box = joystick.getBoundingClientRect();
+  joystickOrigin = {
+    x: box.left + box.width / 2, y: box.top + box.height / 2,
+    radius: box.width * .36, travel: box.width * .25,
+  };
+  joystickPointer = event.pointerId;
+  joystick.setPointerCapture(joystickPointer);
+  joystick.setAttribute("data-active", "");
   path = [];
-  startMovement();
+  moveJoystick(event);
+});
+joystick.addEventListener("pointermove", (event) => {
+  if (event.pointerId === joystickPointer) moveJoystick(event);
 });
 for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
-  touchPad.addEventListener(type, (event) => touchPressed.delete(event.pointerId));
+  joystick.addEventListener(type, (event) => {
+    if (event.pointerId === joystickPointer) stopJoystick();
+  });
 }
-touchPad.addEventListener("click", (event) => {
-  const direction = directions.get(event.target.closest("button")?.dataset.direction);
-  if (!direction || event.detail !== 0 || !canMove()) return;
-  path = pathTo(location, { x: location.x + direction[0] * 3, y: location.y + direction[1] * 3 });
-  if (path.length) startMovement();
-});
-window.addEventListener("blur", () => { pressed.clear(); touchPressed.clear(); });
+window.addEventListener("blur", () => { pressed.clear(); stopJoystick(); });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     pressed.clear();
-    touchPressed.clear();
+    stopJoystick();
     cancelAnimationFrame(frameId);
     frameId = 0;
     lastFrame = 0;
@@ -387,15 +423,17 @@ function animate(time) {
   const seat = seating.current();
   if (lastSeat && !seat) Object.assign(location, spawn);
   if (seat !== lastSeat) path = [];
+  const free = canMove();
+  if (!free) stopJoystick();
 
   let walking = false;
   if (journey) {
     advanceJourney(dt);
     walking = Boolean(journey);
-  } else if (canMove()) {
-    let dx = 0;
-    let dy = 0;
-    for (const key of [...pressed, ...touchPressed.values()]) {
+  } else if (free) {
+    let dx = pressed.size ? 0 : joystickX;
+    let dy = pressed.size ? 0 : joystickY;
+    for (const key of pressed) {
       const [x, y] = directions.get(key);
       dx += x;
       dy += y;
@@ -406,9 +444,9 @@ function animate(time) {
     }
     const length = Math.hypot(dx, dy);
     if (length > 0) {
-      const distance = path.length ? Math.min(length, 20 * dt) : 20 * dt;
-      const x = location.x + dx / length * distance;
-      const y = location.y + dy / length * distance / .67;
+      const step = path.length ? Math.min(length, 20 * dt) : Math.min(length, 1) * 20 * dt;
+      const x = location.x + dx / length * step;
+      const y = location.y + dy / length * step / .67;
       if (canWalk(x, location.y)) { walking ||= x !== location.x; location.x = x; }
       if (canWalk(location.x, y)) { walking ||= y !== location.y; location.y = y; }
       if (dx) facing = dx < 0 ? -1 : 1;
@@ -424,7 +462,7 @@ function animate(time) {
   else if (walking || motionChanged) drawSelf(walking);
   lastPhase = phase;
   lastSeat = seat;
-  if (journey || ((pressed.size || touchPressed.size || path.length) && canMove())) requestFrame();
+  if (journey || (free && (pressed.size || joystickX || joystickY || path.length))) requestFrame();
   else lastFrame = 0;
 }
 

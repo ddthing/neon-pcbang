@@ -113,15 +113,10 @@
             <div id="room-doors" aria-label="룸 입구"></div>
           </div>
           <p class="seat-journey mono" id="seat-journey" role="status"></p>
+          <div class="cafe-joystick" id="cafe-joystick" aria-hidden="true"><span></span></div>
         </div>
         <div class="walk-controls">
-          <p class="walk-guide"><strong>매장 둘러보기</strong><span><kbd>WASD</kbd> <kbd>↑ ↓ ← →</kbd> 또는 바닥 누르기</span></p>
-          <div class="touch-pad" id="touch-pad" aria-label="캐릭터 이동">
-            <button type="button" data-direction="ArrowUp" aria-label="위로 이동">↑</button>
-            <button type="button" data-direction="ArrowLeft" aria-label="왼쪽으로 이동">←</button>
-            <button type="button" data-direction="ArrowDown" aria-label="아래로 이동">↓</button>
-            <button type="button" data-direction="ArrowRight" aria-label="오른쪽으로 이동">→</button>
-          </div>
+          <p class="walk-guide"><strong>매장 둘러보기</strong><span class="walk-key-hint"><kbd>WASD</kbd> <kbd>↑ ↓ ← →</kbd> 또는 바닥 누르기</span><span class="walk-touch-hint">조이스틱 밀기 · 바닥 탭</span></p>
           <button class="walk-button" id="cafe-wave" type="button">👋 손 흔들기</button>
           <div class="game-view-actions">
             <button class="walk-button stage-key" id="game-view-floor" type="button">좌석 선택</button>
@@ -161,30 +156,6 @@
           <div class="kiosk-bottom" aria-hidden="true"><span></span><i></i><span></span></div>
         </section>
 
-        <section class="panel activities" aria-labelledby="activities-title">
-          <p class="panel-index mono"><span>✦</span> DESK MENU</p>
-          <h2 id="activities-title">자리에서 할 일</h2>
-          <button type="button" class="activity" data-open="arcade">
-            <span class="activity-icon violet"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg></span>
-            <span><strong>오락실</strong><small>모퉁이 벽돌깨기 한 판</small></span>
-            <svg class="chevron" aria-hidden="true"><use href="./icons.svg#chevron"/></svg>
-          </button>
-          <button type="button" class="activity" data-open="mines">
-            <span class="activity-icon peach"><svg aria-hidden="true"><use href="./icons.svg#mine"/></svg></span>
-            <span><strong>지뢰찾기</strong><small>숫자를 읽고 지뢰 10개를 피해요</small></span>
-            <svg class="chevron" aria-hidden="true"><use href="./icons.svg#chevron"/></svg>
-          </button>
-          <button type="button" class="activity" data-open="focus">
-            <span class="activity-icon mint"><svg aria-hidden="true"><use href="./icons.svg#clock"/></svg></span>
-            <span><strong>집중 모드</strong><small id="focus-subtitle">25분 타이머 켜기</small></span>
-            <svg class="chevron" aria-hidden="true"><use href="./icons.svg#chevron"/></svg>
-          </button>
-          <button type="button" class="activity" data-open="snacks">
-            <span class="activity-icon peach"><svg aria-hidden="true"><use href="./icons.svg#bowl"/></svg></span>
-            <span><strong>매점</strong><small id="snack-subtitle">내 자리로 간식 주문하기</small></span>
-            <svg class="chevron" aria-hidden="true"><use href="./icons.svg#chevron"/></svg>
-          </button>
-        </section>
         <section class="panel visit-card" id="visit-card" aria-labelledby="visit-title">
           <p class="panel-index mono">✦ GILMOTUNGI CLUB</p>
           <div class="visit-title"><h2 id="visit-title">단골 카드</h2><span id="visit-count" class="mono" role="status">0 / 3</span></div>
@@ -211,30 +182,50 @@
     </div>
     <div class="floor-layout">
       <div class="floor-map">
-        <div class="floor-toolbar">
-          <p><strong>전체 102석</strong><span>일반석 88 · 룸 좌석 14</span></p>
-          <button id="floor-zoom" type="button" aria-pressed="false">＋ 확대</button>
-        </div>
-        <div class="floor-scroll" id="floor-scroll" role="region" aria-label="전체 좌석도" tabindex="0">
-          <div class="floor-plan">
-            <div class="hall-seat-map" aria-label="홀 실제 배치">
-              <div id="floor-banks" class="floor-banks" aria-label="일반석"></div>
-              <div id="floor-room-doors" aria-label="룸 입구"></div>
-              <svg class="kiosk-footprints" viewBox="0 0 1536 1024" aria-hidden="true"><use href="./room-bays.svg#floor-footprints"/></svg>
-              <span class="floor-map-marker" style="--x:12%;--y:74%">카운터</span>
-              <span class="floor-map-marker" style="--x:26%;--y:90%">키오스크</span>
-              <span class="floor-map-marker" style="--x:49%;--y:96%">입구</span>
+        <div id="floor-overview">
+          <div class="floor-toolbar">
+            <p><strong>전체 102석</strong><span>일반석 88 · 룸 좌석 14</span></p>
+            <button class="floor-control" id="floor-zoom" type="button" aria-pressed="false">＋ 확대</button>
+          </div>
+          <div class="floor-scroll" id="floor-scroll" role="region" aria-label="전체 좌석도" tabindex="0">
+            <div class="floor-plan">
+              <div class="hall-seat-map" aria-label="홀 실제 배치">
+                <div id="floor-banks" class="floor-banks" aria-label="일반석"></div>
+                <svg class="kiosk-footprints" viewBox="0 0 1536 1024" aria-label="룸 선택">
+                  <use href="./room-bays.svg#floor-footprints"/>
+                  <a href="#floor-room-view" class="floor-room-target" data-room="solo" role="button" aria-label="1인석 좌석 보기">
+                    <use href="./room-bays.svg#room-solo"/><text x="131" y="256">1인석</text>
+                  </a>
+                  <a href="#floor-room-view" class="floor-room-target" data-room="duo" role="button" aria-label="2인석 좌석 보기">
+                    <use href="./room-bays.svg#room-duo"/><text x="128" y="474">2인석</text>
+                  </a>
+                  <a href="#floor-room-view" class="floor-room-target" data-room="team" role="button" aria-label="5인룸 좌석 보기">
+                    <use href="./room-bays.svg#room-team"/><text x="1411" y="279">5인룸</text>
+                  </a>
+                  <a href="#floor-room-view" class="floor-room-target" data-room="squad" role="button" aria-label="6인룸 좌석 보기">
+                    <use href="./room-bays.svg#room-squad"/><text x="1401" y="657">6인룸</text>
+                  </a>
+                </svg>
+                <span class="floor-map-marker" style="--x:11%;--y:71%">카운터</span>
+                <span class="floor-map-marker" style="--x:26%;--y:85%">키오스크</span>
+                <span class="floor-map-marker" style="--x:49%;--y:88%">입구</span>
+              </div>
             </div>
-            <p class="floor-room-label mono">룸 내부 좌석</p>
-            <div id="floor-rooms" class="floor-rooms" aria-label="룸 내부 배치"></div>
           </div>
         </div>
+        <section id="floor-room-view" aria-labelledby="floor-room-title" hidden>
+          <div class="floor-toolbar">
+            <p><strong id="floor-room-title" tabindex="-1"></strong><span id="floor-room-count"></span></p>
+            <button class="floor-control" id="floor-back" type="button">← 전체 좌석도</button>
+          </div>
+          <div id="floor-rooms"></div>
+        </section>
         <ul class="floor-legend">
           <li><i class="available"></i>선택 가능</li><li><i class="chosen"></i>선택한 자리</li><li><i class="my-seat"></i>내 자리</li><li><i class="taken"></i>이용 중</li>
         </ul>
       </div>
       <div class="floor-actions">
-        <p class="floor-instruction">좌석을 누르고 오른쪽에서 확인하세요.</p>
+        <p class="floor-instruction" id="floor-instruction">일반석을 고르거나 룸 영역을 눌러 내부 좌석을 보세요.</p>
         <label for="floor-select">좌석 번호로 고르기</label>
         <select id="floor-select"><option value="">좌석을 선택하세요</option></select>
         <div class="floor-ticket" role="status"><span>선택한 좌석</span><strong id="floor-selection">선택 대기</strong><small id="floor-detail">좌석도에서 자리를 눌러주세요.</small></div>

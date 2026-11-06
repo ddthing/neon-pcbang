@@ -4,10 +4,10 @@
     <path d="M253 163H1301M27 783H1302" fill="none" stroke="#49574c" stroke-width="4" stroke-dasharray="14 9"/>
     <path d="M52 622H297V773H263V831H52Z" fill="#634e3d" stroke="#a48766"/>
     <path d="M255 320H361V505H255Z" fill="#414a40" stroke="#697265"/>
-    <path d="M40 215L76 176H205L224 224V240H206V273H224V331H40Z" fill="#66543d" stroke="#cbb388"/>
-    <path d="M29 386L61 352H231V551H208V581H231V596H48L29 577Z" fill="#425b4c" stroke="#a4bda6"/>
-    <path d="M1329 103H1490L1510 139V454H1313V407H1331V365H1313V126Z" fill="#554459" stroke="#bea6c3"/>
-    <path d="M1322 476H1480L1511 506V800L1480 838H1322L1295 807V682H1315V647H1295V525Z" fill="#3d555e" stroke="#a5c5c7"/>
     <path d="M633 843H871V883H633Z" fill="#38584c" stroke="#9ab39f"/>
   </g>
+  <path id="room-solo" d="M40 215L76 176H205L224 224V240H206V273H224V331H40Z" fill="#66543d" stroke="#cbb388"/>
+  <path id="room-duo" d="M29 386L61 352H231V551H208V581H231V596H48L29 577Z" fill="#425b4c" stroke="#a4bda6"/>
+  <path id="room-team" d="M1329 103H1490L1510 139V454H1313V407H1331V365H1313V126Z" fill="#554459" stroke="#bea6c3"/>
+  <path id="room-squad" d="M1322 476H1480L1511 506V800L1480 838H1322L1295 807V682H1315V647H1295V525Z" fill="#3d555e" stroke="#a5c5c7"/>
 </svg>
