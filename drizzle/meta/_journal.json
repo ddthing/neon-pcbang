@@ -29,6 +29,13 @@
       "when": 1793953600000,
       "tag": "0003_invite_form_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1793953600001,
+      "tag": "0004_invite_code_vault",
+      "breakpoints": true
     }
   ]
 }

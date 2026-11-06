@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { gate, renewUserCookie } from "../lib/invite-gate.ts";
 
@@ -9,6 +10,7 @@ const password = "local-test-admin-password-do-not-use";
 const sqlite = new DatabaseSync(":memory:");
 sqlite.exec(readFileSync(new URL("../drizzle/0002_invitation_access.sql", import.meta.url), "utf8"));
 sqlite.exec(readFileSync(new URL("../drizzle/0003_invite_form_tokens.sql", import.meta.url), "utf8"));
+sqlite.exec(readFileSync(new URL("../drizzle/0004_invite_code_vault.sql", import.meta.url), "utf8"));
 const db = {
   prepare(sql) {
     const statement = sqlite.prepare(sql);
@@ -22,8 +24,20 @@ const db = {
     });
     return { ...bound(), bind: (...values) => bound(...values) };
   },
+  async batch(statements) {
+    sqlite.exec("BEGIN");
+    try {
+      const results = [];
+      for (const statement of statements) results.push(await statement.run());
+      sqlite.exec("COMMIT");
+      return results;
+    } catch (error) {
+      sqlite.exec("ROLLBACK");
+      throw error;
+    }
+  },
 };
-const env = { DB: db, NEON_ADMIN_PASSWORD: password };
+const env = { DB: db, NEON_ADMIN_PASSWORD: password, NEON_INVITE_VAULT_KEY: "7d".repeat(32) };
 let latestCsrf = "";
 function captureCsrf(response, body) {
   assert.ok(response.status === 200);
@@ -106,13 +120,32 @@ test("beta invitation and public launch use one-time database-backed form tokens
   }),env);
   assert.equal(adminLogin.headers.get("Location"),"/admin");
   const adminCookie=issuedCookie(adminLogin);
+  const legacy = "ABCDEF-012345-6789AB-CDEF12";
+  const now = Date.now();
+  sqlite.prepare("INSERT INTO invite_codes (id, code_hash, label, created_at, expires_at) VALUES (?, ?, ?, ?, ?)")
+    .run(crypto.randomUUID(), createHash("sha256").update(legacy).digest("hex"), "Legacy invite", now, now + 86400000);
   await refreshForm("/admin",adminCookie);
   const created=await gate(post("/auth/invite-create",{label:"Tester A",count:"1",days:"30"},adminCookie),env);
-  assert.equal(created.status,200);
-  const html=await created.text();
+  assert.equal(created.status,303);
+  const reveal = created.headers.get("Location");
+  assert.match(reveal, /^\/admin\?code=[0-9a-f-]+#invite-code$/);
+  const html = await refreshForm(reveal, adminCookie);
   const code=html.match(/[A-F0-9]{6}(?:-[A-F0-9]{6}){3}/)?.[0];
   assert.ok(code);
-  captureCsrf(created,html);
+  assert.equal((await gate(get(reveal), env)).headers.get("Location"), "/admin/login");
+  assert.equal((await gate(get("/invite-admin.js"), env)).status, 403);
+  assert.equal(await gate(get("/invite-admin.js", adminCookie), env), null);
+  const list = await refreshForm("/admin", adminCookie);
+  assert.ok(!list.includes(code));
+  assert.match(list, /이전 발급분 · 원문 없음/);
+  const reopened = await refreshForm(reveal, adminCookie);
+  assert.ok(reopened.includes(code));
+  const stored = sqlite.prepare("SELECT sealed FROM invite_code_vault").get();
+  assert.ok(stored.sealed && !stored.sealed.includes(code));
+  const badKey = await gate(get(reveal, adminCookie), { ...env, NEON_INVITE_VAULT_KEY: "cd".repeat(32) });
+  assert.match(await badKey.text(), /보관된 코드를 열 수 없어요/);
+  await refreshForm("/invite");
+  assert.equal((await gate(post("/auth/redeem", { code: legacy }), env)).headers.get("Location"), "/");
 
   await refreshForm("/invite");
   const redeemed=await gate(post("/auth/redeem",{code}),env);
@@ -134,7 +167,7 @@ test("beta invitation and public launch use one-time database-backed form tokens
   assert.equal((await gate(post("/auth/access-mode",{mode:"invite"},adminCookie),env)).headers.get("Location"),"/admin");
 
   await refreshForm("/admin",adminCookie);
-  const invite=await db.prepare("SELECT id FROM invite_codes LIMIT 1").first();
+  const invite=await db.prepare("SELECT id FROM invite_codes WHERE label = 'Tester A'").first();
   await gate(post("/auth/invite-revoke",{id:invite.id},adminCookie),env);
   assert.equal((await gate(get("/",userCookie),env)).headers.get("Location"),"/invite");
   assert.equal((await gate(get("/"),{DB:db})).status,503);

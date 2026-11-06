@@ -41,11 +41,11 @@ GitHub에 소스를 올리고 **Actions**에서 Cloudflare Workers로 배포합�
 ## 초대코드 발급·관리
 
 - 배포 후 `/admin/login`으로 접속하여 GitHub Actions Secret `NEON_ADMIN_PASSWORD`에 설정한 비밀번호로 로그인하세요.
-- `/admin`에서 초대코드를 발급할 수 있습니다. 메모·사용 가능 횟수·만료 기간을 지정하고 생성한 코드를 사용자에게 전달하세요. 생성된 코드 원문은 **한 번만 표시**됩니다.
+- `/admin`에서 메모·사용 가능 횟수·유효 기간을 지정해 초대코드를 발급하세요. 새로 발급한 코드는 **발급 목록 → 코드 보기 → 코드 복사**에서 다시 꺼낼 수 있습니다. 원문을 보관하기 전에 발급한 코드는 새 코드로 발급해 전달하세요.
 - 사용자는 베타 기간 `/invite`에서 최초 1회 코드를 입력합니다. 서버 인증 기록에는 만료일을 두지 않으며, 같은 브라우저로 PC방에 재방문하면 인증 쿠키가 자동 연장됩니다. 관리자가 코드를 회수하지 않는 한 계속 이용하도록 설계했습니다.
 - 브라우저 쿠키 자체는 1년 단위로 자동 갱신됩니다. **1년 이상 방문하지 않거나 브라우저/기기에서 쿠키를 삭제하면** 재인증이 필요할 수 있습니다. 기본 1회용 코드는 재사용 불가이므로 새 코드 발급이 필요합니다. 이는 브라우저의 개인정보 보호·쿠키 만료 정책에 따른 제약입니다.
 - 관리자는 코드를 회수할 수 있습니다. 회수하면 해당 코드로 인증한 기존 세션도 차단됩니다. 관리자 세션은 12시간 유지됩니다.
-- 초대코드는 D1에 SHA-256 해시로 저장됩니다. 암호나 세션 토큰은 소스 또는 GitHub 저장소에 추가하지 마세요.
+- 입장 검증에는 SHA-256 해시를 사용합니다. 다시 표시할 원문은 AES-GCM으로 암호화해 별도 테이블에 저장합니다. GitHub Actions 배포가 Worker의 `NEON_INVITE_VAULT_KEY`를 최초 한 번 생성합니다. 이 키를 잃으면 기존 원문을 복구할 수 없습니다.
 - 초대 기능은 접근 제어를 위한 것으로 별도의 개인 계정 복구 기능은 없습니다. 한 사용자가 여러 기기에서 이용해야 한다면 코드 사용 횟수를 늘리거나 별도 코드를 발급하세요.
 - 배포 스크립트는 기존 D1에 `0002_invitation_access` 마이그레이션을 자동 적용합니다. 관리자 비밀번호가 빠지거나 D1이 연결되지 않으면 앱 접근을 기본적으로 차단합니다.
 
@@ -59,9 +59,11 @@ npm run build
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_strange_moira_mactaggert.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_corner_snacks.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_invitation_access.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_invite_form_tokens.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0004_invite_code_vault.sql
 npm start
 ```
 
-로컬 관리자 로그인은 별도의 환경 변수 `NEON_ADMIN_PASSWORD`(16자 이상)를 Worker 실행 환경에 지정해야 합니다. 지정하지 않으면 보안을 위해 앱이 503을 반환합니다.
+로컬 관리자 로그인에는 `NEON_ADMIN_PASSWORD`(16자 이상)가 필요합니다. 새 코드를 발급하려면 로컬 전용 `NEON_INVITE_VAULT_KEY`도 Worker 실행 환경에 지정하세요.
 
 매점 메뉴는 [snack-menu.json](public/snack-menu.json)에서 관리합니다. 새 항목은 고유한 `id`를 사용하고, 품절은 `"available": false`로 표시합니다. 메뉴를 변경한 뒤 다시 배포하면 화면과 주문 검증에 함께 적용됩니다.

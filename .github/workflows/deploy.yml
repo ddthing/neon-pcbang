@@ -51,8 +51,15 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           NEON_ADMIN_PASSWORD: ${{ secrets.NEON_ADMIN_PASSWORD }}
         run: |
+          set -o pipefail
           npx --no-install wrangler d1 migrations apply DB --remote --config dist/server/wrangler.json
           printf '%s' "$NEON_ADMIN_PASSWORD" | npx --no-install wrangler secret put NEON_ADMIN_PASSWORD --config dist/server/wrangler.json
+          existing_secrets="$(npx --no-install wrangler secret list --format json --config dist/server/wrangler.json)"
+          has_vault_key="$(printf '%s' "$existing_secrets" | node -e 'const bindings = JSON.parse(require("node:fs").readFileSync(0, "utf8")); console.log(bindings.some(({name}) => name === "NEON_INVITE_VAULT_KEY"));')"
+          if [ "$has_vault_key" = false ]; then
+            node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))' |
+              npx --no-install wrangler secret put NEON_INVITE_VAULT_KEY --config dist/server/wrangler.json
+          fi
           npx --no-install wrangler deploy --config dist/server/wrangler.json
 
       - name: Verify real production login request

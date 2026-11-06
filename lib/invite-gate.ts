@@ -1,6 +1,6 @@
 // Beta invitation gate and administrator-controlled public launch mode.
 type DB = D1Database;
-type GateEnv = { DB?: DB; NEON_ADMIN_PASSWORD?: string; ASSETS?: { fetch(request: Request): Promise<Response> } };
+type GateEnv = { DB?: DB; NEON_ADMIN_PASSWORD?: string; NEON_INVITE_VAULT_KEY?: string };
 const cookieName = "cafe_access";
 // The admission record never expires. The browser cookie lasts a year and is renewed on each visit.
 const userLife = 365 * 86400_000;
@@ -53,7 +53,7 @@ function htmlResponse(document: string, status: number, assets = "") {
   return new Response(document, { status, headers });
 }
 
-function page(title: string, body: string, status = 200) {
+function page(title: string, body: string, status = 200, adminTools = false) {
   return htmlResponse(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · 길모퉁이PC방</title><style>
   :root{font-family:system-ui,-apple-system,sans-serif;color:#4b4150;background:#f4efed;color-scheme:light}
   *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}
@@ -66,7 +66,20 @@ function page(title: string, body: string, status = 200) {
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex-shrink:0}
   table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #e5d9d7;padding:10px 6px;text-align:left;overflow-wrap:anywhere}th{color:#5a5360}
   .muted{color:#7a7380}.code{font-family:ui-monospace,monospace;letter-spacing:1px;overflow-wrap:anywhere;background:#f0eafa;padding:12px;border-radius:8px}
-  </style></head><body><main>${body}</main></body></html>`, status);
+  main.admin{width:min(100%,960px);padding:clamp(15px,4vw,32px)}.admin-header{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .admin-header form,.admin td form{margin:0}.admin section{border-top:1px solid #e5d9d7;margin-top:22px;padding-top:17px}
+  .admin section h2{margin-top:0}.admin-fields{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+  .admin-fields label{margin-top:0}.admin-nav{display:flex;flex-wrap:wrap;gap:8px 18px;margin:12px 0}
+  .admin .quiet{background:#f1e9ed;color:#56475b;border:1px solid #d5c7ce;padding:7px 11px}
+  .admin .table-wrap{overflow:auto}.admin table{min-width:580px}.admin .actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+  .admin td a,.admin summary{cursor:pointer;color:#56475b;text-decoration:underline}.admin summary{white-space:nowrap}
+  .admin .danger{color:#8b2838}.admin .danger button{background:#8b3646;padding:7px 11px}
+  .admin .code-reveal{padding:13px;background:#f3ecef;border:1px solid #e1d3dc;border-radius:8px}
+  .admin .code-reveal .row{align-items:stretch}.admin .code-reveal input{flex:1 1 240px;width:auto;min-width:0;font:700 clamp(12px,2vw,16px) ui-monospace,monospace}
+  .admin .copy-status{min-height:1.4em;margin:6px 0 0}.admin .badge{font-weight:750;white-space:nowrap}
+  @media(max-width:530px){body{padding:12px}.admin-fields{grid-template-columns:1fr 1fr}.admin-fields>div:first-child{grid-column:1 / -1}}
+  </style>${adminTools ? '<script defer src="/invite-admin.js"></script>' : ""}</head><body><main${adminTools ? ' class="admin"' : ""}>${body}</main></body></html>`, status,
+    adminTools ? "style-src 'unsafe-inline'; script-src 'self'" : "");
 }
 function go(path: string, cookie?: string) {
   const headers = new Headers({ Location: path, "Cache-Control": "no-store" });
@@ -185,39 +198,131 @@ function generateCode() {
   const str = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
   return str.match(/.{1,6}/g)!.join("-");
 }
-async function adminPanel(db: DB, created = "") {
-  const mode = await accessMode(db);
-  const { results } = await db.prepare(`SELECT id, label, created_at, expires_at, max_uses, uses, revoked_at
-    FROM invite_codes ORDER BY created_at DESC LIMIT 100`).all<{
-    id: string; label: string; created_at: number; expires_at: number; max_uses: number; uses: number; revoked_at: number | null;
-  }>();
-  const now = Date.now();
-  const rows = results.map((item) => {
-    const status = item.revoked_at ? "회수됨" : item.expires_at < now ? "만료됨" : item.uses >= item.max_uses ? "사용 완료" : "사용 가능";
-    return `<tr><td>${esc(item.label || "초대권")}</td><td>${status}</td><td>${item.uses}/${item.max_uses}</td><td>${new Date(item.expires_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}</td><td>${item.revoked_at ? "" : `<form method="post" action="/auth/invite-revoke"><input type="hidden" name="id" value="${esc(item.id)}"><button>회수</button></form>`}</td></tr>`;
-  }).join("");
-  return pageWithForm(db, "초대코드 관리", `<p class="hint">GILMOTUNGI PC BANG · ADMIN</p><h1>초대코드 관리</h1>
-  <form method="post" action="/auth/admin-logout"><button>관리자 로그아웃</button></form>
-  <h2>사이트 공개 설정</h2>
-  <p>현재 상태: <strong>${mode === "public" ? "정식 공개 · 초대코드 불필요" : "베타 초대제 · 초대코드 필수"}</strong></p>
-  ${mode === "invite"
-    ? `<p class="hint">정식 공개로 전환하면 모든 방문자가 초대코드 없이 PC방을 이용할 수 있습니다. 기존 초대코드와 인증 기록은 삭제되지 않습니다.</p>
-       <form method="post" action="/auth/access-mode"><input type="hidden" name="mode" value="public">
-       <label><input type="checkbox" name="confirm" value="yes" required style="width:auto"> 초대 제한이 모든 사용자에게 해제되는 것을 확인했습니다.</label>
-       <p><button type="submit">정식 공개로 전환</button></p></form>`
-    : `<p class="hint">누구나 입장할 수 있습니다. 초대제로 돌아가면 기존 초대 인증 사용자만 입장할 수 있습니다.</p>
-       <form method="post" action="/auth/access-mode"><input type="hidden" name="mode" value="invite">
-       <button type="submit">베타 초대제로 전환</button></form>`}
-  ${created ? `<h2>새 초대코드</h2><p class="hint">코드는 지금 한 번만 표시됩니다. 복사해서 초대할 사람에게 전달하세요.</p><p class="code"><strong>${esc(created)}</strong></p>` : ""}
-  <h2>새 코드 발급</h2><form method="post" action="/auth/invite-create">
-  <label for="label">메모 (선택)</label><input id="label" name="label" maxlength="40" placeholder="예: 친구 초대">
-  <label for="count">사용 가능 횟수 (1~100)</label><input id="count" name="count" type="number" min="1" max="100" value="1" required>
-  <label for="days">코드 유효 기간 (1~365일)</label><input id="days" name="days" type="number" min="1" max="365" value="30" required>
-  <p><button>초대코드 생성</button></p></form>
-  <h2>최근 발급 코드</h2><p class="hint">코드 원문은 보안상 저장하지 않습니다. 회수하면 이 코드로 입장한 사용자도 차단됩니다.</p>
-  <div style="overflow-x:auto"><table><thead><tr><th>메모</th><th>상태</th><th>사용</th><th>만료일</th><th>관리</th></tr></thead><tbody>${rows || '<tr><td colspan="5">발급된 코드가 없습니다.</td></tr>'}</tbody></table></div>
-  <p class="hint">최근 100개까지 표시됩니다.</p><p><a href="/">PC방으로 이동</a></p>`);
+function vaultConfigured(secret?: string): secret is string {
+  return typeof secret === "string" && /^[0-9a-f]{64}$/i.test(secret);
 }
+async function vaultKey(secret: string) {
+  const bytes = new Uint8Array(32);
+  for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(secret.slice(i * 2, i * 2 + 2), 16);
+  return crypto.subtle.importKey("raw", bytes, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+async function sealInvite(code: string, id: string, secret: string) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv, additionalData: enc.encode(id) }, await vaultKey(secret), enc.encode(code),
+  );
+  return btoa(String.fromCharCode(...iv, ...new Uint8Array(encrypted)));
+}
+async function readInvite(sealed: string, id: string, secret: string) {
+  const bytes = Uint8Array.from(atob(sealed), (char) => char.charCodeAt(0));
+  const plain = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: bytes.slice(0, 12), additionalData: enc.encode(id) }, await vaultKey(secret), bytes.slice(12),
+  );
+  return new TextDecoder().decode(plain);
+}
+
+type InviteRow = {
+  id: string; label: string; created_at: number; expires_at: number; max_uses: number;
+  uses: number; revoked_at: number | null; recoverable: number;
+};
+function inviteStatus(item: Pick<InviteRow, "revoked_at" | "expires_at" | "max_uses" | "uses">, now: number) {
+  if (item.revoked_at !== null) return "회수됨";
+  if (item.expires_at <= now) return "만료됨";
+  if (item.uses >= item.max_uses) return "사용 완료";
+  return "사용 가능";
+}
+const seoulDate = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul", year: "numeric", month: "numeric", day: "numeric",
+});
+const inviteIdPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
+
+async function adminPanel(db: DB, url: URL, secret?: string) {
+  const canIssue = vaultConfigured(secret);
+  const mode = await accessMode(db);
+  const requestedPage = Number(url.searchParams.get("page") || 1);
+  const pageNumber = Number.isSafeInteger(requestedPage) ? Math.min(100000, Math.max(1, requestedPage)) : 1;
+  const pageSize = 25;
+  const selected = url.searchParams.get("code") || "";
+  const now = Date.now();
+  const { results } = await db.prepare(`SELECT c.id, c.label, c.created_at, c.expires_at, c.max_uses, c.uses, c.revoked_at,
+    v.invite_id IS NOT NULL AS recoverable FROM invite_codes c
+    LEFT JOIN invite_code_vault v ON v.invite_id = c.id
+    ORDER BY c.created_at DESC, c.id LIMIT ? OFFSET ?`)
+    .bind(pageSize + 1, (pageNumber - 1) * pageSize).all<InviteRow>();
+
+  let reveal = "";
+  if (inviteIdPattern.test(selected)) {
+    const item = await db.prepare(`SELECT c.label, c.expires_at, c.max_uses, c.uses, c.revoked_at, v.sealed
+      FROM invite_codes c LEFT JOIN invite_code_vault v ON v.invite_id = c.id WHERE c.id = ?`)
+      .bind(selected).first<InviteRow & { sealed: string | null }>();
+    if (!item) reveal = '<p class="error" role="status">선택한 초대코드를 찾을 수 없어요.</p>';
+    else if (!item.sealed) reveal = '<p class="hint" role="status">이전 발급분은 원문을 보관하지 않아 다시 볼 수 없어요.</p>';
+    else if (!canIssue) reveal = '<p class="error" role="status">코드 보관 설정을 확인해 주세요.</p>';
+    else {
+      try {
+        const code = await readInvite(item.sealed, selected, secret);
+        reveal = `<div class="code-reveal">
+          <label for="issued-code">${esc(item.label || "초대코드")} · ${inviteStatus(item, now)}</label>
+          <div class="row"><input id="issued-code" value="${esc(code)}" readonly spellcheck="false">
+          <button type="button" id="copy-invite">코드 복사</button></div>
+          <p class="hint copy-status" id="copy-invite-status" role="status"></p>
+        </div>`;
+      } catch {
+        reveal = '<p class="error" role="status">보관된 코드를 열 수 없어요. 암호화 설정을 확인해 주세요.</p>';
+      }
+    }
+  }
+
+  const rows = results.slice(0, pageSize).map((item) => {
+    const status = inviteStatus(item, now);
+    const view = item.recoverable
+      ? `<a href="/admin?page=${pageNumber}&amp;code=${encodeURIComponent(item.id)}#invite-code">코드 보기</a>`
+      : '<span class="muted">이전 발급분 · 원문 없음</span>';
+    const revoke = item.revoked_at !== null ? "" : `<details class="danger"><summary>회수</summary>
+      <p>이 코드로 이미 입장한 손님도 접속할 수 없게 돼요.</p>
+      <form method="post" action="/auth/invite-revoke"><input type="hidden" name="id" value="${esc(item.id)}">
+      <button type="submit">코드 회수 확인</button></form></details>`;
+    return `<tr><td>${esc(item.label || "초대권")}<br><small class="muted">${seoulDate.format(item.created_at)} 발급</small></td>
+      <td class="badge">${status}</td><td>${Math.max(0, item.max_uses - item.uses)}회 남음<br><small class="muted">${item.uses} / ${item.max_uses} 사용</small></td>
+      <td>${seoulDate.format(item.expires_at)}</td><td><div class="actions">${view}${revoke}</div></td></tr>`;
+  }).join("");
+  const accessStatus = mode === "public" ? "정식 공개" : "베타 초대제";
+  return pageWithForm(db, "초대코드 관리", `
+  <header class="admin-header"><div><p class="hint">길모퉁이PC방 · 관리자</p><h1>초대코드 관리</h1>
+  <p>입장 방식 <strong>${accessStatus}</strong></p></div>
+  <form method="post" action="/auth/admin-logout"><button class="quiet">로그아웃</button></form></header>
+  <nav class="admin-nav" aria-label="관리 메뉴"><a href="#invite-new">코드 발급</a><a href="#invite-list">발급 목록</a>
+    <a href="#access-settings">공개 설정</a><a href="/">PC방으로 이동</a></nav>
+  ${reveal ? `<section id="invite-code"><h2>초대코드 확인</h2>${reveal}</section>` : ""}
+  <section id="invite-new"><h2>새 코드 발급</h2>
+  ${canIssue ? `<form method="post" action="/auth/invite-create"><div class="admin-fields">
+    <div><label for="label">메모 (선택)</label><input id="label" name="label" maxlength="40" placeholder="예: 친구 초대"></div>
+    <div><label for="count">사용 가능 횟수</label><input id="count" name="count" type="number" min="1" max="100" value="1" required></div>
+    <div><label for="days">유효 기간 (일)</label><input id="days" name="days" type="number" min="1" max="365" value="30" required></div>
+    </div><p><button type="submit">초대코드 발급</button></p></form>`
+    : '<p class="error" role="status">코드 보관 설정이 준비되면 새 코드를 발급할 수 있어요.</p>'}
+  </section>
+  <section id="invite-list"><h2>발급 목록</h2><p class="hint">새로 발급한 코드는 ‘코드 보기’에서 다시 복사할 수 있어요.</p>
+  <div class="table-wrap" tabindex="0" role="region" aria-label="초대코드 발급 목록">
+    <table><thead><tr><th scope="col">메모</th><th scope="col">상태</th><th scope="col">남은 횟수</th><th scope="col">만료일</th><th scope="col">관리</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="5">이 페이지에 표시할 코드가 없어요.</td></tr>'}</tbody></table></div>
+  ${pageNumber > 1 || results.length > pageSize ? `<nav class="admin-nav" aria-label="목록 페이지">
+    ${pageNumber > 1 ? `<a href="/admin?page=${pageNumber - 1}#invite-list">이전</a>` : ""}
+    <span>${pageNumber}페이지</span>
+    ${results.length > pageSize ? `<a href="/admin?page=${pageNumber + 1}#invite-list">다음</a>` : ""}
+  </nav>` : ""}</section>
+  <section id="access-settings"><h2>사이트 공개 설정</h2>
+  ${mode === "invite"
+    ? `<p class="hint">정식 공개로 전환하면 누구나 초대코드 없이 입장할 수 있어요.</p>
+       <form method="post" action="/auth/access-mode"><input type="hidden" name="mode" value="public">
+       <label><input type="checkbox" name="confirm" value="yes" required style="width:auto"> 모든 방문자에게 입장을 허용하는 것을 확인했습니다.</label>
+       <p><button type="submit" class="quiet">정식 공개로 전환</button></p></form>`
+    : `<p class="hint">초대제로 돌아가면 초대 인증을 받은 손님만 입장할 수 있어요.</p>
+       <form method="post" action="/auth/access-mode"><input type="hidden" name="mode" value="invite">
+       <button type="submit" class="quiet">베타 초대제로 전환</button></form>`}
+  </section>`, 200, (title, body, status) => page(title, body, status, true));
+}
+
 async function rateLimit(db: DB, request: Request, success: boolean) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   const key = await digest("admin-login:" + ip);
@@ -247,7 +352,8 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
   // Only the invitation screen's decorative assets are needed before admission.
   if ((request.method === "GET" || request.method === "HEAD") &&
       (path === entryStylesheet || path === entryBackdrop)) return null;
-  const isAdminRoute = path === "/admin" || path === "/admin/login" || path.startsWith("/auth/admin-") || path.startsWith("/auth/invite-");
+  const isAdminRoute = path === "/admin" || path === "/admin/login" || path === "/invite-admin.js" ||
+    path.startsWith("/auth/admin-") || path.startsWith("/auth/invite-");
   const isAuthRoute = path === "/invite" || path.startsWith("/auth/") || isAdminRoute;
   const db = env.DB;
   if (!db || !env.NEON_ADMIN_PASSWORD || env.NEON_ADMIN_PASSWORD.length < 16) {
@@ -265,7 +371,8 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
     const admin = session?.role === "admin";
     if (path === "/invite") return mode === "public" || session ? go("/") : invitePage(db, url.searchParams.get("error") ? "초대코드를 다시 확인해 주세요." : "");
     if (path === "/admin/login") return admin ? go("/admin") : adminLogin(db, url.searchParams.get("error") ? "로그인에 실패했습니다." : "");
-    if (path === "/admin") return admin ? adminPanel(db) : go("/admin/login");
+    if (path === "/admin") return admin ? adminPanel(db, url, env.NEON_INVITE_VAULT_KEY) : go("/admin/login");
+    if (path === "/invite-admin.js") return admin ? null : new Response("Forbidden", { status: 403 });
     if (path.startsWith("/auth/")) {
       if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
       const parsed = await form(request, db);
@@ -319,6 +426,10 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
         return go("/admin");
       }
       if (path === "/auth/invite-create") {
+        const secret = env.NEON_INVITE_VAULT_KEY;
+        if (!vaultConfigured(secret)) {
+          return page("발급 오류", '<h1>코드 보관 설정을 확인해 주세요</h1><p><a href="/admin">관리 화면으로 돌아가기</a></p>', 503);
+        }
         const label = (input.get("label") || "").trim().slice(0, 40);
         const count = Number(input.get("count"));
         const days = Number(input.get("days"));
@@ -326,14 +437,19 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
           return page("입력 오류", '<h1>입력값을 확인해주세요</h1><p><a href="/admin">돌아가기</a></p>', 400);
         }
         const code = generateCode();
+        const id = crypto.randomUUID();
         const now = Date.now();
-        await db.prepare(`INSERT INTO invite_codes (id, code_hash, label, created_at, expires_at, max_uses, uses)
-          VALUES (?, ?, ?, ?, ?, ?, 0)`).bind(crypto.randomUUID(), await digest(code), label, now, now + days * 86400_000, count).run();
-        return adminPanel(db, code);
+        const [hash, sealed] = await Promise.all([digest(code), sealInvite(code, id, secret)]);
+        await db.batch([
+          db.prepare(`INSERT INTO invite_codes (id, code_hash, label, created_at, expires_at, max_uses, uses)
+            VALUES (?, ?, ?, ?, ?, ?, 0)`).bind(id, hash, label, now, now + days * 86400_000, count),
+          db.prepare("INSERT INTO invite_code_vault (invite_id, sealed) VALUES (?, ?)").bind(id, sealed),
+        ]);
+        return go("/admin?code=" + id + "#invite-code");
       }
       if (path === "/auth/invite-revoke") {
         const id = input.get("id") || "";
-        if (!/^[0-9a-f-]{36}$/.test(id)) return new Response("Bad Request", { status: 400 });
+        if (!inviteIdPattern.test(id)) return new Response("Bad Request", { status: 400 });
         await db.prepare("UPDATE invite_codes SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL").bind(Date.now(), id).run();
         return go("/admin");
       }
