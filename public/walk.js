@@ -10,11 +10,14 @@ const nameInput = document.getElementById("cafe-name");
 const seating = window.cafeSeating;
 const camera = createCafeCamera(scene);
 const palettes = ["#a6bdac", "#c3b0cc", "#ccb99c", "#9eb4c5"];
+const walkSpeed = 14;
+const seatJourneyDuration = 4.2;
 const directions = new Map([
   ["ArrowLeft", [-1, 0]], ["KeyA", [-1, 0]], ["ArrowRight", [1, 0]], ["KeyD", [1, 0]],
   ["ArrowUp", [0, -1]], ["KeyW", [0, -1]], ["ArrowDown", [0, 1]], ["KeyS", [0, 1]],
 ]);
 const pressed = new Set();
+const remoteJourneys = new Map();
 let joystickPointer = null;
 let joystickOrigin;
 let joystickX = 0;
@@ -60,6 +63,7 @@ function displayedSpace() {
 function makeVisitor(key) {
   const node = document.createElement("div");
   node.className = "cafe-visitor";
+  node.dataset.visitorId = key;
   node.classList.toggle("mine", key === "mine");
   node.innerHTML = `<span class="cafe-wave" hidden>👋</span><span class="cafe-nickname"></span>
     <svg viewBox="0 0 16 22" aria-hidden="true" shape-rendering="crispEdges">
@@ -81,9 +85,14 @@ function paint(key, data, point, walking) {
   const { node, label, wave } = sprite;
   const moved = point.x !== sprite.x || point.y !== sprite.y;
   if (key !== "mine" && moved && sprite.x !== undefined && !data.seat) {
-    node.classList.add("walking");
-    clearTimeout(sprite.stopWalking);
-    sprite.stopWalking = setTimeout(() => node.classList.remove("walking"), 850);
+    if (data.walking !== undefined) {
+      clearTimeout(sprite.stopWalking);
+      node.classList.toggle("walking", data.walking);
+    } else {
+      node.classList.add("walking");
+      clearTimeout(sprite.stopWalking);
+      sprite.stopWalking = setTimeout(() => node.classList.remove("walking"), 850);
+    }
   }
   if (moved) {
     sprite.x = point.x;
@@ -96,7 +105,8 @@ function paint(key, data, point, walking) {
   if (sprite.facing !== data.facing) node.style.setProperty("--facing", data.facing);
   sprite.color = data.color;
   sprite.facing = data.facing;
-  if (key === "mine" || data.seat) node.classList.toggle("walking", walking);
+  if (key === "mine" || data.seat || data.walking !== undefined) node.classList.toggle("walking", walking);
+  node.classList.toggle("remote-path", data.walking !== undefined);
   node.classList.toggle("seated", Boolean(data.seat));
   const regular = key === "mine" && window.cafeIsRegular();
   if (sprite.name !== data.name || sprite.regular !== regular) {
@@ -136,6 +146,14 @@ function draw() {
   drawSelf(wasWalking);
   const visible = new Set(["mine"]);
   for (const peer of peers) {
+    const remoteJourney = remoteJourneys.get(peer.id);
+    if (remoteJourney) {
+      remoteJourney.visitor = peer;
+      if (remoteJourney.leg?.space !== displayedSpace() || !remoteJourney.point) continue;
+      paint(peer.id, { ...peer, seat: null, walking: true }, remoteJourney.point, true);
+      visible.add(peer.id);
+      continue;
+    }
     const space = peer.seat?.split(":")[0] || "hall";
     if (space !== displayedSpace()) continue;
     const target = peer.seat ? seating.position(peer.seat) : peer;
@@ -147,6 +165,7 @@ function draw() {
     if (visible.has(id)) continue;
     clearTimeout(sprite.stopWalking);
     clearTimeout(sprite.hideWave);
+    window.cafeChatRemoveVisitor?.(id);
     sprite.node.remove();
     visitors.delete(id);
   }
@@ -159,45 +178,110 @@ function setStatus(text) {
 function receive(result) {
   connected = true;
   const receivedAt = Date.now();
-  peers = result.visitors.filter((visitor) => visitor.id !== result.id).map((visitor) => {
+  const incoming = result.visitors.filter((visitor) => visitor.id !== result.id).map((visitor) => {
     const remaining = visitor.wave + 3200 - result.now;
     return { ...visitor, waveUntil: remaining > 0 ? receivedAt + remaining : 0 };
   });
+  const previous = new Map(peers.map((peer) => [peer.id, peer]));
+  const received = new Set();
+  for (const peer of incoming) {
+    received.add(peer.id);
+    const oldPeer = previous.get(peer.id);
+    const oldSeat = oldPeer?.seat ?? null;
+    const remoteJourney = remoteJourneys.get(peer.id);
+    if (remoteJourney && peer.seat === remoteJourney.seat) {
+      remoteJourney.visitor = peer;
+      continue;
+    }
+    if (remoteJourney) {
+      remoteJourneys.delete(peer.id);
+    }
+    if (!oldPeer || !peer.seat || peer.seat === oldSeat || reducedMotion.matches) continue;
+
+    const target = seating.position(peer.seat);
+    const origin = oldSeat ? seating.position(oldSeat) : { x: peer.x, y: peer.y };
+    if (!target || !origin) continue;
+    const route = routeToSeat(
+      origin,
+      oldSeat,
+      peer.seat,
+      seating.position,
+    );
+    if (!route.length) continue;
+    const nextJourney = {
+      seat: peer.seat,
+      visitor: peer,
+      legs: route,
+      leg: null,
+      point: null,
+      speed: 0,
+    };
+    if (startRemoteLeg(nextJourney)) remoteJourneys.set(peer.id, nextJourney);
+  }
+  for (const id of remoteJourneys.keys()) {
+    if (!received.has(id)) remoteJourneys.delete(id);
+  }
+  peers = incoming;
   setStatus("접속 " + result.visitors.length + "명");
   const roster = peers.length ? "함께 있는 손님 · " + peers.map((peer) => peer.name).join(", ") : "";
   guests.hidden = !roster;
   if (guests.textContent !== roster) guests.textContent = roster;
   seating.refresh(peers.flatMap((peer) => peer.seat ? [peer.seat] : []));
   draw();
+  if (Array.isArray(result.chat)) {
+    document.dispatchEvent(new CustomEvent("cafe-chat-sync", {
+      detail: {
+        now: result.now,
+        visitorId: result.id,
+        space: displayedSpace(),
+        messages: result.chat,
+      },
+    }));
+  }
+  if (Object.hasOwn(result, "delivery") || Object.hasOwn(result, "trays")) {
+    document.dispatchEvent(new CustomEvent("cafe-delivery-sync", {
+      detail: { now: result.now, delivery: result.delivery ?? null, trays: result.trays ?? [] },
+    }));
+  }
+  if (remoteJourneys.size) requestFrame();
 }
 
 function disconnected() {
   connected = false;
   setStatus("다시 연결 중");
-  if (peers.length) {
+  if (peers.length || remoteJourneys.size) {
     peers = [];
+    remoteJourneys.clear();
     guests.hidden = true;
     seating.refresh([]);
     draw();
   }
 }
 
-function send(action, seat) {
+function send(action, seat, extra = {}) {
   const request = queue.catch(() => {}).then(async () => {
     const response = await fetch("./api/presence", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, name, color, facing, x: location.x, y: location.y, action, seat }),
+      body: JSON.stringify({ token, name, color, facing, x: location.x, y: location.y, action, seat, ...extra }),
       signal: AbortSignal.timeout(7000),
     });
-    if (!response.ok && response.status !== 409) throw new Error("Presence unavailable");
     const result = await response.json();
+    if (action === "say" && response.status >= 400 && response.status < 500) {
+      if (result && Array.isArray(result.visitors)) receive(result);
+      return result;
+    }
+    if (!response.ok && response.status !== 409) throw new Error("Presence unavailable");
     receive(result);
     return result;
   });
   queue = request;
   return request;
 }
+
+window.cafeChatSay = (text) => !seating.phase()
+  ? send("say", undefined, { text, space: seating.current()?.split(":")[0] ?? "hall" })
+  : Promise.resolve({ error: "chat_room_changed" });
 
 async function changeSeat(action, seat) {
   pendingSeatChanges++;
@@ -236,6 +320,63 @@ window.cafeWorld = {
   },
 };
 
+function startRemoteLeg(remoteJourney) {
+  const leg = remoteJourney.legs.shift();
+  if (!leg) return false;
+
+  let total = 0;
+  let previous = leg.start;
+  for (const point of leg.points) {
+    total += Math.hypot(point.x - previous.x, (point.y - previous.y) * .67);
+    previous = point;
+  }
+  remoteJourney.leg = leg;
+  remoteJourney.point = { ...leg.start };
+  remoteJourney.speed = Math.max(20, total / seatJourneyDuration);
+  return true;
+}
+
+function advanceRemoteJourneys(dt) {
+  let changedLeg = false;
+  for (const [id, remoteJourney] of remoteJourneys) {
+    if (!remoteJourney.leg && !startRemoteLeg(remoteJourney)) {
+      remoteJourneys.delete(id);
+      continue;
+    }
+
+    let remaining = remoteJourney.speed * dt;
+    const points = remoteJourney.leg.points;
+    while (remaining > 0 && points.length) {
+      const next = points[0];
+      const dx = next.x - remoteJourney.point.x;
+      const dy = next.y - remoteJourney.point.y;
+      const length = Math.hypot(dx, dy * .67);
+      if (length > remaining) {
+        remoteJourney.point.x += dx * remaining / length;
+        remoteJourney.point.y += dy * remaining / length;
+        remaining = 0;
+      } else {
+        Object.assign(remoteJourney.point, next);
+        points.shift();
+        remaining -= length;
+      }
+    }
+    if (!points.length) {
+      remoteJourney.leg = null;
+      if (!startRemoteLeg(remoteJourney)) remoteJourneys.delete(id);
+      changedLeg = true;
+    }
+  }
+  if (changedLeg) draw();
+}
+
+function drawRemoteJourneys() {
+  for (const [id, remoteJourney] of remoteJourneys) {
+    if (remoteJourney.leg?.space !== displayedSpace() || !remoteJourney.point) continue;
+    paint(id, { ...remoteJourney.visitor, seat: null, walking: true }, remoteJourney.point, true);
+  }
+}
+
 function startLeg() {
   const leg = journey.legs.shift();
   if (!leg) {
@@ -249,7 +390,7 @@ function startLeg() {
     last = point;
   }
   journey.leg = leg;
-  journey.speed = Math.max(29, total / 2.8);
+  journey.speed = Math.max(20, total / seatJourneyDuration);
   Object.assign(location, leg.start);
   journey.showSpace(leg.space);
   draw();
@@ -422,6 +563,8 @@ function animate(time) {
   frameId = 0;
   const dt = lastFrame ? Math.min((time - lastFrame) / 1000, .04) : 0;
   lastFrame = time;
+  advanceRemoteJourneys(dt);
+  drawRemoteJourneys();
   const seat = seating.current();
   if (lastSeat && !seat) Object.assign(location, spawn);
   if (seat !== lastSeat) path = [];
@@ -446,7 +589,7 @@ function animate(time) {
     }
     const length = Math.hypot(dx, dy);
     if (length > 0) {
-      const step = path.length ? Math.min(length, 20 * dt) : Math.min(length, 1) * 20 * dt;
+      const step = path.length ? Math.min(length, walkSpeed * dt) : Math.min(length, 1) * walkSpeed * dt;
       const x = location.x + dx / length * step;
       const y = location.y + dy / length * step / .67;
       if (canWalk(x, location.y)) { walking ||= x !== location.x; location.x = x; }
@@ -464,12 +607,17 @@ function animate(time) {
   else if (walking || motionChanged) drawSelf(walking);
   lastPhase = phase;
   lastSeat = seat;
-  if (journey || (free && (pressed.size || joystickX || joystickY || path.length))) requestFrame();
+  if (journey || remoteJourneys.size || (free && (pressed.size || joystickX || joystickY || path.length))) requestFrame();
   else lastFrame = 0;
 }
 
 document.addEventListener("cafe-seat-phase", requestFrame);
 document.addEventListener("cafe-regular", () => drawSelf(wasWalking));
+reducedMotion.addEventListener("change", () => {
+  if (!reducedMotion.matches || !remoteJourneys.size) return;
+  remoteJourneys.clear();
+  draw();
+});
 seating.placeRoomDoors(roomPortals);
 draw();
 document.dispatchEvent(new Event("cafe-ready"));

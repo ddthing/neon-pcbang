@@ -36,6 +36,20 @@
       "when": 1793953600001,
       "tag": "0004_invite_code_vault",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1793953600002,
+      "tag": "0005_cafe_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793953600003,
+      "tag": "0006_cafe_chat",
+      "breakpoints": true
     }
   ]
 }

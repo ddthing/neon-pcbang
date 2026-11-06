@@ -5,7 +5,8 @@
   position: absolute; width: calc(2.23cqw * var(--avatar-scale)); height: calc(3.2cqw * var(--avatar-scale));
   transform: translate(-50%, -100%);
 }
-.cafe-visitor:not(.mine) { transition: left .82s linear, top .82s linear; }
+.cafe-visitor:not(.mine) { transition: left 1s linear, top 1s linear; }
+.cafe-visitor.remote-path { transition: none; }
 .cafe-visitor::before { content: ""; position: absolute; width: 76%; height: 14%; bottom: 2%; left: 12%; border-radius: 50%; background: #201b1b65; }
 .cafe-visitor svg { position: absolute; width: 100%; height: auto; bottom: 5%; transform: scaleX(var(--facing, 1)); filter: drop-shadow(0 1px 1px #221c1a80); }
 .cafe-visitor.seated svg { height: 70%; width: 80%; left: 10%; }
@@ -73,7 +74,7 @@ body.cafe-fullscreen { overflow: hidden; background: #2c2926; }
 .floor-legend .taken { background: #93807d; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .cafe-visitor.walking svg { animation: cafe-steps .28s steps(2, end) infinite; }
+  .cafe-visitor.walking svg { animation: cafe-steps .4s steps(2, end) infinite; }
   .scene[data-ambience-active] .cafe-visitor.mine.walking:not(.seated)::after {
     content: "";
     position: absolute;

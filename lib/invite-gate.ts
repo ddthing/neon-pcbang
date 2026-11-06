@@ -184,6 +184,15 @@ async function currentSession(db: DB, request: Request) {
     AND (s.role = 'admin' OR (s.role = 'user' AND c.id IS NOT NULL AND c.revoked_at IS NULL))
     LIMIT 1`).bind(hash, now).first<{ id: string; role: string; invite_id: string | null }>();
 }
+// Scope chat throttles to a real invitation session across browser tabs.
+// Public mode falls back to the visitor token used by cafe-presence.
+export async function cafeChatSessionId(request: Request, db: DB | undefined) {
+  if (!db) return null;
+  const session = await currentSession(db, request);
+  if (!session || session.role !== "user") return null;
+  return digest("cafe-chat-session:" + session.id);
+}
+
 async function createSession(db: DB, role: "admin" | "user", inviteId: string | null, request: Request) {
   const token = (role === "user" ? "u_" : "a_") +
     Array.from(crypto.getRandomValues(new Uint8Array(32)), (n) => n.toString(16).padStart(2, "0")).join("");

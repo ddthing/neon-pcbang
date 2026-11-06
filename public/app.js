@@ -6,7 +6,8 @@ const formatTime = (seconds) => [Math.floor(seconds / 60), seconds % 60]
   .map((value) => String(value).padStart(2, "0")).join(":");
 const roomKey = "neon-pcbang-room";
 const focusKey = "neon-pcbang-focus";
-const focusDuration = 25 * 60 * 1000;
+const defaultFocusMinutes = 25;
+const maximumFocusMinutes = 120;
 
 function readState(key, defaults) {
   try {
@@ -78,7 +79,47 @@ if (room.seat !== null && !room.space) {
   room.seat -= firstSeat[legacySpace];
   saveState(roomKey, room);
 }
-const focus = readState(focusKey, { remaining: focusDuration, end: null });
+let storedFocus = null;
+try { storedFocus = JSON.parse(localStorage.getItem(focusKey)); } catch {}
+const hasStoredFocus = Boolean(storedFocus && typeof storedFocus === "object");
+const focus = readState(focusKey, {
+  durationMinutes: null,
+  remaining: 0,
+  end: null,
+  soundEnabled: true,
+  completed: false,
+  completionPending: false,
+  completionAnnounced: false,
+  completionEffectsShown: false,
+  completionSoundPlayed: false,
+});
+const expiredWhilePageClosed = typeof focus.end === "number" && focus.end > 0 && focus.end <= Date.now();
+let skipFocusCompletionEffects = expiredWhilePageClosed;
+if (!Number.isInteger(focus.durationMinutes) || focus.durationMinutes < 1 || focus.durationMinutes > maximumFocusMinutes) {
+  focus.durationMinutes = hasStoredFocus && !Object.hasOwn(storedFocus, "durationMinutes") ? defaultFocusMinutes : null;
+}
+if (!Number.isFinite(focus.remaining) || focus.remaining < 0) {
+  focus.remaining = focus.durationMinutes ? focus.durationMinutes * 60_000 : 0;
+}
+if (typeof focus.end !== "number" || !Number.isFinite(focus.end)) focus.end = null;
+if (typeof focus.soundEnabled !== "boolean") focus.soundEnabled = true;
+if (typeof focus.completed !== "boolean") focus.completed = false;
+if (typeof focus.completionPending !== "boolean") focus.completionPending = false;
+if (typeof focus.completionAnnounced !== "boolean") focus.completionAnnounced = false;
+if (typeof focus.completionEffectsShown !== "boolean") focus.completionEffectsShown = Boolean(focus.completed);
+if (typeof focus.completionSoundPlayed !== "boolean") focus.completionSoundPlayed = false;
+if (expiredWhilePageClosed) {
+  Object.assign(focus, {
+    remaining: 0,
+    end: null,
+    completed: true,
+    completionPending: false,
+    completionAnnounced: true,
+    completionEffectsShown: true,
+    completionSoundPlayed: true,
+  });
+  saveState(focusKey, focus);
+}
 const floor = $("#floor-kiosk");
 const hub = $("#cafe-menu");
 const floorSelect = $("#floor-select");
@@ -504,6 +545,189 @@ document.querySelectorAll("[data-open]").forEach((button) => {
 document.querySelectorAll("[data-close]").forEach((button) => {
   button.addEventListener("click", () => closeCafeWindow(button.closest("dialog")));
 });
+const focusDialog = $("#focus");
+const focusMinutesInput = $("#focus-minutes");
+const focusDurationError = $("#focus-duration-error");
+const focusSoundToggle = $("#focus-sound");
+const focusComplete = $("#focus-complete");
+let focusAudioContext = null;
+focusMinutesInput.value = focus.durationMinutes === null ? "" : String(focus.durationMinutes);
+focusSoundToggle.checked = focus.soundEnabled;
+
+function focusDurationMs() {
+  return focus.durationMinutes * 60_000;
+}
+
+function presentPendingFocusCompletion() {
+  if (!focus.completionPending) return;
+  focus.completionPending = false;
+  focus.completionAnnounced = true;
+  saveState(focusKey, focus);
+  notify("집중 시간이 끝났어요. 잠깐 쉬어가요.");
+  showFocusCompletion({ animate: !skipFocusCompletionEffects, sound: !skipFocusCompletionEffects });
+}
+
+function setFocusDurationError(message) {
+  focusDurationError.textContent = message;
+  focusMinutesInput.setAttribute("aria-invalid", String(Boolean(message)));
+}
+
+function closeFocusAudio() {
+  if (!focusAudioContext) return;
+  const context = focusAudioContext;
+  focusAudioContext = null;
+  context.close().catch(() => {});
+}
+
+function unlockFocusAudio() {
+  if (!focus.soundEnabled) return null;
+  const AudioEngine = window.AudioContext || window.webkitAudioContext;
+  if (!AudioEngine) return null;
+  try {
+    focusAudioContext ??= new AudioEngine();
+    if (focusAudioContext.state === "suspended") focusAudioContext.resume().catch(() => {});
+    return focusAudioContext;
+  } catch {
+    return null;
+  }
+}
+
+function playFocusCompletionSound() {
+  const context = focusAudioContext;
+  if (!context || context.state !== "running") return false;
+
+  const now = context.currentTime;
+  const notes = [523.25, 659.25, 783.99];
+  notes.forEach((frequency, index) => {
+    const start = now + index * .12;
+    const oscillator = context.createOscillator();
+    const volume = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(frequency, start);
+    volume.gain.setValueAtTime(.0001, start);
+    volume.gain.exponentialRampToValueAtTime(.16, start + .018);
+    volume.gain.exponentialRampToValueAtTime(.0001, start + .21);
+    oscillator.connect(volume).connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + .23);
+    oscillator.addEventListener("ended", () => {
+      oscillator.disconnect();
+      volume.disconnect();
+    }, { once: true });
+  });
+  const playbackContext = context;
+  window.setTimeout(() => {
+    if (focusAudioContext !== playbackContext || focus.end) return;
+    closeFocusAudio();
+  }, 750);
+  return true;
+}
+
+function hideFocusCompletion() {
+  focusComplete.hidden = true;
+  focusComplete.classList.remove("is-complete", "is-settled");
+  focusDialog.classList.remove("is-complete");
+}
+
+function showFocusCompletion({ animate = false, sound = false } = {}) {
+  if (!focus.completed) return;
+  focusComplete.hidden = false;
+  const playAnimation = animate && !focus.completionEffectsShown && focusDialog.open && !document.hidden &&
+    !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (playAnimation) {
+    focusComplete.classList.remove("is-settled", "is-complete");
+    requestAnimationFrame(() => {
+      if (!focus.completed || !focusDialog.open || focusComplete.hidden) return;
+      focusComplete.classList.add("is-complete");
+      focusDialog.classList.add("is-complete");
+      focus.completionEffectsShown = true;
+      saveState(focusKey, focus);
+    });
+  } else {
+    focusComplete.classList.add("is-complete", "is-settled");
+    focusDialog.classList.add("is-complete");
+    focus.completionEffectsShown = true;
+    saveState(focusKey, focus);
+  }
+  if (sound && focus.soundEnabled && !focus.completionSoundPlayed && !document.hidden) {
+    if (playFocusCompletionSound()) {
+      focus.completionSoundPlayed = true;
+      saveState(focusKey, focus);
+    }
+  }
+}
+
+function completeFocus() {
+  const completionPending = document.hidden;
+  Object.assign(focus, {
+    remaining: 0,
+    end: null,
+    completed: true,
+    completionPending,
+    completionAnnounced: !completionPending,
+  });
+  saveState(focusKey, focus);
+  if (completionPending) {
+    if (focus.soundEnabled && !focus.completionSoundPlayed && playFocusCompletionSound()) {
+      focus.completionSoundPlayed = true;
+      saveState(focusKey, focus);
+    }
+    return;
+  }
+  notify("집중 시간이 끝났어요. 잠깐 쉬어가요.");
+  showFocusCompletion({ animate: !skipFocusCompletionEffects, sound: !skipFocusCompletionEffects });
+}
+
+function updateFocusDuration() {
+  const minutes = focusMinutesInput.valueAsNumber;
+  if (!Number.isInteger(minutes) || minutes < 1 || minutes > maximumFocusMinutes) {
+    setFocusDurationError(focusMinutesInput.value === ""
+      ? "집중할 시간을 입력해 주세요."
+      : `1분부터 ${maximumFocusMinutes}분 사이로 입력해 주세요.`);
+    renderTimer();
+    return false;
+  }
+  setFocusDurationError("");
+  if (minutes !== focus.durationMinutes || focus.completed || !focus.durationMinutes) {
+    Object.assign(focus, {
+      durationMinutes: minutes,
+      remaining: minutes * 60_000,
+      end: null,
+      completed: false,
+      completionPending: false,
+      completionAnnounced: false,
+      completionEffectsShown: false,
+      completionSoundPlayed: false,
+    });
+    skipFocusCompletionEffects = false;
+    hideFocusCompletion();
+    saveState(focusKey, focus);
+    renderTimer();
+    scheduleClock();
+  }
+  return true;
+}
+
+focusMinutesInput.addEventListener("change", updateFocusDuration);
+focusMinutesInput.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  if (updateFocusDuration()) $("#timer-toggle").click();
+});
+focusMinutesInput.addEventListener("input", () => {
+  const minutes = focusMinutesInput.valueAsNumber;
+  setFocusDurationError(Number.isInteger(minutes) && minutes >= 1 && minutes <= maximumFocusMinutes
+    ? ""
+    : focusMinutesInput.value === "" ? "집중할 시간을 입력해 주세요."
+      : `1분부터 ${maximumFocusMinutes}분 사이로 입력해 주세요.`);
+  renderTimer();
+});
+focusSoundToggle.addEventListener("change", () => {
+  focus.soundEnabled = focusSoundToggle.checked;
+  saveState(focusKey, focus);
+  if (focus.soundEnabled && focus.end) unlockFocusAudio();
+});
+
 function remainingTime() {
   return focus.end ? Math.max(0, focus.end - Date.now()) : focus.remaining;
 }
@@ -511,35 +735,76 @@ function remainingTime() {
 const paintFocusMotion = createCafeFocusMotion($("#focus"));
 
 function renderTimer() {
-  const remaining = remainingTime();
-  if (focus.end && remaining === 0) {
-    Object.assign(focus, { remaining: 0, end: null });
-    saveState(focusKey, focus);
-    notify("25분 집중이 끝났어요. 잠깐 쉬어가요.");
+  const duration = focusDurationMs();
+  const remaining = duration ? remainingTime() : 0;
+  if (focus.end && duration && remaining === 0) {
+    completeFocus();
+  } else if (focus.completed) {
+    showFocusCompletion();
   }
-  const display = formatTime(Math.ceil(remaining / 1000));
-  paintFocusMotion(display, remaining / focusDuration, Boolean(focus.end));
-  $("#timer-toggle").textContent = focus.end ? "일시 정지" : remaining === 0 ? "다시 시작" : remaining < focusDuration ? "이어서 집중" : "집중 시작";
-  $("#timer-note").textContent = remaining === 0 ? "집중 완료. 잠깐 쉬어가요." : "창을 닫아도 타이머는 계속 돌아가요.";
+  const display = duration ? formatTime(Math.ceil(remaining / 1000)) : "00:00";
+  paintFocusMotion(display, duration ? remaining / duration : 0, Boolean(focus.end), duration);
+  $("#timer").classList.toggle("empty", !duration);
+  const selectedMinutes = focusMinutesInput.valueAsNumber;
+  const validSelection = Number.isInteger(selectedMinutes) && selectedMinutes >= 1 && selectedMinutes <= maximumFocusMinutes;
+  $("#timer-toggle").disabled = !focus.end && !validSelection;
+  $("#timer-toggle").textContent = focus.end ? "일시 정지"
+    : focus.completed ? "다시 시작"
+      : remaining < duration ? "이어서 집중" : "집중 시작";
+  $("#timer-note").textContent = focus.completed ? "집중 완료. 잠깐 쉬어가요."
+    : focus.end ? "창을 닫아도 타이머는 계속 돌아가요."
+      : !duration ? "집중할 시간을 입력해 주세요." : "집중할 시간을 입력하고 시작하세요.";
+  $("#focus-minutes").disabled = Boolean(focus.end);
+  $("#focus-sound").disabled = Boolean(focus.end);
 }
 
 $("#timer-toggle").addEventListener("click", () => {
   if (focus.end) {
-    focus.remaining = remainingTime();
+    const remaining = remainingTime();
+    if (remaining === 0) {
+      renderTimer();
+      scheduleClock();
+      return;
+    }
+    focus.remaining = remaining;
     focus.end = null;
+    closeFocusAudio();
   } else {
-    focus.end = Date.now() + (focus.remaining || focusDuration);
+    if (!updateFocusDuration()) return;
+    const duration = focusDurationMs();
+    if (focus.remaining === 0) focus.remaining = duration;
+    focus.completed = false;
+    focus.completionPending = false;
+    focus.completionAnnounced = false;
+    focus.completionEffectsShown = false;
+    focus.completionSoundPlayed = false;
+    skipFocusCompletionEffects = false;
+    hideFocusCompletion();
+    focus.end = Date.now() + focus.remaining;
+    if (focus.soundEnabled) unlockFocusAudio();
   }
   saveState(focusKey, focus);
   renderTimer();
   scheduleClock();
 });
 $("#timer-reset").addEventListener("click", () => {
-  Object.assign(focus, { remaining: focusDuration, end: null });
+  Object.assign(focus, {
+    remaining: focus.durationMinutes ? focusDurationMs() : 0,
+    end: null,
+    completed: false,
+    completionPending: false,
+    completionAnnounced: false,
+    completionEffectsShown: false,
+    completionSoundPlayed: false,
+  });
+  skipFocusCompletionEffects = false;
+  hideFocusCompletion();
+  closeFocusAudio();
   saveState(focusKey, focus);
   renderTimer();
   scheduleClock();
 });
+window.addEventListener("pagehide", closeFocusAudio);
 
 const seoulTime = new Intl.DateTimeFormat("ko-KR", {
   timeZone: "Asia/Seoul",
@@ -551,7 +816,10 @@ let lastClock;
 let clockTimeout;
 function scheduleClock() {
   clearTimeout(clockTimeout);
-  if (document.hidden) return;
+  if (document.hidden) {
+    if (focus.end) clockTimeout = setTimeout(tick, Math.max(0, focus.end - Date.now()));
+    return;
+  }
   const interval = room.since || focus.end ? 1000 : 60_000;
   clockTimeout = setTimeout(tick, interval - Date.now() % interval);
 }
@@ -655,6 +923,11 @@ if (room.space) window.recordCafeStamp("seat");
 renderTimer();
 tick();
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) clearTimeout(clockTimeout);
-  else tick();
+  if (document.hidden) {
+    clearTimeout(clockTimeout);
+    scheduleClock();
+    return;
+  }
+  presentPendingFocusCompletion();
+  tick();
 });
