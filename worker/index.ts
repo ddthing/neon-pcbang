@@ -9,7 +9,7 @@ const worker = {
     if (access) return access;
     // When Worker-first static asset routing is enabled, explicitly forward assets.
     const pathname = new URL(request.url).pathname;
-    if (pathname !== "/" && !pathname.startsWith("/api/") && /\.[a-z0-9]+$/i.test(pathname) && env.ASSETS) {
+    if (pathname !== "/" && pathname !== "/world.js" && !pathname.startsWith("/api/") && /\.[a-z0-9]+$/i.test(pathname) && env.ASSETS) {
       return env.ASSETS.fetch(request);
     }
     let binding = ctx.props?.CONNECTORS;
