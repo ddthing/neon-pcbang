@@ -10,20 +10,16 @@ const sqlite = new DatabaseSync(":memory:");
 sqlite.exec(readFileSync(new URL("../drizzle/0002_invitation_access.sql", import.meta.url), "utf8"));
 const db = {
   prepare(sql) {
-    return {
-      bind(...values) {
-        const statement = sqlite.prepare(sql);
-        const apply = () => statement;
-        return {
-          async first() { return apply().get(...values) ?? null; },
-          async all() { return { results: apply().all(...values) }; },
-          async run() {
-            const info = apply().run(...values);
-            return { success: true, meta: { changes: Number(info.changes) } };
-          },
-        };
+    const statement = sqlite.prepare(sql);
+    const bound = (...values) => ({
+      async first() { return statement.get(...values) ?? null; },
+      async all() { return { results: statement.all(...values) }; },
+      async run() {
+        const info = statement.run(...values);
+        return { success: true, meta: { changes: Number(info.changes) } };
       },
-    };
+    });
+    return { ...bound(), bind: (...values) => bound(...values) };
   },
 };
 const env = { DB: db, NEON_ADMIN_PASSWORD: password };
