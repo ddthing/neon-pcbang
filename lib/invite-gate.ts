@@ -21,7 +21,38 @@ function equal(a: string, b: string) {
 function esc(value: unknown) {
   return String(value ?? "").replace(/[&<>"']/g, (s) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s]!));
 }
-function page(title: string, body: string, status = 200) {
+
+const csrfCookieHttps = "__Host-pcbang_csrf";
+const csrfCookieLocal = "pcbang_csrf";
+function csrfCookieName(request: Request) {
+  return new URL(request.url).protocol === "https:" ? csrfCookieHttps : csrfCookieLocal;
+}
+function getNamedCookie(request: Request, name: string) {
+  const pair = (request.headers.get("Cookie") || "").split(";")
+    .map((part) => part.trim()).find((part) => part.startsWith(name + "="));
+  return pair?.slice(name.length + 1) || "";
+}
+function csrfCookieValue(request: Request) {
+  return getNamedCookie(request, csrfCookieName(request));
+}
+function csrfForForm(request: Request) {
+  const existing = csrfCookieValue(request);
+  if (/^[a-f0-9]{64}$/.test(existing)) return existing;
+  return Array.from(crypto.getRandomValues(new Uint8Array(32)),
+    (value) => value.toString(16).padStart(2, "0")).join("");
+}
+
+function page(title: string, body: string, status = 200, request?: Request) {
+  const headers = new Headers({ "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer",
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" });
+  if (request && /<form\b/i.test(body)) {
+    const token = csrfForForm(request);
+    body = body.replace(/(<form\b[^>]*>)/gi, '$1<input type="hidden" name="csrf" value="' + token + '">');
+    const secure = new URL(request.url).protocol === "https:";
+    headers.set("Set-Cookie", csrfCookieName(request) + "=" + token +
+      "; Path=/; HttpOnly; SameSite=Strict; Max-Age=7200" + (secure ? "; Secure" : ""));
+  }
   return new Response(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · 길모퉁이PC방</title><style>
   :root{font-family:system-ui,-apple-system,sans-serif;color:#4b4150;background:#f4efed;color-scheme:light}
   *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}
@@ -34,7 +65,7 @@ function page(title: string, body: string, status = 200) {
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex-shrink:0}
   table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #e5d9d7;padding:10px 6px;text-align:left;overflow-wrap:anywhere}th{color:#5a5360}
   .muted{color:#7a7380}.code{font-family:ui-monospace,monospace;letter-spacing:1px;overflow-wrap:anywhere;background:#f0eafa;padding:12px;border-radius:8px}
-  </style></head><body><main>${body}</main></body></html>`, { status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" } });
+  </style></head><body><main>${body}</main></body></html>`, { status, headers });
 }
 function go(path: string, cookie?: string) {
   const headers = new Headers({ Location: path, "Cache-Control": "no-store" });
@@ -61,26 +92,36 @@ async function accessMode(db: DB): Promise<"invite" | "public"> {
 }
 function permittedPost(request: Request) {
   const origin = request.headers.get("Origin");
-  return origin === new URL(request.url).origin && request.headers.get("Content-Type")?.startsWith("application/x-www-form-urlencoded");
+  // Some browsers omit Origin on same-site HTML form submissions. A matching
+  // server-issued form token is mandatory in addition to these origin checks.
+  if (origin && origin !== new URL(request.url).origin) return false;
+  const fetchSite = request.headers.get("Sec-Fetch-Site");
+  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "none") return false;
+  return request.headers.get("Content-Type")?.toLowerCase().startsWith("application/x-www-form-urlencoded") === true;
 }
 async function form(request: Request) {
   if (!permittedPost(request)) return null;
   const input = await request.text();
   if (input.length > 2048) return null;
-  return new URLSearchParams(input);
+  const params = new URLSearchParams(input);
+  const submitted = params.get("csrf") || "";
+  const cookie = csrfCookieValue(request);
+  if (!/^[a-f0-9]{64}$/.test(submitted) || !/^[a-f0-9]{64}$/.test(cookie) || !equal(submitted, cookie)) return null;
+  params.delete("csrf");
+  return params;
 }
-function invitePage(message = "") {
+function invitePage(message = "", request?: Request) {
   return page("초대코드 입장", `<p class="hint">GILMOTUNGI PC BANG · PRIVATE ENTRY</p><h1>길모퉁이PC방</h1>
   <p>초대받은 손님만 입장할 수 있어요. 전달받은 초대코드를 입력해주세요.</p>
   ${message ? `<p class="error">${esc(message)}</p>` : ""}
   <form method="post" action="/auth/redeem"><label for="code">초대코드</label><input id="code" name="code" maxlength="64" autocomplete="one-time-code" required placeholder="XXXX-XXXX-XXXX-XXXX"><p><button type="submit">PC방 입장하기</button></p></form>
-  <p class="hint">초대코드가 없다면 관리자에게 문의해주세요.</p>`);
+  <p class="hint">초대코드가 없다면 관리자에게 문의해주세요.</p>`, 200, request);
 }
-function adminLogin(message = "") {
+function adminLogin(message = "", request?: Request) {
   return page("관리자 로그인", `<p class="hint">PRIVATE ACCESS · ADMIN</p><h1>관리자 로그인</h1>
   ${message ? `<p class="error">${esc(message)}</p>` : ""}
   <form method="post" action="/auth/admin-login"><label for="password">관리자 비밀번호</label><input type="password" id="password" name="password" maxlength="256" required autocomplete="current-password"><p><button>로그인</button></p></form>
-  <p><a href="/invite">초대코드 입력으로 돌아가기</a></p>`);
+  <p><a href="/invite">초대코드 입력으로 돌아가기</a></p>`, 200, request);
 }
 async function currentSession(db: DB, request: Request) {
   const token = getCookie(request);
@@ -107,7 +148,7 @@ function generateCode() {
   const str = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
   return str.match(/.{1,6}/g)!.join("-");
 }
-async function adminPanel(db: DB, created = "") {
+async function adminPanel(db: DB, created = "", request?: Request) {
   const mode = await accessMode(db);
   const { results } = await db.prepare(`SELECT id, label, created_at, expires_at, max_uses, uses, revoked_at
     FROM invite_codes ORDER BY created_at DESC LIMIT 100`).all<{
@@ -138,7 +179,7 @@ async function adminPanel(db: DB, created = "") {
   <p><button>초대코드 생성</button></p></form>
   <h2>최근 발급 코드</h2><p class="hint">코드 원문은 보안상 저장하지 않습니다. 회수하면 이 코드로 입장한 사용자도 차단됩니다.</p>
   <div style="overflow-x:auto"><table><thead><tr><th>메모</th><th>상태</th><th>사용</th><th>만료일</th><th>관리</th></tr></thead><tbody>${rows || '<tr><td colspan="5">발급된 코드가 없습니다.</td></tr>'}</tbody></table></div>
-  <p class="hint">최근 100개까지 표시됩니다.</p><p><a href="/">PC방으로 이동</a></p>`);
+  <p class="hint">최근 100개까지 표시됩니다.</p><p><a href="/">PC방으로 이동</a></p>`, 200, request);
 }
 async function rateLimit(db: DB, request: Request, success: boolean) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
@@ -182,9 +223,9 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
     if (mode === "public" && !isAuthRoute) return null;
     const session = await currentSession(db, request);
     const admin = session?.role === "admin";
-    if (path === "/invite") return mode === "public" || session ? go("/") : invitePage(url.searchParams.get("error") ? "초대코드를 다시 확인해주세요." : "");
-    if (path === "/admin/login") return admin ? go("/admin") : adminLogin(url.searchParams.get("error") ? "로그인에 실패했습니다." : "");
-    if (path === "/admin") return admin ? adminPanel(db) : go("/admin/login");
+    if (path === "/invite") return mode === "public" || session ? go("/") : invitePage(url.searchParams.get("error") ? "초대코드를 다시 확인해주세요." : "", request);
+    if (path === "/admin/login") return admin ? go("/admin") : adminLogin(url.searchParams.get("error") ? "로그인에 실패했습니다." : "", request);
+    if (path === "/admin") return admin ? adminPanel(db, "", request) : go("/admin/login");
     if (path.startsWith("/auth/")) {
       if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
       const input = await form(request);
@@ -204,7 +245,7 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
         return go("/", await createSession(db, "user", invite.id, request));
       }
       if (path === "/auth/admin-login") {
-        if (await blockedLogin(db, request)) return adminLogin("로그인 시도가 너무 많습니다. 15분 뒤 다시 시도해주세요.");
+        if (await blockedLogin(db, request)) return adminLogin("로그인 시도가 너무 많습니다. 15분 뒤 다시 시도해주세요.", request);
         const pass = input.get("password") || "";
         const valid = equal(await digest(pass), await digest(env.NEON_ADMIN_PASSWORD));
         if (!valid) {
@@ -237,7 +278,7 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
         const now = Date.now();
         await db.prepare(`INSERT INTO invite_codes (id, code_hash, label, created_at, expires_at, max_uses, uses)
           VALUES (?, ?, ?, ?, ?, ?, 0)`).bind(crypto.randomUUID(), await digest(code), label, now, now + days * 86400_000, count).run();
-        return adminPanel(db, code);
+        return adminPanel(db, code, request);
       }
       if (path === "/auth/invite-revoke") {
         const id = input.get("id") || "";
