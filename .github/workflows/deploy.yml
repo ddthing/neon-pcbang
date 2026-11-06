@@ -2,11 +2,13 @@ name: Deploy Gilmotungi PC Bang
 
 on:
   workflow_dispatch:
-  # The invitation rollout deploys once when merged; later releases remain manual.
+  # Deploy updates to the access gate and its verification workflow.
   push:
     branches: [main]
     paths:
       - ".github/workflows/deploy.yml"
+      - "lib/invite-gate.ts"
+      - "tests/invite-gate.test.mjs"
 
 permissions:
   contents: read
