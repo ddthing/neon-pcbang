@@ -44,6 +44,7 @@ GitHub에 소스를 올리고 **Actions**에서 Cloudflare Workers로 배포합�
 - `/admin`에서 초대코드를 발급할 수 있습니다. 메모·사용 가능 횟수·만료 기간을 지정하고 생성한 코드를 사용자에게 전달하세요. 생성된 코드 원문은 **한 번만 표시**됩니다.
 - 사용자는 베타 기간 `/invite`에서 최초 1회 코드를 입력합니다. 서버 인증 기록에는 만료일을 두지 않으며, 같은 브라우저로 PC방에 재방문하면 인증 쿠키가 자동 연장됩니다. 관리자가 코드를 회수하지 않는 한 계속 이용하도록 설계했습니다.
 - 브라우저 쿠키 자체는 1년 단위로 자동 갱신됩니다. **1년 이상 방문하지 않거나 브라우저/기기에서 쿠키를 삭제하면** 재인증이 필요할 수 있습니다. 기본 1회용 코드는 재사용 불가이므로 새 코드 발급이 필요합니다. 이는 브라우저의 개인정보 보호·쿠키 만료 정책에 따른 제약입니다.
+- 관리자는 `/admin`에서 **베타 초대제**와 **정식 공개**를 전환할 수 있습니다. 정식 공개 시 모든 방문자가 코드 없이 입장합니다. 관리자 로그인은 계속 유지됩니다. 초대제로 다시 전환하면 기존에 인증받은 사용자만 입장 가능합니다.
 - 관리자는 코드를 회수할 수 있습니다. 회수하면 해당 코드로 인증한 기존 세션도 차단됩니다. 관리자 세션은 12시간 유지됩니다.
 - 초대코드는 D1에 SHA-256 해시로 저장됩니다. 암호나 세션 토큰은 소스 또는 GitHub 저장소에 추가하지 마세요.
 - 초대 기능은 접근 제어를 위한 것으로 별도의 개인 계정 복구 기능은 없습니다. 한 사용자가 여러 기기에서 이용해야 한다면 코드 사용 횟수를 늘리거나 별도 코드를 발급하세요.
@@ -58,6 +59,7 @@ npm ci
 npm run build
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_strange_moira_mactaggert.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_corner_snacks.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_invitation_access.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_invitation_access.sql
 npm start
 ```
