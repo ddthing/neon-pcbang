@@ -87,6 +87,7 @@
             <img id="lobby-art" src="./pcbang-hall-pastel.webp" fetchpriority="high" width="1536" height="1024" alt="회색과 크림색의 대형 픽셀 아트 PC방에 PC 좌석 네 줄과 게임룸, 고양이 점원이 있는 카운터가 보이는 모습">
             <img id="rooms-art" data-src="./pcbang-rooms-pastel.webp" width="1536" height="1024" alt="" hidden>
             <div id="window-view" class="window-view" aria-hidden="true"></div>
+            <svg class="room-bays" viewBox="0 0 1536 1024" aria-hidden="true"><use href="./room-bays.svg#rendered-rooms"/></svg>
             <div id="cafe-ambience" aria-hidden="true"></div>
             <div id="monitor-layer" aria-hidden="true"></div>
             <div class="cafe-avatars" id="cafe-avatars" aria-hidden="true"></div>
@@ -197,10 +198,12 @@
             <div class="hall-seat-map" aria-label="홀 실제 배치">
               <div id="floor-banks" class="floor-banks" aria-label="일반석"></div>
               <div id="floor-room-doors" aria-label="룸 입구"></div>
+              <svg class="kiosk-footprints" viewBox="0 0 1536 1024" aria-hidden="true"><use href="./room-bays.svg#floor-footprints"/></svg>
               <span class="floor-map-marker" style="--x:12%;--y:74%">카운터</span>
               <span class="floor-map-marker" style="--x:26%;--y:90%">키오스크</span>
               <span class="floor-map-marker" style="--x:49%;--y:96%">입구</span>
             </div>
+            <p class="floor-room-label mono">룸 내부 좌석</p>
             <div id="floor-rooms" class="floor-rooms" aria-label="룸 내부 배치"></div>
           </div>
         </div>

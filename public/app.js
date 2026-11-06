@@ -42,10 +42,6 @@ const hallBanks = [
 ];
 const hallRows = [196, 244, 291, 338, 386, 434, 481, 529, 577, 626, 675];
 const bankSize = hallRows.length * 2;
-const hallSideScreens = [
-  [109, 215], [162, 215], [109, 340], [161, 340], [109, 470], [161, 470],
-  [1367, 124], [1429, 124], [1405, 343], [1461, 343], [1406, 579], [1467, 579]
-].map(([x, y]) => [x / 15.36, y / 10.24]);
 const spaces = {
   hall: {
     label: "일반석",
@@ -109,7 +105,7 @@ function prepareRoomArt() {
 function renderMonitorPower(spaceId) {
   if (monitorLayer.dataset.space !== spaceId) {
     monitorLayer.dataset.space = spaceId;
-    const positions = spaceId === "hall" ? [...spaces.hall.positions, ...hallSideScreens] : spaces[spaceId].positions;
+    const positions = spaces[spaceId].positions;
     const dimensions = { hall: [1.92, 1.83], solo: [21.9, 17.1], duo: [18.3, 14.7], team: [10.6, 9.7], squad: [13.5, 9.9] };
     monitorLayer.replaceChildren(...positions.map(([x, y], index) => {
       const screen = document.createElement("span");
@@ -624,6 +620,7 @@ window.cafeSeating = {
         const door = document.createElement("button");
         door.type = "button";
         door.className = onMap ? "floor-map-marker room-map-door" : "stage-room-door";
+        door.dataset.room = id;
         door.textContent = spaces[id].label;
         door.setAttribute("aria-label", spaces[id].label + (onMap ? " 내부 배치 보기" : " 입구"));
         door.style.setProperty("--x", point.x + "%");
