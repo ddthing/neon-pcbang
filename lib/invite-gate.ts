@@ -35,7 +35,7 @@ async function pageWithForm(db: DB, title: string, html: string, status = 200) {
   await db.prepare("DELETE FROM invite_form_tokens WHERE expires_at <= ?").bind(now).run();
   await db.prepare("INSERT INTO invite_form_tokens (token_hash, expires_at) VALUES (?, ?)")
     .bind(await digest(token), now + 30 * 60_000).run();
-  const safeHtml = html.replace(/(<form\\b[^>]*>)/gi,
+  const safeHtml = html.replace(/(<form\b[^>]*>)/gi,
     '$1<input type="hidden" name="csrf" value="' + token + '">');
   return page(title, safeHtml, status);
 }
