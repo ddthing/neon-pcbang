@@ -23,20 +23,31 @@ const db = {
   },
 };
 const env = { DB: db, NEON_ADMIN_PASSWORD: password };
+let csrfCookie = "";
+let csrfToken = "";
+function captureCsrf(response) {
+  const cookie = response.headers.get("Set-Cookie");
+  assert.ok(cookie, "GET form must set CSRF cookie");
+  csrfCookie = cookie.split(";")[0];
+  const value = csrfCookie.split("=").slice(1).join("=");
+  assert.match(value, /^[a-f0-9]{64}$/);
+  csrfToken = value;
+}
 function get(path, accessCookie) {
   return new Request(origin + path, {
     headers: accessCookie ? { Cookie: accessCookie } : {},
   });
 }
-function post(path, values, accessCookie) {
+function post(path, values, accessCookie, extraHeaders = {}) {
+  const cookie = [csrfCookie, accessCookie].filter(Boolean).join("; ");
   return new Request(origin + path, {
     method: "POST",
     headers: {
-      Origin: origin,
       "Content-Type": "application/x-www-form-urlencoded",
-      ...(accessCookie ? { Cookie: accessCookie } : {}),
+      ...(cookie ? { Cookie: cookie } : {}),
+      ...extraHeaders,
     },
-    body: new URLSearchParams(values).toString(),
+    body: new URLSearchParams({ csrf: csrfToken, ...values }).toString(),
   });
 }
 function issuedCookie(response) {
@@ -60,9 +71,30 @@ test("beta invitation and public launch work end to end with real SQLite", async
   const invitation = await gate(get("/invite"), env);
   assert.equal(invitation.status, 200);
   assert.match(await invitation.text(), /초대코드/);
+  captureCsrf(invitation);
 
   const adminUnauthenticated = await gate(get("/admin"), env);
   assert.equal(adminUnauthenticated.headers.get("Location"), "/admin/login");
+  // A browser may omit Origin from a same-origin HTML form POST.
+  const loginPage = await gate(get("/admin/login"), env);
+  captureCsrf(loginPage);
+  assert.match(await loginPage.text(), /name="csrf"/);
+  const crossOrigin = await gate(post("/auth/admin-login", { password }, null, { Origin: "https://attacker.example" }), env);
+  assert.equal(crossOrigin.status, 403);
+  const fetchCrossSite = await gate(post("/auth/admin-login", { password }, null, { "Sec-Fetch-Site": "cross-site" }), env);
+  assert.equal(fetchCrossSite.status, 403);
+  const missingToken = new Request(origin + "/auth/admin-login", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: csrfCookie },
+    body: new URLSearchParams({ password }).toString(),
+  });
+  assert.equal((await gate(missingToken, env)).status, 403);
+  const missingCookie = new Request(origin + "/auth/admin-login", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ password, csrf: csrfToken }).toString(),
+  });
+  assert.equal((await gate(missingCookie, env)).status, 403);
 
   const wrongPassword = await gate(post("/auth/admin-login", { password: "incorrect" }), env);
   assert.equal(wrongPassword.headers.get("Location"), "/admin/login?error=1");
@@ -74,6 +106,7 @@ test("beta invitation and public launch work end to end with real SQLite", async
   const adminPage = await gate(get("/admin", adminCookie), env);
   assert.equal(adminPage.status, 200);
   assert.match(await adminPage.text(), /베타 초대제/);
+  captureCsrf(adminPage);
 
   const created = await gate(post("/auth/invite-create", { label: "Tester A", count: "1", days: "30" }, adminCookie), env);
   assert.equal(created.status, 200);
