@@ -107,6 +107,7 @@ function renderMonitorPower(spaceId) {
       screen.style.setProperty("--y", y + "%");
       screen.style.setProperty("--screen-width", width + "%");
       screen.style.setProperty("--screen-height", height + "%");
+      screen.style.setProperty("--screen-offset", -(index % 13) * 0.71 + "s");
       return screen;
     }));
   }
@@ -504,7 +505,7 @@ function makeRain(AudioEngine) {
   rain.start();
 }
 
-connectRainSwitch(async (enabled) => {
+connectCafeSwitch(document.querySelector(".top-actions .u013"), async (enabled) => {
   const AudioEngine = window.AudioContext || window.webkitAudioContext;
   if (!AudioEngine) {
     notify("이 브라우저에서는 빗소리를 재생할 수 없어요.", "err");

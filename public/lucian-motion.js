@@ -2,33 +2,33 @@
 /* Lucian UX/UI Prompt #070 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#070 */
 "use strict";
 
-function connectRainSwitch(requestChange) {
-  var root = document.querySelector('.u013');
+function connectCafeSwitch(root, requestChange) {
   var sw = root.querySelector('.u013-sw');
   var knob = root.querySelector('.u013-knob');
   var on = false, t = 0, pending = false;
 
-  async function set(v) {
-    if (pending || on === v) return;
-    pending = true;
-    var applied;
-    try { applied = await requestChange(v); }
-    finally { pending = false; }
-    if (!applied) return;
+  function paint(v, stretch) {
     on = v;
     root.classList.toggle('is-on', v);
     sw.setAttribute('aria-checked', String(v));
     // 이동하는 처음 순간에 늘어나고, 도착하면서 원래 폭으로 튕깁니다
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (stretch && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       root.classList.add('is-stretch');
       clearTimeout(t);
       t = setTimeout(function () { root.classList.remove('is-stretch'); }, 170);
     }
   }
+  async function set(v) {
+    if (pending || on === v || sw.disabled) return;
+    pending = true;
+    try {
+      if (await requestChange(v)) paint(v, true);
+    } finally { pending = false; }
+  }
   // 손잡이를 끌면 따라오고, 놓은 위치가 절반을 넘으면 그쪽으로 붙습니다
   var drag = null;
   sw.addEventListener('pointerdown', function (e) {
-    if (e.button !== 0 || pending) return;
+    if (e.button !== 0 || pending || sw.disabled) return;
     drag = { x: e.clientX, moved: false, start: on ? 72 : 8 };
     sw.setPointerCapture(e.pointerId);
   });
@@ -57,6 +57,7 @@ function connectRainSwitch(requestChange) {
     if (sw._skip) { sw._skip = false; return; }
     set(!on);
   });
+  return function sync(v) { paint(v, false); };
 }
 
 (function () {

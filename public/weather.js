@@ -20,7 +20,10 @@ for (let index = 0, x = -7; x < 1030; index++) {
   buildings += `<path fill="var(--building-${index % 3})" d="M${x} 90V${y + 4}h5v-4h${width - 10}v4h5v${86 - y}z"/>`;
   for (let i = x + 6; i < x + width - 3; i += 8) {
     for (let j = y + 8; j < 88; j += 8) {
-      if ((i + j + index) % 7 < 5) lights += `<rect x="${i}" y="${j}" width="3" height="4"/>`;
+      if ((i + j + index) % 7 < 5) {
+        const phase = (i + j) % 11;
+        lights += `<rect x="${i}" y="${j}" width="3" height="4"${phase < 2 ? ` class="sky-lit-room" style="--offset:${-i % 23}s"` : ""}/>`;
+      }
     }
   }
   x += width + 2 + index % 6;
@@ -44,6 +47,9 @@ layer.innerHTML = `<svg viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/sv
       <path fill="#f4f1e7" d="M4 6h2v2H4z M19 33h1v1h-1z M34 19h2v2h-2z M53 6h2v2h-2z
         M64 30h3v3h-3z M82 14h1v2h-1z M91 44h2v2h-2z"/>
     </pattern>
+    <clipPath id="cafe-pendant-glass">
+      ${lamps.map(x => `<path d="M${x - 3} 41h6v6h5v4h5v2h5v4h3v5h1v8h-4v3h-37v-3h-4v-8h2v-5h3v-4h5v-2h5v-4h5z"/>`).join("")}
+    </clipPath>
     <g id="cafe-sky" shape-rendering="crispEdges">
       <path class="sky-top" d="M0 0h1040v90H0z"/>
       <path class="sky-band" d="M0 28h1040v62H0z"/>
@@ -64,13 +70,17 @@ layer.innerHTML = `<svg viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/sv
       <g class="sky-lights">${lights}</g>
       <g class="sky-fog"><path d="M-65 53h115v3h80v-2h183v4h238v-3h140v3h192v-4h192v12H-65z"/>
         <path d="M-65 73H70v-4h125v3h186v-5h143v3h211v5h197v-5h143v16H-65z"/></g>
-      <rect class="sky-rain" x="-28" y="-32" width="1094" height="154" fill="url(#cafe-rain-pattern)"/>
+      <g class="sky-rain" transform="skewX(-10)">
+        <rect class="sky-rain-near" x="-31" y="-32" width="1107" height="154" fill="url(#cafe-rain-pattern)"/>
+        <rect class="sky-rain-far" x="-4" y="-47" width="1107" height="154" fill="url(#cafe-rain-pattern)"/>
+      </g>
       <rect class="sky-snow" x="-28" y="-48" width="1094" height="170" fill="url(#cafe-snow-pattern)"/>
     </g>
   </defs>
   <g class="hall-sky" mask="url(#hall-panes)">
     <svg x="275" y="43" width="1005" height="90" viewBox="0 0 1040 90" preserveAspectRatio="none"><use href="#cafe-sky"/></svg>
   </g>
+  <image class="hall-sky" href="./pcbang-hall-pastel.png" width="1536" height="1024" clip-path="url(#cafe-pendant-glass)"/>
   ${Object.keys(roomPanes).map(space => `<g class="room-sky ${space}" clip-path="url(#panes-${space})">
     <svg x="0" y="0" width="370" height="555" viewBox="38 0 218 90" preserveAspectRatio="none"><use href="#cafe-sky"/></svg>
   </g>`).join("")}
@@ -122,6 +132,7 @@ function paintSky() {
     : `서울 · ${names[condition]} ${Math.round(current.temperature)}°`;
   layer.dataset.phase = phase;
   layer.dataset.weather = condition;
+  document.body.dataset.cafeLight = phase;
   badge.textContent = label;
   badge.setAttribute("aria-label", `${label} (날씨 출처: Open-Meteo)`);
 }

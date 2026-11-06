@@ -15,12 +15,14 @@
   <link rel="stylesheet" href="./pc.css">
   <link rel="stylesheet" href="./walk.css">
   <link rel="stylesheet" href="./weather.css">
+  <link rel="stylesheet" href="./ambience.css">
   <script src="./lucian-motion.js" defer></script>
   <script src="./app.js" defer></script>
   <script src="./game.js" defer></script>
   <script src="./wallpaper.js" defer></script>
   <script src="./walk.js" type="module"></script>
   <script src="./weather.js" type="module"></script>
+  <script src="./ambience.js" type="module"></script>
   <title>네온 PC방 · 우리 동네 PC방</title>
 </head>
 <body>
@@ -83,6 +85,7 @@
             <img id="lobby-art" src="./pcbang-hall-pastel.png" width="1536" height="1024" alt="회색과 크림색의 대형 픽셀 아트 PC방에 PC 좌석 네 줄과 게임룸, 고양이 점원이 있는 카운터가 보이는 모습">
             <img id="rooms-art" src="./pcbang-rooms-pastel.png" width="1536" height="1024" alt="" hidden>
             <div id="window-view" class="window-view" aria-hidden="true"></div>
+            <div id="cafe-ambience" aria-hidden="true"></div>
             <div id="monitor-layer" aria-hidden="true"></div>
             <div class="cafe-avatars" id="cafe-avatars" aria-hidden="true"></div>
             <button id="seat-marker" class="seat-marker mono" type="button" hidden></button>
@@ -101,6 +104,20 @@
             <input id="cafe-name" type="text" maxlength="12" pattern="[\p{L}\p{N} _·\-]{1,12}" autocomplete="off">
             <button class="walk-button" type="submit">저장</button>
           </form>
+          <!-- Lucian UX/UI Prompt #013 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#013 -->
+          <div class="ux u013 ambience-control" id="ambience-control">
+            <div class="u013-txt">
+              <b class="u013-lab" id="ambience-label">배경 움직임</b>
+              <span class="u013-sub" aria-hidden="true"><span>꺼짐</span><span>켜짐</span></span>
+            </div>
+            <div class="rain-switch-slot">
+              <button class="u013-sw" type="button" role="switch" aria-checked="false" aria-labelledby="ambience-label">
+                <span class="u013-knob" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path class="u013-x" d="M7.5 7.5l9 9M16.5 7.5l-9 9"/><path class="u013-v" d="M7.5 12.5l4.5 4.5 8.5-9"/></svg>
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
         <p class="walk-guests" id="cafe-guests" hidden></p>
         <div class="room-foot">
@@ -200,7 +217,30 @@
       <button class="close" type="button" data-close aria-label="PC 화면 닫기">×</button>
     </div>
     <div class="pc-workspace">
-      <img class="pc-wallpaper pixel" id="pc-wallpaper-image" src="./pc-wallpaper.png" alt="">
+      <img class="pc-wallpaper pixel" id="pc-wallpaper-image" src="./pc-wallpaper.png" alt="" data-default>
+      <svg class="wallpaper-life" viewBox="0 0 1672 941" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="wall-cloud-shadow">
+            <stop stop-color="#424e51" stop-opacity="0"/>
+            <stop offset=".48" stop-color="#424e51" stop-opacity=".2"/>
+            <stop offset="1" stop-color="#424e51" stop-opacity="0"/>
+          </linearGradient>
+          <path id="wall-bird" d="M0 0h6v3h5v3h5V3h5V0h6v3h-4v3h-6v4h-7V6H4V3H0z"/>
+          <clipPath id="wall-field">
+            <path d="M0 419h118l113 11 151 22 180 36 156 37 174 49 116 34 143 21 155 29 150 13 216 3v267H0z"/>
+          </clipPath>
+        </defs>
+        <g clip-path="url(#wall-field)">
+          <path class="wall-shadow" fill="url(#wall-cloud-shadow)" d="M-550 417H-90l570 524H-20z"/>
+        </g>
+        <g class="wall-birds" fill="#657079" shape-rendering="crispEdges">
+          <use href="#wall-bird" x="280" y="341"/><use href="#wall-bird" x="318" y="328"/><use href="#wall-bird" x="354" y="348"/>
+        </g>
+        <g class="wall-motes" fill="#fff1be" shape-rendering="crispEdges">
+          <path d="M259 782h5v5h-5z M487 678h4v4h-4z M759 789h5v5h-5z M1069 745h5v5h-5z"/>
+          <path d="M174 834h4v4h-4z M372 757h5v5h-5z M951 819h4v4h-4z M1341 749h5v5h-5z"/>
+        </g>
+      </svg>
       <h2 class="pc-sr-only" id="pc-title" tabindex="-1">네온 PC 바탕화면</h2>
       <div class="pc-shortcuts" aria-label="바탕화면 바로가기">
         <button class="pc-shortcut" type="button" data-launcher><span class="pc-app-icon sage"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg></span>게임 런처</button>

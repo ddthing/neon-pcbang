@@ -42,13 +42,16 @@
 [data-weather="rain"] .sky-rain { opacity: .58; }
 [data-weather="storm"] .sky-rain { opacity: .84; }
 [data-weather="storm"] .sky-cloud { opacity: .78; }
+.sky-rain-far { opacity: .45; }
 
 @media (prefers-reduced-motion: no-preference) {
   .sky-cloud { animation: cafe-cloud-drift 42s linear infinite alternate; }
   [data-phase="night"]:is([data-weather="clear"], [data-weather="unknown"]) .sky-stars { animation: cafe-starlight 7s ease-in-out infinite alternate; }
   [data-weather="fog"] .sky-fog { animation: cafe-mist 12s ease-in-out infinite alternate; }
   [data-weather="snow"] .sky-snow { animation: cafe-snowfall 8s linear infinite; }
-  :is([data-weather="rain"], [data-weather="storm"]) .sky-rain { animation: cafe-rainfall 1s linear infinite; }
+  :is([data-weather="rain"], [data-weather="storm"]) .sky-rain-near { animation: cafe-rainfall .85s linear infinite; }
+  :is([data-weather="rain"], [data-weather="storm"]) .sky-rain-far { animation: cafe-rainfall 1.8s linear infinite; }
+  :is([data-phase="dusk"], [data-phase="night"]) .sky-lit-room { animation: cafe-city-lights 23s var(--offset) steps(1, end) infinite; }
   [data-weather="storm"] .sky-cloud { animation-duration: 12s; }
   .sky-top, .sky-band, .sky-horizon, .sky-ridge, .sky-lights { transition: fill 1.2s ease; }
 }
@@ -57,3 +60,4 @@
 @keyframes cafe-mist { to { transform: translateX(55px); opacity: .35; } }
 @keyframes cafe-snowfall { to { transform: translateY(48px); } }
 @keyframes cafe-rainfall { to { transform: translateY(32px); } }
+@keyframes cafe-city-lights { 29%, 75% { opacity: .2; } 49%, 94% { opacity: .85; } }

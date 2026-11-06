@@ -31,6 +31,7 @@
     const isPixel = !setting.original || setting.usePixel;
     const blob = isPixel ? setting.pixelated : setting.original;
     image.classList.toggle("pixel", isPixel);
+    if (image === desktopImage) image.toggleAttribute("data-default", !blob);
     const previous = urls.get(image);
     if (previous?.blob === blob) return;
     const url = blob ? URL.createObjectURL(blob) : defaultImage;

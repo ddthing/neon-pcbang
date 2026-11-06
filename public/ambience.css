@@ -1,0 +1,112 @@
+#cafe-ambience, #cafe-ambience .plant-tiles, .cafe-lighting {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.cafe-lighting { width: 100%; height: 100%; }
+.plant-tiles canvas {
+  position: absolute;
+  image-rendering: pixelated;
+  mask-image: linear-gradient(90deg, transparent, black 8px, black calc(100% - 8px), transparent);
+}
+.hall-ambience, .room-ambience { display: none; }
+.scene:is([data-space="lobby"], [data-space="hall"]) .hall-ambience,
+.scene[data-space="solo"] [data-room="solo"],
+.scene[data-space="duo"] [data-room="duo"],
+.scene[data-space="team"] [data-room="team"],
+.scene[data-space="squad"] [data-room="squad"] { display: block; }
+.cafe-night-veil { fill: #242438; opacity: 0; }
+body[data-cafe-light="dawn"] .cafe-night-veil { opacity: .06; }
+body[data-cafe-light="dusk"] .cafe-night-veil { opacity: .13; }
+body[data-cafe-light="night"] .cafe-night-veil { opacity: .22; }
+.ambient-lamp { fill: url(#cafe-amber); opacity: .28; }
+.counter-neon { opacity: .37; }
+body[data-cafe-light="night"] :is(.ambient-lamp, .counter-neon) { opacity: .72; }
+.entry-reflections { opacity: .19; }
+.counter-steam use { opacity: 0; }
+.ambience-control.u013 { margin-left: auto; }
+.ambience-control .u013-txt b { font-size: 11px; }
+.ambience-control .rain-switch-slot { width: 59px; height: 32px; }
+.ambience-control .u013-sw { transform: scale(.42); }
+.ambience-control .u013-sw:disabled { opacity: .65; cursor: default; }
+
+.wallpaper-life {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+.wall-shadow, .wall-birds, .wall-motes { opacity: 0; }
+.pc-screen { overflow: hidden; }
+.pc-screen.is-on::after {
+  position: absolute;
+  content: "";
+  inset: 0;
+  background: linear-gradient(180deg, transparent 15%, #e2f1d4 44%, transparent 50%);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  body[data-ambience="on"] .cafe-night-veil { transition: opacity 4s ease; }
+  body[data-ambience="on"] .ambient-lamp { animation: lamp-breathe 8s var(--offset) ease-in-out infinite alternate; }
+  body[data-ambience="on"] .counter-neon { animation: lamp-breathe 6.4s ease-in-out infinite alternate; }
+  body[data-ambience="on"] .kiosk-glass-scan { animation: kiosk-glass-scan 8s ease-in-out infinite; }
+  body[data-ambience="on"] .counter-steam use { animation: cafe-steam 6s var(--offset) steps(14, end) infinite; }
+  body[data-ambience="on"] .entry-reflections { animation: entry-glimmer 7.7s ease-in-out infinite alternate; }
+  body[data-ambience="on"] .pc-screen.is-on::after { animation: monitor-glimmer 9s var(--screen-offset) steps(13, end) infinite; }
+  .pc-screen.is-on { animation: monitor-start .28s steps(3, end); }
+
+  .scene:not([data-ambience-active]) :is(.window-view, #cafe-ambience) *,
+  .scene:not([data-ambience-active]) .pc-screen.is-on::after {
+    animation-play-state: paused;
+  }
+  body[data-ambience="off"] .window-view * { animation: none; transition: none; }
+
+  body[data-ambience="on"] .pc-desktop[open] .pc-wallpaper[data-default] + .wallpaper-life { display: block; }
+  .wall-shadow { animation: wall-shadow 36s -11s linear infinite; }
+  .wall-birds { animation: wall-birds 33s -13s steps(50, end) infinite; }
+  .wall-birds use { transform-box: fill-box; transform-origin: center; animation: bird-wings .85s steps(2, end) infinite alternate; }
+  .wall-motes path { animation: wall-motes 12s -3s steps(12, end) infinite; }
+  .wall-motes path + path { animation-delay: -7s; }
+}
+
+@keyframes lamp-breathe { to { opacity: .87; } }
+@keyframes kiosk-glass-scan {
+  0%, 42%, 100% { transform: translateY(0); }
+  62%, 99.9% { transform: translateY(90px); }
+}
+@keyframes cafe-steam {
+  0%, 100% { transform: none; opacity: 0; }
+  15% { opacity: .47; }
+  79% { transform: translate(10px, -53px); opacity: 0; }
+  99% { opacity: 0; }
+}
+@keyframes entry-glimmer { to { opacity: .56; transform: translateY(3px); } }
+@keyframes monitor-glimmer {
+  0%, 100% { opacity: 0; transform: translateY(-100%); }
+  8% { opacity: .13; }
+  28% { opacity: 0; transform: translateY(100%); }
+}
+@keyframes monitor-start {
+  0% { filter: brightness(.36); clip-path: inset(46% 0); }
+  100% { filter: none; clip-path: inset(0); }
+}
+@keyframes wall-shadow {
+  0%, 100% { opacity: 0; transform: none; }
+  18%, 71% { opacity: .85; }
+  96% { opacity: 0; transform: translateX(1820px); }
+}
+@keyframes wall-birds {
+  0%, 24%, 100% { transform: translate(-500px, 8px); opacity: 0; }
+  29%, 77% { opacity: .85; }
+  92% { transform: translate(1500px, -125px); opacity: 0; }
+}
+@keyframes bird-wings { to { transform: scaleY(.46); } }
+@keyframes wall-motes {
+  0%, 100% { opacity: 0; transform: none; }
+  32%, 57% { opacity: .54; }
+  93% { opacity: 0; transform: translate(38px, -67px); }
+}
