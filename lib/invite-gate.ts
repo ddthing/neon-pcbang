@@ -7,6 +7,8 @@ const userLife = 365 * 86400_000;
 const userSessionExpiry = 253402300799000;
 const adminLife = 12 * 3600_000;
 const enc = new TextEncoder();
+const entryStylesheet = "/invite-entry.css";
+const entryBackdrop = "/corner-hall-timber.webp";
 
 async function digest(value: string) {
   const bytes = await crypto.subtle.digest("SHA-256", enc.encode(value));
@@ -27,7 +29,10 @@ function secureRandomHex() {
     (value) => value.toString(16).padStart(2, "0")).join("");
 }
 
-async function pageWithForm(db: DB, title: string, html: string, status = 200) {
+async function pageWithForm(
+  db: DB, title: string, html: string, status = 200,
+  render: (title: string, body: string, status: number) => Response = page,
+) {
   const now = Date.now();
   const token = secureRandomHex();
   // Keep an unguessable, single-use token on the server, not in a browser cookie.
@@ -37,14 +42,19 @@ async function pageWithForm(db: DB, title: string, html: string, status = 200) {
     .bind(await digest(token), now + 30 * 60_000).run();
   const safeHtml = html.replace(/(<form\b[^>]*>)/gi,
     '$1<input type="hidden" name="csrf" value="' + token + '">');
-  return page(title, safeHtml, status);
+  return render(title, safeHtml, status);
+}
+
+function htmlResponse(document: string, status: number, assets = "") {
+  const headers = new Headers({ "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer",
+    "Content-Security-Policy": "default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'; " +
+      (assets || "style-src 'unsafe-inline'") });
+  return new Response(document, { status, headers });
 }
 
 function page(title: string, body: string, status = 200) {
-  const headers = new Headers({ "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store",
-    "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer",
-    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" });
-  return new Response(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · 길모퉁이PC방</title><style>
+  return htmlResponse(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · 길모퉁이PC방</title><style>
   :root{font-family:system-ui,-apple-system,sans-serif;color:#4b4150;background:#f4efed;color-scheme:light}
   *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}
   main{width:min(100%,600px);padding:36px;background:#fffaf6;border:2px solid #e5d9d7;border-radius:22px;box-shadow:0 20px 60px #44372b1a}
@@ -56,7 +66,7 @@ function page(title: string, body: string, status = 200) {
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex-shrink:0}
   table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #e5d9d7;padding:10px 6px;text-align:left;overflow-wrap:anywhere}th{color:#5a5360}
   .muted{color:#7a7380}.code{font-family:ui-monospace,monospace;letter-spacing:1px;overflow-wrap:anywhere;background:#f0eafa;padding:12px;border-radius:8px}
-  </style></head><body><main>${body}</main></body></html>`, { status, headers });
+  </style></head><body><main>${body}</main></body></html>`, status);
 }
 function go(path: string, cookie?: string) {
   const headers = new Headers({ Location: path, "Cache-Control": "no-store" });
@@ -97,12 +107,52 @@ async function form(request: Request, db: DB): Promise<FormResult> {
   params.delete("csrf");
   return { params };
 }
-async function invitePage(db: DB, message = "") {
-  return pageWithForm(db, "초대코드 입장", `<p class="hint">GILMOTUNGI PC BANG · PRIVATE ENTRY</p><h1>길모퉁이PC방</h1>
-  <p>초대받은 손님만 입장할 수 있어요. 전달받은 초대코드를 입력해주세요.</p>
-  ${message ? `<p class="error">${esc(message)}</p>` : ""}
-  <form method="post" action="/auth/redeem"><label for="code">초대코드</label><input id="code" name="code" maxlength="64" autocomplete="one-time-code" required placeholder="XXXX-XXXX-XXXX-XXXX"><p><button type="submit">PC방 입장하기</button></p></form>
-  <p class="hint">초대코드가 없다면 관리자에게 문의해주세요.</p>`);
+function entryDocument(title: string, body: string, status: number) {
+  return htmlResponse(`<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#302b25">
+  <title>${esc(title)} · 길모퉁이PC방</title>
+  <link rel="stylesheet" href="${entryStylesheet}">
+</head>
+<body>
+  <img class="entry-art" src="${entryBackdrop}" width="1536" height="1024" fetchpriority="high" alt="">
+  <header class="entry-bar">
+    <span class="entry-brand">길모퉁이PC방 <span class="entry-location">PC방 입구</span></span>
+    <span class="entry-open"><i aria-hidden="true"></i> 24H OPEN</span>
+  </header>
+  <main class="entry-layout">${body}</main>
+  <footer class="entry-footer"><span>GILMOTUNGI PC BANG</span><span>2F · BETA</span></footer>
+</body>
+</html>`, status, "style-src 'self'; img-src 'self'; font-src https://cdn.jsdelivr.net");
+}
+
+async function invitePage(db: DB, message = "", status = 200) {
+  return pageWithForm(db, "초대코드 입장", `
+    <section class="entry-sign" aria-labelledby="entry-title">
+      <p class="entry-eyebrow">02F <span aria-hidden="true">/</span> BETA ENTRANCE</p>
+      <h1 id="entry-title">길모퉁이PC방</h1>
+      <p class="entry-welcome">초대받은 손님을 기다리고 있어요.</p>
+    </section>
+    <section class="entry-kiosk" aria-labelledby="entry-kiosk-title">
+      <div class="entry-bezel"><span>길모퉁이PC방</span><span>▦ 키오스크</span></div>
+      <div class="entry-screen">
+        <p class="entry-eyebrow">01 / ADMISSION</p>
+        <h2 id="entry-kiosk-title">초대코드 입장</h2>
+        <p class="entry-description" id="entry-help">받은 초대코드를 입력하면 매장으로 들어갈 수 있어요.</p>
+        <form method="post" action="/auth/redeem">
+          <label for="code">초대코드</label>
+          <input id="code" name="code" maxlength="64" autocomplete="one-time-code" autocapitalize="characters"
+            spellcheck="false" required placeholder="XXXXXX-XXXXXX-XXXXXX-XXXXXX"
+            aria-describedby="entry-help${message ? " entry-error" : ""}"${message ? ' aria-invalid="true"' : ""}>
+          ${message ? `<p class="entry-error" id="entry-error" role="alert">${esc(message)}</p>` : ""}
+          <button type="submit">PC방 입장하기 <span aria-hidden="true">→</span></button>
+        </form>
+      </div>
+      <div class="entry-bezel entry-bezel-bottom" aria-hidden="true"><span></span><i></i><span></span></div>
+    </section>`, status, entryDocument);
 }
 async function adminLogin(db: DB, message = "") {
   return pageWithForm(db, "관리자 로그인", `<p class="hint">PRIVATE ACCESS · ADMIN</p><h1>관리자 로그인</h1>
@@ -194,6 +244,9 @@ async function blockedLogin(db: DB, request: Request) {
 export async function gate(request: Request, env: GateEnv): Promise<Response | null> {
   const url = new URL(request.url);
   const path = url.pathname;
+  // Only the invitation screen's decorative assets are needed before admission.
+  if ((request.method === "GET" || request.method === "HEAD") &&
+      (path === entryStylesheet || path === entryBackdrop)) return null;
   const isAdminRoute = path === "/admin" || path === "/admin/login" || path.startsWith("/auth/admin-") || path.startsWith("/auth/invite-");
   const isAuthRoute = path === "/invite" || path.startsWith("/auth/") || isAdminRoute;
   const db = env.DB;
@@ -210,13 +263,16 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
     if (mode === "public" && !isAuthRoute) return null;
     const session = await currentSession(db, request);
     const admin = session?.role === "admin";
-    if (path === "/invite") return mode === "public" || session ? go("/") : invitePage(db, url.searchParams.get("error") ? "초대코드를 다시 확인해주세요." : "");
+    if (path === "/invite") return mode === "public" || session ? go("/") : invitePage(db, url.searchParams.get("error") ? "초대코드를 다시 확인해 주세요." : "");
     if (path === "/admin/login") return admin ? go("/admin") : adminLogin(db, url.searchParams.get("error") ? "로그인에 실패했습니다." : "");
     if (path === "/admin") return admin ? adminPanel(db) : go("/admin/login");
     if (path.startsWith("/auth/")) {
       if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
       const parsed = await form(request, db);
       if (!parsed.params) {
+        if (path === "/auth/redeem") {
+          return invitePage(db, "입장 요청을 확인하지 못했어요. 초대코드를 다시 입력해 주세요.", 403);
+        }
         // Codes indicate which browser request validation failed without
         // printing passwords, tokens, cookies, or other sensitive values.
         const reason = parsed.error || "UNKNOWN";
