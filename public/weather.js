@@ -1,17 +1,6 @@
 const layer = document.getElementById("window-view");
 const badge = document.getElementById("window-weather");
 
-// Artwork coordinates match the hall image and each enlarged room tile.
-const hallPanes = [[277, 35], [319, 70], [397, 62], [469, 73], [550, 64], [622, 63],
-  [693, 60], [761, 70], [839, 61], [908, 50], [966, 67], [1041, 61], [1109, 59], [1176, 45], [1228, 34]];
-const lamps = [355, 548, 789, 965, 1157];
-const roomPanes = {
-  solo: "M0 7L88 25V245L75 238L68 221L51 209L35 213L27 238L13 237L0 244Z M113 32L187 47V237L113 283Z",
-  duo: "M0 6L65 24V203L53 209L41 202L26 210L12 215L0 231Z M82 28L173 47V202L100 250L96 235L82 224Z",
-  team: "M0 23L55 45V220L18 242L0 246Z M73 48L108 63V188L73 208Z",
-  squad: "M0 17L67 42V228L53 213L38 204L27 211L27 235L0 247Z M84 46L115 58V200L84 220Z",
-};
-
 let buildings = "";
 let lights = "";
 for (let index = 0, x = -7; x < 1030; index++) {
@@ -31,15 +20,6 @@ for (let index = 0, x = -7; x < 1030; index++) {
 
 layer.innerHTML = `<svg viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <mask id="hall-panes" x="0" y="0" width="1536" height="1024" maskUnits="userSpaceOnUse">
-      ${hallPanes.map(([x, w]) => `<rect fill="white" x="${x}" y="43" width="${w}" height="87"/>`).join("")}
-      ${lamps.map(x => `<path d="M${x - 4} 41h8v7h5v4h7l6 5v12l-7 5h-30l-7-5V57l6-5h7v-4h5z"/>`).join("")}
-      <path d="M277 42h17v12h-7v22h-6v24h-7v30h-17z M1251 42h26v88h-24v-24h8V83h-7z
-        M466 128v-9h9v-9h8v4h6v-7h8v9h9v8h7v9z M774 131v-11h7v-8h10v4h8v-8h8v11h10v12z
-        M1024 131v-11h8v-8h10v4h6v-7h8v10h8v13z M1251 131v-13h9v-10h8v23z"/>
-    </mask>
-    ${Object.entries(roomPanes).map(([space, path]) =>
-      `<clipPath id="panes-${space}"><path d="${path}" transform="scale(2)"/></clipPath>`).join("")}
     <pattern id="cafe-rain-pattern" width="67" height="32" patternUnits="userSpaceOnUse">
       <path fill="#e3e9ea" d="M8 3h1v5H8z M22 22h1v8h-1z M40 12h1v6h-1z M55 3h1v9h-1z M64 24h1v6h-1z"/>
     </pattern>
@@ -47,9 +27,7 @@ layer.innerHTML = `<svg viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/sv
       <path fill="#f4f1e7" d="M4 6h2v2H4z M19 33h1v1h-1z M34 19h2v2h-2z M53 6h2v2h-2z
         M64 30h3v3h-3z M82 14h1v2h-1z M91 44h2v2h-2z"/>
     </pattern>
-    <clipPath id="cafe-pendant-glass">
-      ${lamps.map(x => `<path d="M${x - 3} 41h6v6h5v4h5v2h5v4h3v5h1v8h-4v3h-37v-3h-4v-8h2v-5h3v-4h5v-2h5v-4h5z"/>`).join("")}
-    </clipPath>
+    <path id="city-bird" d="M0 2h3v2h3V2h3V0h2v4H8v2H4V4H0z"/>
     <g id="cafe-sky" shape-rendering="crispEdges">
       <path class="sky-top" d="M0 0h1040v90H0z"/>
       <path class="sky-band" d="M0 28h1040v62H0z"/>
@@ -68,6 +46,13 @@ layer.innerHTML = `<svg viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/sv
       <path class="sky-tower" d="M815 10h2v10h2v3h2v5h-3v14h4v3h-12v-3h4V28h-3v-5h2v-3h2z"/>
       ${buildings}
       <g class="sky-lights">${lights}</g>
+      <g class="sky-flock">
+        <use href="#city-bird" x="45" y="24"/><use href="#city-bird" x="66" y="17"/><use href="#city-bird" x="77" y="29"/>
+      </g>
+      <g class="city-traffic">
+        <path class="city-car car-east" fill="#edd6ac" d="M27 87h8v1h-8z M96 88h6v1h-6z M191 87h6v1h-6z M322 88h9v1h-9z M524 87h7v1h-7z"/>
+        <path class="city-car car-west" fill="#dc9c8b" d="M192 88h6v1h-6z M455 89h7v1h-7z M601 89h8v1h-8z M808 88h6v1h-6z M993 88h10v1h-10z"/>
+      </g>
       <g class="sky-fog"><path d="M-65 53h115v3h80v-2h183v4h238v-3h140v3h192v-4h192v12H-65z"/>
         <path d="M-65 73H70v-4h125v3h186v-5h143v3h211v5h197v-5h143v16H-65z"/></g>
       <g class="sky-rain" transform="skewX(-10)">
@@ -75,15 +60,12 @@ layer.innerHTML = `<svg viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/sv
         <rect class="sky-rain-far" x="-4" y="-47" width="1107" height="154" fill="url(#cafe-rain-pattern)"/>
       </g>
       <rect class="sky-snow" x="-28" y="-48" width="1094" height="170" fill="url(#cafe-snow-pattern)"/>
+      <path class="sky-storm-flash" d="M0 0h1040v90H0z" fill="#e2e4ef"/>
     </g>
   </defs>
-  <g class="hall-sky" mask="url(#hall-panes)">
-    <svg x="275" y="43" width="1005" height="90" viewBox="0 0 1040 90" preserveAspectRatio="none"><use href="#cafe-sky"/></svg>
-  </g>
-  <image class="hall-sky" href="./corner-hall.webp" width="1536" height="1024" clip-path="url(#cafe-pendant-glass)"/>
-  ${Object.keys(roomPanes).map(space => `<g class="room-sky ${space}" clip-path="url(#panes-${space})">
-    <svg x="0" y="-18" width="380" height="580" viewBox="38 0 218 90" transform="skewY(14)" preserveAspectRatio="none"><use href="#cafe-sky"/></svg>
-  </g>`).join("")}
+  <svg class="hall-sky" x="244" y="40" width="1050" height="93" viewBox="0 0 1040 90" preserveAspectRatio="none"><use href="#cafe-sky"/></svg>
+  <svg class="room-sky" x="0" y="0" width="398" height="699" viewBox="26 0 302 90" transform="skewY(-8)" preserveAspectRatio="none"><use href="#cafe-sky"/></svg>
+  <svg class="room-transom" x="420" y="0" width="1010" height="55" viewBox="10 0 1010 36" preserveAspectRatio="none"><use href="#cafe-sky"/></svg>
 </svg>`;
 
 const seoulHour = new Intl.DateTimeFormat("en-GB", {

@@ -1,14 +1,9 @@
-#cafe-ambience, #cafe-ambience .plant-tiles, .cafe-lighting {
+#cafe-ambience, .cafe-lighting {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 .cafe-lighting { width: 100%; height: 100%; }
-.plant-tiles canvas {
-  position: absolute;
-  image-rendering: pixelated;
-  mask-image: linear-gradient(90deg, transparent, black 8px, black calc(100% - 8px), transparent);
-}
 .hall-ambience, .room-ambience { display: none; }
 .scene:is([data-space="lobby"], [data-space="hall"]) .hall-ambience,
 .scene[data-space="solo"] [data-room="solo"],
@@ -23,7 +18,12 @@ body[data-cafe-light="night"] .cafe-night-veil { opacity: .22; }
 .counter-neon { opacity: .37; }
 body[data-cafe-light="night"] :is(.ambient-lamp, .counter-neon) { opacity: .72; }
 .entry-reflections { opacity: .19; }
-.counter-steam use { opacity: 0; }
+.counter-steam use, .ambient-floor-light, .ambient-mote, .ambient-leaf-tip,
+.counter-cat-eyes, .counter-tail-shine { opacity: 0; }
+.ambient-mote { fill: #f5e4bd; }
+.ambient-leaf-tip { fill: #f4e9ab; }
+.room-strip-light { fill: #dcf2d3; opacity: .12; }
+.ambient-floor-light { mix-blend-mode: screen; }
 
 .wallpaper-life {
   display: none;
@@ -47,12 +47,19 @@ body[data-cafe-light="night"] :is(.ambient-lamp, .counter-neon) { opacity: .72; 
 @media (prefers-reduced-motion: no-preference) {
   .cafe-night-veil { transition: opacity 4s ease; }
   .ambient-lamp { animation: lamp-breathe 8s var(--offset) ease-in-out infinite alternate; }
-  .counter-neon { animation: lamp-breathe 6.4s ease-in-out infinite alternate; }
+  .counter-neon { animation: counter-pulse 8.8s steps(1,end) infinite; }
   .kiosk-glass-scan { animation: kiosk-glass-scan 8s ease-in-out infinite; }
   .counter-steam use { animation: cafe-steam 6s var(--offset) steps(14, end) infinite; }
   .entry-reflections { animation: entry-glimmer 7.7s ease-in-out infinite alternate; }
+  .ambient-mote { animation: room-air 13s var(--offset) steps(38,end) infinite; }
+  .ambient-leaf-tip { animation: leaf-light 5.2s var(--offset) steps(13,end) infinite alternate; }
+  .counter-cat-eyes { animation: counter-peek 17.3s -4s steps(1,end) infinite; }
+  .counter-tail-shine { animation: tail-gleam 7.8s steps(12,end) infinite; }
+  .room-strip-light { animation: strip-breathe 9.3s -2s ease-in-out infinite alternate; }
+  body:is([data-cafe-light="dawn"],[data-cafe-light="day"],[data-cafe-light="dusk"]) .ambient-floor-light {
+    animation: room-floor-light 24s ease-in-out infinite alternate;
+  }
   .pc-screen.is-on::after { animation: monitor-glimmer 9s var(--screen-offset) steps(13, end) infinite; }
-  .pc-screen.is-on { animation: monitor-start .28s steps(3, end); }
 
   .scene:not([data-ambience-active]) :is(.window-view, #cafe-ambience) *,
   .scene:not([data-ambience-active]) .pc-screen.is-on::after {
@@ -67,6 +74,33 @@ body[data-cafe-light="night"] :is(.ambient-lamp, .counter-neon) { opacity: .72; 
 }
 
 @keyframes lamp-breathe { to { opacity: .87; } }
+@keyframes counter-pulse {
+  0%,100% { opacity: .59; }
+  68% { opacity: .37; }
+  72% { opacity: .61; }
+  75% { opacity: .45; }
+  80% { opacity: .63; }
+}
+@keyframes room-air {
+  0%,100% { opacity: 0; }
+  25%,66% { opacity: .58; }
+  92%,100% { transform: translate(28px,-48px); opacity: 0; }
+}
+@keyframes leaf-light {
+  15% { opacity: .09; }
+  75% { opacity: .4; translate: 1px -1px; }
+}
+@keyframes counter-peek {
+  0%,100% { opacity: 0; }
+  29%,39% { opacity: .95; }
+  38%,48% { opacity: 0; }
+}
+@keyframes tail-gleam { 15%,65% { opacity: .48; } 80%,100% { opacity: 0; } }
+@keyframes strip-breathe { to { opacity: .48; } }
+@keyframes room-floor-light {
+  from { transform: translateX(-4px); opacity: .08; }
+  to { transform: translateX(9px); opacity: .29; }
+}
 @keyframes kiosk-glass-scan {
   0%, 42%, 100% { transform: translateY(0); }
   62%, 99.9% { transform: translateY(90px); }
@@ -82,10 +116,6 @@ body[data-cafe-light="night"] :is(.ambient-lamp, .counter-neon) { opacity: .72; 
   0%, 100% { opacity: 0; transform: translateY(-100%); }
   8% { opacity: .13; }
   28% { opacity: 0; transform: translateY(100%); }
-}
-@keyframes monitor-start {
-  0% { filter: brightness(.36); clip-path: inset(46% 0); }
-  100% { filter: none; clip-path: inset(0); }
 }
 @keyframes wall-shadow {
   0%, 100% { opacity: 0; transform: none; }

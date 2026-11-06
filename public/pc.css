@@ -1,11 +1,10 @@
 #monitor-layer { position: absolute; inset: 0; pointer-events: none; }
 .pc-screen {
   position: absolute; left: var(--x); top: var(--y); width: var(--screen-width); height: var(--screen-height);
-  transform: translate(-50%, -50%); background: #191a1b;
+  clip-path: var(--screen-outline); background: linear-gradient(155deg,#25292c,#151719 62%);
 }
 .pc-screen.is-on {
-  background: linear-gradient(145deg, #769383 0 36%, #a8c4b2 36% 40%, #8eaf9b 40% 100%);
-  box-shadow: 0 0 clamp(4px, 1.1vw, 12px) #bed9c3a8;
+  background: linear-gradient(145deg, #617f7a 0 36%, #b0c9b6 36% 40%, #87a99b 40% 100%);
 }
 .scene .seat-marker { margin-top: -16px; }
 #stage-seated:not([hidden]) + #open-floor {
@@ -172,7 +171,7 @@
   .pc-app:hover .pc-app-icon, .pc-app:focus-visible .pc-app-icon { transform: translateY(-2px); }
 }
 @keyframes monitor-power {
-  from { filter: brightness(.25); box-shadow: none; }
+  from { filter: brightness(.25); }
   to { filter: brightness(1); }
 }
 @keyframes card-flip { from { transform: scaleX(.4); } to { transform: scaleX(1); } }

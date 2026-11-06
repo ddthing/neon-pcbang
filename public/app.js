@@ -41,13 +41,6 @@ const hallBanks = [
   { letter: "D", x: [1133, 1196] }
 ];
 const hallRows = [196, 244, 291, 338, 386, 434, 481, 529, 577, 626, 675];
-// Screen centers in the hall painting; the room interiors use their own atlas coordinates.
-const hallRoomScreens = {
-  solo: [[149, 244]],
-  duo: [[108, 434], [168, 434]],
-  team: [148, 204, 260, 317, 373].map((y) => [1447, y]),
-  squad: [562, 650, 736].flatMap((y) => [[1367, y], [1448, y]]),
-};
 const bankSize = hallRows.length * 2;
 const spaces = {
   hall: {
@@ -112,25 +105,25 @@ function prepareRoomArt() {
 function renderMonitorPower(spaceId) {
   if (monitorLayer.dataset.space !== spaceId) {
     monitorLayer.dataset.space = spaceId;
-    const dimensions = { hall: [1.92, 1.83], solo: [21.9, 17.1], duo: [18.3, 14.7], team: [10.6, 9.7], squad: [13.5, 9.9] };
-    const positions = spaces[spaceId].positions.map(([x, y], index) => {
-      const size = spaceId === "squad" && index >= 3 ? [15.6, 12.4] : dimensions[spaceId];
-      return [spaceId + ":" + index, x, y, ...size];
-    });
-    if (spaceId === "hall") {
-      for (const [id, screens] of Object.entries(hallRoomScreens)) {
-        positions.push(...screens.map(([x, y], index) => [id + ":" + index, x / 15.36, y / 10.24, 2.1, 1.72]));
-      }
-    }
-    monitorLayer.replaceChildren(...positions.map(([key, x, y, width, height], index) => {
+    const groups = spaceId === "hall"
+      ? ["hall", "hall-solo", "hall-duo", "hall-team", "hall-squad"] : [spaceId];
+    const scale = spaceId === "hall" ? 1 : 2;
+    const panels = groups.flatMap((group) => cafeScreenShapes[group].map((points, index) =>
+      [group.replace("hall-", "") + ":" + index, points]));
+    monitorLayer.replaceChildren(...panels.map(([key, points], index) => {
+      const xs = points.map(([x]) => x), ys = points.map(([, y]) => y);
+      const x = Math.min(...xs), y = Math.min(...ys);
+      const width = Math.max(...xs) - x, height = Math.max(...ys) - y;
       const screen = document.createElement("span");
       screen.className = "pc-screen";
       screen.dataset.seat = key;
-      screen.style.setProperty("--x", x + "%");
-      screen.style.setProperty("--y", y + "%");
-      screen.style.setProperty("--screen-width", width + "%");
-      screen.style.setProperty("--screen-height", height + "%");
+      screen.style.setProperty("--x", x * scale / 15.36 + "%");
+      screen.style.setProperty("--y", y * scale / 10.24 + "%");
+      screen.style.setProperty("--screen-width", width * scale / 15.36 + "%");
+      screen.style.setProperty("--screen-height", height * scale / 10.24 + "%");
       screen.style.setProperty("--screen-offset", -(index % 13) * 0.71 + "s");
+      screen.style.setProperty("--screen-outline", "polygon(" + points.map(([px, py]) =>
+        ((px - x) / width * 100).toFixed(2) + "% " + ((py - y) / height * 100).toFixed(2) + "%").join(",") + ")");
       return screen;
     }));
   }
