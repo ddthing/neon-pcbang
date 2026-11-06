@@ -164,7 +164,6 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
         const code = (input.get("code") || "").trim().toUpperCase();
         if (!/^[0-9A-F]{6}(?:-[0-9A-F]{6}){3}$/.test(code)) return go("/invite?error=1");
         const now = Date.now();
-        const id = crypto.randomUUID();
         const hash = await digest(code);
         const updated = await db.prepare(`UPDATE invite_codes SET uses = uses + 1
           WHERE code_hash = ? AND revoked_at IS NULL AND expires_at > ? AND uses < max_uses`)
