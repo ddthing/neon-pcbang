@@ -21,13 +21,24 @@ GitHub에 소스를 올리고 **Actions**에서 Cloudflare Workers로 배포합�
    | --- | --- | --- |
    | Secrets | `CLOUDFLARE_API_TOKEN` | 해당 계정의 **Workers Scripts: Edit**, **D1: Edit** 권한이 있는 API 토큰 |
    | Secrets | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare 계정 ID |
+   | Secrets | `NEON_ADMIN_PASSWORD` | 관리자 로그인 비밀번호 (16자 이상, 충분히 복잡하게 설정) |
    | Variables | `NEON_WORKER_NAME` | Worker 이름 (예: `neon-pcbang`) |
    | Variables | `NEON_D1_NAME` | 만든 D1 데이터베이스 이름 |
    | Variables | `NEON_D1_ID` | 만든 D1 데이터베이스 ID |
 
 4. 기본 브랜치에서 **Actions → Deploy Gilmotungi PC Bang → Run workflow**를 누르세요. 워크플로가 테이블을 준비하고 배포합니다. 실행 로그 마지막에 새 주소가 표시됩니다.
 
-이 절차로 만든 `workers.dev` 주소는 공개됩니다. 기존 Sites 주소나 그곳의 좌석 데이터는 연결되지 않습니다.
+이 절차로 만든 `workers.dev` 주소는 공개되지만, **초대코드를 인증한 사용자만 앱에 입장**할 수 있습니다. 기존 Sites 주소나 그곳의 좌석 데이터는 연결되지 않습니다.
+
+## 초대코드 발급·관리
+
+- 배포 후 `/admin/login`으로 접속하여 GitHub Actions Secret `NEON_ADMIN_PASSWORD`에 설정한 비밀번호로 로그인하세요.
+- `/admin`에서 초대코드를 발급할 수 있습니다. 메모·사용 가능 횟수·만료 기간을 지정하고 생성한 코드를 사용자에게 전달하세요. 생성된 코드 원문은 **한 번만 표시**됩니다.
+- 사용자는 `/invite`에서 코드를 입력합니다. 인증 후 30일 동안 같은 브라우저에서 입장할 수 있습니다. 브라우저 쿠키를 지우거나 다른 기기에서 접속하면 다시 초대코드가 필요합니다. (기본 1회용 코드는 재사용 불가)
+- 관리자는 코드를 회수할 수 있습니다. 회수하면 해당 코드로 인증한 기존 세션도 차단됩니다. 관리자 세션은 12시간 유지됩니다.
+- 초대코드는 D1에 SHA-256 해시로 저장됩니다. 암호나 세션 토큰은 소스 또는 GitHub 저장소에 추가하지 마세요.
+- 초대 기능은 접근 제어를 위한 것으로 별도의 개인 계정 복구 기능은 없습니다. 한 사용자가 여러 기기에서 이용해야 한다면 코드 사용 횟수를 늘리거나 별도 코드를 발급하세요.
+- 배포 스크립트는 기존 D1에 `0002_invitation_access` 마이그레이션을 자동 적용합니다. 관리자 비밀번호가 빠지거나 D1이 연결되지 않으면 앱 접근을 기본적으로 차단합니다.
 
 ## 로컬에서 실행하기
 
