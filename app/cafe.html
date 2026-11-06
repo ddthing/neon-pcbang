@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="./lucian-motion.css">
   <link rel="stylesheet" href="./motion.css">
   <link rel="stylesheet" href="./pc.css">
+  <link rel="stylesheet" href="./merge.css">
   <link rel="stylesheet" href="./walk.css">
   <link rel="stylesheet" href="./weather.css">
   <link rel="stylesheet" href="./ambience.css">
@@ -24,12 +25,10 @@
   <script src="./visit.js" defer></script>
   <script src="./cafe-screen-shapes.js" defer></script>
   <script src="./app.js" defer></script>
-  <script src="./game.js" defer></script>
   <script src="./wallpaper.js" defer></script>
   <script src="./walk.js" type="module"></script>
   <script src="./weather.js" type="module"></script>
   <script src="./ambience.js" type="module"></script>
-  <script src="./sudoku.js" type="module"></script>
   <script src="./corner-shop.js" type="module"></script>
   <title>길모퉁이PC방 · 우리 동네 PC방</title>
 </head>
@@ -285,7 +284,7 @@
         <div class="pc-panel-heading"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg><h3 id="pc-launcher-title" tabindex="-1">게임 런처</h3><span class="mono">04 GAMES</span></div>
         <div class="pc-apps">
           <button class="pc-app" type="button" data-open="arcade"><span class="pc-app-icon lilac" aria-hidden="true">▦</span><span><strong>모퉁이 벽돌깨기</strong><small>공을 튕겨 벽돌을 깨요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
-          <button class="pc-app" type="button" data-open="pairs"><span class="pc-app-icon sage" aria-hidden="true">◆</span><span><strong>픽셀 짝맞추기</strong><small>같은 그림 8쌍을 찾아요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="merge"><span class="pc-app-icon sage mono" aria-hidden="true">2²</span><span><strong>픽셀 머지 2048</strong><small>같은 숫자를 밀어서 합쳐요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
           <button class="pc-app" type="button" data-open="mines"><span class="pc-app-icon cream" aria-hidden="true"><svg><use href="./icons.svg#mine"/></svg></span><span><strong>지뢰찾기</strong><small>안전한 칸을 모두 열어요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
           <button class="pc-app" type="button" data-open="sudoku"><span class="pc-app-icon sage mono" aria-hidden="true">9</span><span><strong>스도쿠</strong><small>빈칸에 숫자 1~9를 채워요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
         </div>
@@ -343,15 +342,31 @@
       <p class="dialog-note">← → 키 또는 마우스·터치로 패들을 움직여요.</p>
     </div>
   </dialog>
-  <dialog id="pairs" aria-labelledby="pairs-title">
+  <dialog id="merge" aria-labelledby="merge-title">
     <div class="dialog-inner">
-      <div class="dialog-head"><span class="panel-index mono"><span>02</span> / ARCADE</span><button class="close" type="button" data-close aria-label="짝맞추기 닫기">×</button></div>
-      <h2 id="pairs-title">픽셀 짝맞추기</h2>
-      <p class="panel-copy">카드 두 장을 뒤집어 같은 그림을 찾아요.</p>
-      <div class="pair-hud mono"><span>시도 <strong id="pair-moves">0</strong></span><span>짝 <strong id="pair-count">0 / 8</strong></span></div>
-      <div class="pair-grid" id="pair-grid" role="group" aria-label="짝맞추기 카드"></div>
-      <p class="game-status" id="pair-status" role="status">카드를 한 장 골라주세요.</p>
-      <button class="secondary dialog-action" id="pair-reset" type="button">새 게임</button>
+      <div class="dialog-head"><span class="panel-index mono"><span>02</span> / ARCADE</span><button class="close" type="button" data-close aria-label="머지 게임 닫기">×</button></div>
+      <h2 id="merge-title">픽셀 머지 2048</h2>
+      <p class="panel-copy">같은 숫자의 타일을 합쳐 2048을 만들어 보세요.</p>
+      <div class="merge-hud mono">
+        <div class="ux u018"><span>점수</span><strong id="merge-score" class="u018-num">0</strong></div>
+        <div><span>최고 점수</span><strong id="merge-best">0</strong></div>
+      </div>
+      <div class="ux u093 merge-progress">
+        <span>목표 <strong id="merge-progress">2 / 2048</strong></span>
+        <div class="u093-bar" aria-hidden="true"><i></i></div>
+      </div>
+      <div class="ux merge-board mono" id="merge-board" role="table" aria-label="머지 게임 4행 4열" aria-describedby="merge-help" tabindex="0" autofocus></div>
+      <p class="game-status" id="merge-status" role="status">게임을 불러오는 중이에요.</p>
+      <div class="merge-controls">
+        <div class="merge-directions" role="group" aria-label="타일 밀기">
+          <button class="walk-button" type="button" data-direction="left" aria-label="왼쪽으로 밀기" disabled>←</button>
+          <button class="walk-button" type="button" data-direction="up" aria-label="위로 밀기" disabled>↑</button>
+          <button class="walk-button" type="button" data-direction="down" aria-label="아래로 밀기" disabled>↓</button>
+          <button class="walk-button" type="button" data-direction="right" aria-label="오른쪽으로 밀기" disabled>→</button>
+        </div>
+        <button class="walk-button" id="merge-reset" type="button" disabled>새 게임</button>
+      </div>
+      <p class="dialog-note" id="merge-help">방향키, 화면 버튼, 보드 스와이프로 타일을 밀어요.</p>
     </div>
   </dialog>
   <dialog id="mines" aria-labelledby="mines-title">

@@ -1,6 +1,6 @@
 "use strict";
 
-{
+export function initArcade() {
   const arcade = document.getElementById("arcade");
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
@@ -253,92 +253,7 @@
   draw();
 }
 
-{
-  const grid = document.getElementById("pair-grid");
-  const status = document.getElementById("pair-status");
-  const moveCount = document.getElementById("pair-moves");
-  const matchCount = document.getElementById("pair-count");
-  const motifs = [
-    ["▦", "컴퓨터"], ["◆", "보석"], ["☾", "달"], ["☕", "머그컵"],
-    ["♪", "음표"], ["✦", "별"], ["✿", "꽃"], ["♠", "잎사귀"]
-  ];
-  let first = null;
-  let flipBack;
-  let moves = 0;
-  let matches = 0;
-
-  function show(card, revealed) {
-    card.button.textContent = revealed ? card.motif[0] : "·";
-    card.button.classList.toggle("revealed", revealed);
-    card.button.setAttribute("aria-label", card.position + "번 카드" + (revealed ? ", " + card.motif[1] : ", 뒤집혀 있음"));
-  }
-
-  function flip(card) {
-    if (flipBack || first === card || card.matched) return;
-    show(card, true);
-    if (!first) {
-      first = card;
-      status.textContent = "다른 카드를 한 장 골라주세요.";
-      return;
-    }
-
-    moveCount.textContent = ++moves;
-    const other = first;
-    first = null;
-    if (other.motif === card.motif) {
-      for (const match of [other, card]) {
-        match.matched = true;
-        match.button.classList.add("matched");
-        match.button.setAttribute("aria-disabled", "true");
-        match.button.setAttribute("aria-label", match.position + "번 카드, " + match.motif[1] + ", 짝 찾음");
-      }
-      matchCount.textContent = ++matches + " / " + motifs.length;
-      status.textContent = matches === motifs.length ? moves + "번 만에 모든 짝을 찾았어요!" : "한 쌍을 찾았어요.";
-      if (matches === motifs.length) window.recordCafeStamp("game");
-    } else {
-      status.textContent = "서로 다른 그림이에요.";
-      flipBack = setTimeout(() => {
-        show(other, false);
-        show(card, false);
-        flipBack = null;
-        status.textContent = "카드를 한 장 골라주세요.";
-      }, 650);
-    }
-  }
-
-  function reset() {
-    clearTimeout(flipBack);
-    first = null;
-    flipBack = null;
-    moves = 0;
-    matches = 0;
-    moveCount.textContent = "0";
-    matchCount.textContent = "0 / " + motifs.length;
-    status.textContent = "카드를 한 장 골라주세요.";
-    const deck = [...motifs, ...motifs];
-    for (let i = deck.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [deck[i], deck[j]] = [deck[j], deck[i]];
-    }
-    grid.replaceChildren(...deck.map((motif, index) => {
-      const button = document.createElement("button");
-      const card = { button, motif, position: index + 1, matched: false };
-      button.type = "button";
-      button.className = "pair-card";
-      show(card, false);
-      button.addEventListener("click", () => flip(card));
-      return button;
-    }));
-  }
-
-  document.getElementById("pair-reset").addEventListener("click", () => {
-    reset();
-    grid.firstElementChild.focus();
-  });
-  reset();
-}
-
-{
+export function initMines() {
   const dialog = document.getElementById("mines");
   const board = document.getElementById("mine-board");
   const status = document.getElementById("mine-status");

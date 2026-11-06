@@ -158,9 +158,11 @@ function setStatus(text) {
 
 function receive(result) {
   connected = true;
-  peers = result.visitors.filter((visitor) => visitor.id !== result.id).map((visitor) => ({
-    ...visitor, waveUntil: Date.now() + Math.max(0, visitor.wave + 3200 - result.now),
-  }));
+  const receivedAt = Date.now();
+  peers = result.visitors.filter((visitor) => visitor.id !== result.id).map((visitor) => {
+    const remaining = visitor.wave + 3200 - result.now;
+    return { ...visitor, waveUntil: remaining > 0 ? receivedAt + remaining : 0 };
+  });
   setStatus("접속 " + result.visitors.length + "명");
   const roster = peers.length ? "함께 있는 손님 · " + peers.map((peer) => peer.name).join(", ") : "";
   guests.hidden = !roster;
