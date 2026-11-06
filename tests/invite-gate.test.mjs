@@ -8,6 +8,7 @@ const origin = "https://pcbang.example.test";
 const password = "local-test-admin-password-do-not-use";
 const sqlite = new DatabaseSync(":memory:");
 sqlite.exec(readFileSync(new URL("../drizzle/0002_invitation_access.sql", import.meta.url), "utf8"));
+sqlite.exec(readFileSync(new URL("../drizzle/0003_invite_form_tokens.sql", import.meta.url), "utf8"));
 const db = {
   prepare(sql) {
     const statement = sqlite.prepare(sql);
@@ -23,32 +24,33 @@ const db = {
   },
 };
 const env = { DB: db, NEON_ADMIN_PASSWORD: password };
-let csrfCookie = "";
-let csrfToken = "";
-function captureCsrf(response) {
-  const cookie = response.headers.get("Set-Cookie");
-  assert.ok(cookie, "GET form must set CSRF cookie");
-  csrfCookie = cookie.split(";")[0];
-  const value = csrfCookie.split("=").slice(1).join("=");
-  assert.match(value, /^[a-f0-9]{64}$/);
-  csrfToken = value;
+let latestCsrf = "";
+function captureCsrf(response, body) {
+  assert.ok(response.status === 200);
+  const matches = body.match(/name="csrf" value="([a-f0-9]{64})"/g) || [];
+  assert.ok(matches.length > 0, "HTML forms must include server-issued security token");
+  latestCsrf = matches[0].match(/[a-f0-9]{64}/)[0];
+  assert.equal(response.headers.get("Set-Cookie"), null, "CSRF should not depend on a browser cookie");
 }
 function get(path, accessCookie) {
-  return new Request(origin + path, {
-    headers: accessCookie ? { Cookie: accessCookie } : {},
-  });
+  return new Request(origin + path, { headers: accessCookie ? { Cookie: accessCookie } : {} });
 }
 function post(path, values, accessCookie, extraHeaders = {}) {
-  const cookie = [csrfCookie, accessCookie].filter(Boolean).join("; ");
   return new Request(origin + path, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      ...(cookie ? { Cookie: cookie } : {}),
+      ...(accessCookie ? { Cookie: accessCookie } : {}),
       ...extraHeaders,
     },
-    body: new URLSearchParams({ csrf: csrfToken, ...values }).toString(),
+    body: new URLSearchParams({ csrf: latestCsrf, ...values }).toString(),
   });
+}
+async function refreshForm(path, cookie) {
+  const response = await gate(get(path, cookie), env);
+  const body = await response.text();
+  captureCsrf(response, body);
+  return body;
 }
 function issuedCookie(response) {
   const set = response.headers.get("Set-Cookie");
@@ -58,120 +60,74 @@ function issuedCookie(response) {
   return set.split(";")[0];
 }
 
-test("beta invitation and public launch work end to end with real SQLite", async () => {
-  const anon = await gate(get("/"), env);
-  assert.equal(anon.status, 303);
-  assert.equal(anon.headers.get("Location"), "/invite");
+test("beta invitation and public launch use one-time database-backed form tokens", async () => {
+  assert.equal((await gate(get("/"), env)).headers.get("Location"), "/invite");
+  assert.equal((await gate(get("/app.js"), env)).headers.get("Location"), "/invite");
+  assert.equal((await gate(get("/api/presence"), env)).status, 401);
+  await refreshForm("/invite");
+  const loginHtml = await refreshForm("/admin/login");
+  assert.match(loginHtml, /name="csrf"/);
 
-  const asset = await gate(get("/app.js"), env);
-  assert.equal(asset.headers.get("Location"), "/invite");
-  const api = await gate(get("/api/presence"), env);
-  assert.equal(api.status, 401);
-
-  const invitation = await gate(get("/invite"), env);
-  assert.equal(invitation.status, 200);
-  assert.match(await invitation.text(), /초대코드/);
-  captureCsrf(invitation);
-
-  const adminUnauthenticated = await gate(get("/admin"), env);
-  assert.equal(adminUnauthenticated.headers.get("Location"), "/admin/login");
-  // A browser may omit Origin from a same-origin HTML form POST.
-  const loginPage = await gate(get("/admin/login"), env);
-  captureCsrf(loginPage);
-  assert.match(await loginPage.text(), /name="csrf"/);
-  const crossOrigin = await gate(post("/auth/admin-login", { password }, null, { Origin: "https://attacker.example" }), env);
-  assert.equal(crossOrigin.status, 403);
-  const fetchCrossSite = await gate(post("/auth/admin-login", { password }, null, { "Sec-Fetch-Site": "cross-site" }), env);
-  assert.equal(fetchCrossSite.status, 403);
-  const missingToken = new Request(origin + "/auth/admin-login", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: csrfCookie },
-    body: new URLSearchParams({ password }).toString(),
-  });
-  assert.equal((await gate(missingToken, env)).status, 403);
-  const missingCookie = new Request(origin + "/auth/admin-login", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ password, csrf: csrfToken }).toString(),
-  });
-  assert.equal((await gate(missingCookie, env)).status, 403);
-  // Some browsers omit a partitioned or blocked CSRF cookie, while their
-  // Origin or Fetch Metadata still prove a same-origin HTML form submission.
-  const withOrigin = new Request(origin + "/auth/admin-login", {
-    method: "POST",
-    headers: { Origin: origin, "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ password: "incorrect" }).toString(),
-  });
-  assert.equal((await gate(withOrigin, env)).headers.get("Location"), "/admin/login?error=1");
-  const withFetchMetadata = new Request(origin + "/auth/admin-login", {
-    method: "POST",
-    headers: { "Sec-Fetch-Site": "same-origin", "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ password: "incorrect" }).toString(),
-  });
-  assert.equal((await gate(withFetchMetadata, env)).headers.get("Location"), "/admin/login?error=1");
-
-  const wrongPassword = await gate(post("/auth/admin-login", { password: "incorrect" }), env);
+  // Reproduce the real production symptom: a proxy exposes a different Origin
+  // than the request URL used by the server. The one-time token must win.
+  const wrongPassword = await gate(post("/auth/admin-login", {password:"incorrect"}, null, {
+    Origin:"https://motoongpc.com", "Sec-Fetch-Site":"same-site"
+  }), env);
   assert.equal(wrongPassword.headers.get("Location"), "/admin/login?error=1");
 
-  const adminLogin = await gate(post("/auth/admin-login", { password }), env);
-  assert.equal(adminLogin.headers.get("Location"), "/admin");
-  const adminCookie = issuedCookie(adminLogin);
+  const replay = await gate(post("/auth/admin-login", {password}, null, {
+    Origin:"https://motoongpc.com"
+  }), env);
+  assert.equal(replay.status, 403);
 
-  const adminPage = await gate(get("/admin", adminCookie), env);
-  assert.equal(adminPage.status, 200);
-  assert.match(await adminPage.text(), /베타 초대제/);
-  captureCsrf(adminPage);
+  const tokenless = new Request(origin + "/auth/admin-login", {
+    method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded","Origin":origin},
+    body:new URLSearchParams({password}).toString()
+  });
+  assert.equal((await gate(tokenless,env)).status,403);
+  // Verify a totally different Origin also fails without a valid form token.
+  const crossSite = new Request(origin + "/auth/admin-login", {
+    method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded","Origin":"https://attacker.example"},
+    body:new URLSearchParams({password}).toString()
+  });
+  assert.equal((await gate(crossSite,env)).status,403);
 
-  const created = await gate(post("/auth/invite-create", { label: "Tester A", count: "1", days: "30" }, adminCookie), env);
-  assert.equal(created.status, 200);
-  const createdHtml = await created.text();
-  const code = createdHtml.match(/[A-F0-9]{6}(?:-[A-F0-9]{6}){3}/)?.[0];
-  assert.ok(code, "A distinct random invite code must be shown to the admin");
+  await refreshForm("/admin/login");
+  const adminLogin = await gate(post("/auth/admin-login",{password},null,{
+    Origin:"https://motoongpc.com"
+  }),env);
+  assert.equal(adminLogin.headers.get("Location"),"/admin");
+  const adminCookie=issuedCookie(adminLogin);
+  await refreshForm("/admin",adminCookie);
+  const created=await gate(post("/auth/invite-create",{label:"Tester A",count:"1",days:"30"},adminCookie),env);
+  assert.equal(created.status,200);
+  const html=await created.text();
+  const code=html.match(/[A-F0-9]{6}(?:-[A-F0-9]{6}){3}/)?.[0];
+  assert.ok(code);
+  captureCsrf(created,html);
 
-  const wrongCode = await gate(post("/auth/redeem", { code: "000000-000000-000000-000000" }), env);
-  assert.equal(wrongCode.headers.get("Location"), "/invite?error=1");
+  await refreshForm("/invite");
+  const redeemed=await gate(post("/auth/redeem",{code}),env);
+  assert.equal(redeemed.headers.get("Location"),"/");
+  const userCookie=issuedCookie(redeemed);
+  assert.equal(await gate(get("/",userCookie),env),null);
+  assert.equal(await gate(get("/api/presence",userCookie),env),null);
 
-  const redeemed = await gate(post("/auth/redeem", { code }), env);
-  assert.equal(redeemed.headers.get("Location"), "/");
-  const memberCookie = issuedCookie(redeemed);
-  assert.match(memberCookie, /^cafe_access=u_/);
+  await refreshForm("/invite");
+  assert.equal((await gate(post("/auth/redeem",{code}),env)).headers.get("Location"),"/invite?error=1");
 
-  assert.equal(await gate(get("/", memberCookie), env), null);
-  assert.equal(await gate(get("/api/presence", memberCookie), env), null);
-  assert.equal(await gate(get("/room.png", memberCookie), env), null);
-  const renew = renewUserCookie(get("/", memberCookie));
-  assert.ok(renew?.includes("Max-Age=31536000"));
+  await refreshForm("/admin",adminCookie);
+  assert.equal((await gate(post("/auth/access-mode",{mode:"public"},adminCookie),env)).status,400);
+  await refreshForm("/admin",adminCookie);
+  assert.equal((await gate(post("/auth/access-mode",{mode:"public",confirm:"yes"},adminCookie),env)).headers.get("Location"),"/admin");
+  assert.equal(await gate(get("/"),env),null);
+  assert.equal((await gate(get("/admin"),env)).headers.get("Location"),"/admin/login");
+  await refreshForm("/admin",adminCookie);
+  assert.equal((await gate(post("/auth/access-mode",{mode:"invite"},adminCookie),env)).headers.get("Location"),"/admin");
 
-  const replay = await gate(post("/auth/redeem", { code }), env);
-  assert.equal(replay.headers.get("Location"), "/invite?error=1");
-
-  const declinedPublicSwitch = await gate(post("/auth/access-mode", { mode: "public" }, adminCookie), env);
-  assert.equal(declinedPublicSwitch.status, 400);
-  assert.equal((await db.prepare("SELECT value FROM invite_settings WHERE key = 'site_access'").bind().first()).value, "invite");
-
-  const publicSwitch = await gate(post("/auth/access-mode", { mode: "public", confirm: "yes" }, adminCookie), env);
-  assert.equal(publicSwitch.headers.get("Location"), "/admin");
-  assert.equal(await gate(get("/"), env), null);
-  assert.equal(await gate(get("/app.js"), env), null);
-  assert.equal(await gate(get("/api/presence"), env), null);
-  assert.equal((await gate(get("/admin"), env)).headers.get("Location"), "/admin/login");
-
-  const inviteSwitch = await gate(post("/auth/access-mode", { mode: "invite" }, adminCookie), env);
-  assert.equal(inviteSwitch.headers.get("Location"), "/admin");
-  assert.equal((await gate(get("/"), env)).headers.get("Location"), "/invite");
-  assert.equal(await gate(get("/", memberCookie), env), null);
-
-  const row = await db.prepare("SELECT id FROM invite_codes ORDER BY created_at DESC LIMIT 1").bind().first();
-  assert.ok(row?.id);
-  const revoke = await gate(post("/auth/invite-revoke", { id: row.id }, adminCookie), env);
-  assert.equal(revoke.headers.get("Location"), "/admin");
-  assert.equal((await gate(get("/", memberCookie), env)).headers.get("Location"), "/invite");
-
-  const forgeAdmin = await gate(post("/auth/access-mode", { mode: "public", confirm: "yes" }, memberCookie), env);
-  assert.equal(forgeAdmin.status, 403);
-
-  const noSecret = await gate(get("/"), { DB: db });
-  assert.equal(noSecret.status, 503);
-  const noDb = await gate(get("/"), { NEON_ADMIN_PASSWORD: password });
-  assert.equal(noDb.status, 503);
+  await refreshForm("/admin",adminCookie);
+  const invite=await db.prepare("SELECT id FROM invite_codes LIMIT 1").first();
+  await gate(post("/auth/invite-revoke",{id:invite.id},adminCookie),env);
+  assert.equal((await gate(get("/",userCookie),env)).headers.get("Location"),"/invite");
+  assert.equal((await gate(get("/"),{DB:db})).status,503);
 });

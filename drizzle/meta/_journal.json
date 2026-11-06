@@ -22,6 +22,13 @@
       "when": 1793940185880,
       "tag": "0002_invitation_access",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1793953600000,
+      "tag": "0003_invite_form_tokens",
+      "breakpoints": true
     }
   ]
 }
