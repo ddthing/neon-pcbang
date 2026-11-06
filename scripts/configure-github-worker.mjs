@@ -15,4 +15,5 @@ const db = config.d1_databases?.find(({ binding }) => binding === "DB");
 if (!db) throw new Error("Build output is missing its DB binding.");
 Object.assign(db, { database_id: NEON_D1_ID, database_name: NEON_D1_NAME, migrations_dir: "../../drizzle" });
 Object.assign(config, { name: NEON_WORKER_NAME, topLevelName: NEON_WORKER_NAME, workers_dev: true });
+config.assets = { ...(config.assets ?? {}), binding: "ASSETS", binding: "ASSETS", run_worker_first: true };
 await writeFile(file, JSON.stringify(config, null, 2) + "\n");

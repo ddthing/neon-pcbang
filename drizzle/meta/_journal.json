@@ -15,6 +15,13 @@
       "when": 1793940185879,
       "tag": "0001_corner_snacks",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793940185880,
+      "tag": "0002_invitation_access",
+      "breakpoints": true
     }
   ]
 }
