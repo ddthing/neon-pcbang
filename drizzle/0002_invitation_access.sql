@@ -29,3 +29,10 @@ CREATE TABLE IF NOT EXISTS invite_login_attempts (
   count INTEGER NOT NULL DEFAULT 0,
   reset_at INTEGER NOT NULL
 );
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS invite_settings (
+  key TEXT PRIMARY KEY NOT NULL,
+  value TEXT NOT NULL
+);
+--> statement-breakpoint
+INSERT OR IGNORE INTO invite_settings(key, value) VALUES ('site_access', 'invite');
