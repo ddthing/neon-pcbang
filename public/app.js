@@ -84,10 +84,12 @@ if (room.seat !== null && !room.space) {
 }
 const focus = readState(focusKey, { remaining: focusDuration, end: null });
 const floor = $("#floor-kiosk");
+const hub = $("#cafe-menu");
 const floorSelect = $("#floor-select");
 const floorSeats = new Map();
 const desktop = $("#pc-desktop");
 const monitorLayer = $("#monitor-layer");
+const roomsArtwork = $("#rooms-art");
 let selectedSeat = null;
 let poweredMonitor = null;
 let desktopReturnFocus;
@@ -98,6 +100,10 @@ const reduceSeatMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
 function isSeated() {
   return Boolean(room.space) && (!seatJourney || seatJourney.phase === "booting");
+}
+
+function prepareRoomArt() {
+  if (!roomsArtwork.hasAttribute("src")) roomsArtwork.src = roomsArtwork.dataset.src;
 }
 
 function renderMonitorPower(spaceId) {
@@ -128,6 +134,7 @@ function openDesktop(fromSeat = false) {
   if (fromSeat) poweredMonitor.scrollIntoView({ block: "nearest" });
   desktopReturnFocus = fromSeat ? $("#seat-marker") : document.activeElement;
   const origin = poweredMonitor.getBoundingClientRect();
+  window.prepareCafeWallpaper?.();
   desktop.showModal();
   $("#pc-title").focus({ preventScroll: true });
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !desktop.animate) return;
@@ -161,9 +168,12 @@ function renderRoom() {
   const inRoom = Boolean(space) && view !== "hall";
   $(".scene").dataset.space = view;
   $("#lobby-art").hidden = inRoom;
-  $("#rooms-art").hidden = !inRoom;
-  $("#rooms-art").alt = inRoom ? space.alt : "";
+  if (inRoom) prepareRoomArt();
+  roomsArtwork.hidden = !inRoom;
+  roomsArtwork.alt = inRoom ? space.alt : "";
+  $("#touch-pad").hidden = Boolean(room.space);
   $("#kiosk-pin").hidden = inRoom;
+  $("#room-doors").hidden = inRoom || Boolean(seatJourney);
   $("#room-title").textContent = space?.label ?? "PC방 입구";
   $("#room-count").textContent = inRoom ? "정원 " + space.positions.length + "명" : "102석";
   $("#kiosk-title").textContent = seated ? "자리를 잡았어요!" : "어디에 앉을까요?";
@@ -200,6 +210,7 @@ function renderRoom() {
   }
   renderOrder();
   updateSessionTime();
+  document.dispatchEvent(new Event("cafe-seat-phase"));
 }
 
 function isMySeat(seat) {
@@ -235,6 +246,10 @@ function appendSeatGroup(parent, label, spaceId, count, first = 0, letter = "") 
   group.dataset.space = spaceId;
   const heading = document.createElement("h3");
   heading.textContent = label;
+  if (letter) {
+    const [left, right] = hallBanks[first / bankSize].x;
+    heading.style.setProperty("--x", (left + right) / 30.72 + "%");
+  }
   group.append(heading);
   const grid = document.createElement("div");
   grid.className = "floor-seat-grid";
@@ -251,6 +266,9 @@ function appendSeatGroup(parent, label, spaceId, count, first = 0, letter = "") 
     const button = document.createElement("button");
     button.type = "button";
     button.className = "floor-seat mono";
+    const [x, y] = spaces[spaceId].positions[index];
+    button.style.setProperty("--x", x + "%");
+    button.style.setProperty("--y", y + "%");
     button.tabIndex = -1;
     button.textContent = code;
     grid.append(button);
@@ -275,19 +293,27 @@ for (const id of ["solo", "duo", "team", "squad"]) {
   appendSeatGroup($("#floor-rooms"), spaces[id].label, id, spaces[id].positions.length);
 }
 
-function openFloor() {
+function openFloor(roomId = null) {
   if (seatJourney || floor.open) return;
-  selectedSeat = null;
+  if (hub.open) hub.close();
+  selectedSeat = typeof roomId === "string"
+    ? [...floorSeats.values()].find((seat) => seat.space === roomId && !occupiedSeats.has(seat.key)) ?? null
+    : null;
+  floor.dataset.room = typeof roomId === "string" ? roomId : "";
   $("#floor-feedback").textContent = "";
   renderFloorSelection();
   floor.showModal();
   $("#floor-title").focus({ preventScroll: true });
+  if (typeof roomId === "string") {
+    document.querySelector('.floor-room[data-space="' + roomId + '"]')?.scrollIntoView({ block: "nearest" });
+  }
 }
 floor.addEventListener("cancel", (event) => {
   if (bookingSeat) event.preventDefault();
 });
 $("#kiosk-pin").addEventListener("click", openFloor);
 $("#open-floor").addEventListener("click", openFloor);
+$("#cafe-menu-open").addEventListener("click", () => { if (!hub.open) hub.showModal(); });
 $("#open-monitor").addEventListener("click", () => openDesktop());
 $("#seat-marker").addEventListener("click", () => openDesktop());
 desktop.addEventListener("close", () => desktopReturnFocus?.focus({ preventScroll: true }));
@@ -337,6 +363,8 @@ $("#enter").addEventListener("click", async () => {
     room.seat = seat.index;
     room.since ??= Date.now();
     saveState(roomKey, room);
+    if (seat.space !== "hall") prepareRoomArt();
+    window.prepareCafeWallpaper?.();
     floor.close();
     renderRoom();
     const scene = $(".scene");
@@ -362,6 +390,7 @@ $("#enter").addEventListener("click", async () => {
     }
     seatJourney = null;
     renderRoom();
+    window.recordCafeStamp("seat");
     openDesktop(true);
     if (!desktop.open) $("#kiosk-title").focus();
   } catch {
@@ -401,7 +430,10 @@ $("#pc-end").addEventListener("click", leaveSeat);
 
 
 document.querySelectorAll("[data-open]").forEach((button) => {
-  button.addEventListener("click", () => document.getElementById(button.dataset.open).showModal());
+  button.addEventListener("click", () => {
+    if (hub.contains(button) && hub.open) hub.close();
+    document.getElementById(button.dataset.open).showModal();
+  });
 });
 document.querySelectorAll("[data-close]").forEach((button) => {
   button.addEventListener("click", () => button.closest("dialog").close());
@@ -466,9 +498,14 @@ function renderOrder() {
 
 function watchOrder() {
   clearTimeout(orderTimer);
-  if (!room.order || room.order.readyAt <= Date.now()) return;
+  if (!room.order) return;
+  if (room.order.readyAt <= Date.now()) {
+    window.recordCafeStamp("snack");
+    return;
+  }
   orderTimer = setTimeout(() => {
     renderOrder();
+    window.recordCafeStamp("snack");
     if (!desktop.open && !$("#snacks").open) notify("매점에서 간식이 도착했어요.", "ok");
   }, room.order.readyAt - Date.now());
 }
@@ -525,12 +562,16 @@ const seoulTime = new Intl.DateTimeFormat("ko-KR", {
   minute: "2-digit",
   hourCycle: "h23"
 });
+let lastClock;
 function tick() {
   const time = seoulTime.format(new Date());
-  $("#clock").textContent = time;
-  $("#pc-clock").textContent = time;
+  if (time !== lastClock) {
+    $("#clock").textContent = time;
+    $("#pc-clock").textContent = time;
+    lastClock = time;
+  }
   updateSessionTime();
-  renderTimer();
+  if (focus.end) renderTimer();
 }
 
 let rainContext;
@@ -558,6 +599,7 @@ function makeRain(AudioEngine) {
   rain.start();
 }
 
+$(".hub-ambience").append($(".top-actions"));
 connectCafeSwitch(document.querySelector(".top-actions .u013"), async (enabled) => {
   const AudioEngine = window.AudioContext || window.webkitAudioContext;
   if (!AudioEngine) {
@@ -576,6 +618,28 @@ connectCafeSwitch(document.querySelector(".top-actions .u013"), async (enabled) 
 });
 
 window.cafeSeating = {
+  placeRoomDoors(portals) {
+    for (const [id, point] of Object.entries(portals)) {
+      for (const [target, onMap] of [[$("#room-doors"), false], [$("#floor-room-doors"), true]]) {
+        const door = document.createElement("button");
+        door.type = "button";
+        door.className = onMap ? "floor-map-marker room-map-door" : "stage-room-door";
+        door.textContent = spaces[id].label;
+        door.setAttribute("aria-label", spaces[id].label + (onMap ? " 내부 배치 보기" : " 입구"));
+        door.style.setProperty("--x", point.x + "%");
+        door.style.setProperty("--y", point.y + "%");
+        door.addEventListener("click", () => {
+          if (!onMap) openFloor(id);
+          else {
+            const plan = document.querySelector('.floor-room[data-space="' + id + '"]');
+            plan.scrollIntoView({ block: "nearest" });
+            plan.querySelector(".floor-seat:not(:disabled)")?.focus({ preventScroll: true });
+          }
+        });
+        target.append(door);
+      }
+    }
+  },
   current: () => room.space ? room.space + ":" + room.seat : null,
   phase: () => seatJourney?.phase ?? null,
   position(key) {
@@ -600,6 +664,8 @@ window.cafeSeating = {
   },
 };
 renderRoom();
+if (room.space) window.recordCafeStamp("seat");
 watchOrder();
+renderTimer();
 tick();
-setInterval(tick, 250);
+setInterval(tick, 1000);

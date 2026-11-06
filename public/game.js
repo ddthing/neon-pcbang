@@ -12,7 +12,14 @@
   const ball = { x: 0, y: 0, vx: 0, vy: 0, r: 4 };
   const palette = ["#c7b8cf", "#ada7ba", "#9eafb9", "#b4c5ad"];
   const keys = new Set();
-  let bricks, score, lives;
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  const scoreKey = "neon-pcbang-arcade-best";
+  const hud = Object.fromEntries(["score", "lives", "game-round", "game-best", "game-combo"]
+    .map((id) => [id, document.getElementById(id)]));
+  let best = 0;
+  try { best = Number(localStorage.getItem(scoreKey)) || 0; } catch {}
+  let bricks, score, lives, round, combo;
+  let sparks = [];
   let state = "idle";
   let frame = 0;
   let previousTime = 0;
@@ -26,41 +33,62 @@
   function resetBall() {
     ball.x = paddle.x;
     ball.y = paddle.y - 11;
-    ball.vx = 112;
-    ball.vy = -147;
+    ball.vx = 112 + Math.min(round - 1, 9) * 3;
+    ball.vy = -147 - Math.min(round - 1, 9) * 8;
   }
 
   function updateHud() {
-    document.getElementById("score").textContent = String(score).padStart(3, "0");
-    document.getElementById("lives").textContent = lives;
+    hud.score.textContent = String(score).padStart(3, "0");
+    hud.lives.textContent = lives;
+    hud["game-round"].textContent = String(round).padStart(2, "0");
+    hud["game-best"].textContent = String(best).padStart(3, "0");
+    hud["game-combo"].textContent = combo;
   }
 
-  function resetGame() {
-    bricks = palette.flatMap((color, row) => Array.from({ length: 8 }, (_, col) => ({
-      x: 16 + col * 57, y: 24 + row * 21, width: 49, height: 13, color
+  function resetBoard() {
+    bricks = palette.flatMap((_, row) => Array.from({ length: 8 }, (_, col) => ({
+      x: 16 + col * 57, y: 24 + row * 21, width: 49, height: 13,
+      color: palette[(row + round - 1) % palette.length]
     })));
-    score = 0;
-    lives = 3;
+    sparks = [];
+    combo = 0;
     paddle.x = width / 2;
     resetBall();
     updateHud();
   }
 
-  function draw() {
-    ctx.fillStyle = "#292827";
-    ctx.fillRect(0, 0, width, height);
-    ctx.strokeStyle = "#3d3936";
-    ctx.beginPath();
+  function resetGame() {
+    score = 0;
+    lives = 3;
+    round = 1;
+    resetBoard();
+  }
+
+  const background = document.createElement("canvas");
+  background.width = width;
+  background.height = height;
+  {
+    const grid = background.getContext("2d");
+    const gradient = grid.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, "#27282a");
+    gradient.addColorStop(1, "#1a1e1c");
+    grid.fillStyle = gradient;
+    grid.fillRect(0, 0, width, height);
+    grid.strokeStyle = "#d0bc9c18";
+    grid.beginPath();
     for (let x = 0; x <= width; x += 16) {
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
+      grid.moveTo(x, 0);
+      grid.lineTo(x, height);
     }
     for (let y = 0; y <= height; y += 16) {
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
+      grid.moveTo(0, y);
+      grid.lineTo(width, y);
     }
-    ctx.stroke();
+    grid.stroke();
+  }
 
+  function draw() {
+    ctx.drawImage(background, 0, 0);
     for (const brick of bricks) {
       ctx.fillStyle = brick.color;
       ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
@@ -71,6 +99,14 @@
     }
     ctx.fillStyle = "#bfd0bb";
     ctx.fillRect(paddle.x - paddle.width / 2, paddle.y, paddle.width, paddle.height);
+    ctx.fillStyle = "#edf0d9";
+    ctx.fillRect(paddle.x - paddle.width / 2 + 3, paddle.y + 1, paddle.width - 6, 2);
+    for (const spark of sparks) {
+      ctx.globalAlpha = spark.life / .44;
+      ctx.fillStyle = spark.color;
+      ctx.fillRect(Math.round(spark.x), Math.round(spark.y), spark.size, spark.size);
+    }
+    ctx.globalAlpha = 1;
     ctx.fillStyle = "#f3ece2";
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.r, 0, 2 * Math.PI);
@@ -83,6 +119,13 @@
   }
 
   function update(dt) {
+    for (const spark of sparks) {
+      spark.life -= dt;
+      spark.x += spark.vx * dt;
+      spark.y += spark.vy * dt;
+      spark.vy += 72 * dt;
+    }
+    if (sparks.length) sparks = sparks.filter((spark) => spark.life > 0);
     const direction = Number(keys.has("ArrowRight")) - Number(keys.has("ArrowLeft"));
     if (direction) movePaddle(paddle.x + direction * 360 * dt);
 
@@ -105,9 +148,27 @@
       if (lastY + ball.r <= brick.y || lastY - ball.r >= brick.y + brick.height) ball.vy *= -1;
       else ball.vx *= -1;
       bricks.splice(hit, 1);
-      score += 10;
+      combo++;
+      score += 10 + Math.min(combo - 1, 9) * 2;
+      if (score > best) {
+        best = score;
+        try { localStorage.setItem(scoreKey, String(best)); } catch {}
+      }
+      if (!reducedMotion.matches) {
+        sparks.splice(0, Math.max(0, sparks.length - 56));
+        for (let index = 0; index < 12; index++) {
+          sparks.push({
+            x: ball.x, y: ball.y, vx: (Math.random() - .5) * 150,
+            vy: (Math.random() - .68) * 105, size: index % 3 + 2, life: .44, color: brick.color,
+          });
+        }
+      }
       updateHud();
-      if (!bricks.length) setState("finished", "한 판 더", "모든 벽돌을 깼어요!");
+      if (!bricks.length) {
+        window.recordCafeStamp("game");
+        setState("next", "다음 라운드", "라운드 클리어! 다음 라운드는 공이 더 빨라요.");
+        action.focus();
+      }
     }
 
     if (ball.vy > 0 && lastY + ball.r <= paddle.y && ball.y + ball.r >= paddle.y
@@ -120,8 +181,10 @@
     }
     if (ball.y - ball.r > height) {
       lives--;
+      combo = 0;
       updateHud();
       if (lives === 0) {
+        window.recordCafeStamp("game");
         setState("finished", "다시 도전", "게임 끝! 한 판 더 해볼까요?");
       } else {
         resetBall();
@@ -152,6 +215,11 @@
       return;
     }
     if (state === "finished" || state === "idle") resetGame();
+    if (state === "next") {
+      round++;
+      lives = Math.min(3, lives + 1);
+      resetBoard();
+    }
     previousTime = 0;
     setState("playing", "일시 정지", "플레이 중");
     canvas.focus();
@@ -226,6 +294,7 @@
       }
       matchCount.textContent = ++matches + " / " + motifs.length;
       status.textContent = matches === motifs.length ? moves + "번 만에 모든 짝을 찾았어요!" : "한 쌍을 찾았어요.";
+      if (matches === motifs.length) window.recordCafeStamp("game");
     } else {
       status.textContent = "서로 다른 그림이에요.";
       flipBack = setTimeout(() => {

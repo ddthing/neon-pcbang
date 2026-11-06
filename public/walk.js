@@ -1,4 +1,4 @@
-import { canWalk, entrance, kiosk, pathTo, routeToSeat } from "./world.js";
+import { canWalk, entrance, kiosk, pathTo, routeToSeat, roomPortals } from "./world.js";
 import { createCafeCamera } from "./camera.js";
 
 const scene = document.querySelector(".scene");
@@ -14,6 +14,7 @@ const directions = new Map([
   ["ArrowUp", [0, -1]], ["KeyW", [0, -1]], ["ArrowDown", [0, 1]], ["KeyS", [0, 1]],
 ]);
 const pressed = new Set();
+const touchPressed = new Map();
 const visitors = new Map();
 
 function read(storage, key) {
@@ -45,6 +46,7 @@ let pendingSeatChanges = 0;
 let pulseTimer;
 let pulsing = false;
 let journey;
+let firstMove = true;
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
 function displayedSpace() {
@@ -65,7 +67,7 @@ function makeVisitor(key) {
       <path fill="#5a5252" d="M4 18h3v2H3v-1h1zm5 0h3v1h1v1H9z"/>
     </svg>`;
   avatars.append(node);
-  const visitor = { node, label: node.querySelector(".cafe-nickname"), wave: node.querySelector(".cafe-wave"), until: 0 };
+  const visitor = { node, label: node.querySelector(".cafe-nickname"), wave: node.querySelector(".cafe-wave") };
   visitors.set(key, visitor);
   return visitor;
 }
@@ -73,19 +75,44 @@ function makeVisitor(key) {
 function paint(key, data, point, walking) {
   const sprite = visitors.get(key) || makeVisitor(key);
   const { node, label, wave } = sprite;
-  if (key !== "mine" && sprite.point && (point.x !== sprite.point.x || point.y !== sprite.point.y)) {
-    sprite.until = performance.now() + 850;
+  const moved = point.x !== sprite.x || point.y !== sprite.y;
+  if (key !== "mine" && moved && sprite.x !== undefined && !data.seat) {
+    node.classList.add("walking");
+    clearTimeout(sprite.stopWalking);
+    sprite.stopWalking = setTimeout(() => node.classList.remove("walking"), 850);
   }
-  sprite.point = point;
-  node.style.left = point.x + "%";
-  node.style.top = point.y + "%";
-  node.style.zIndex = String(Math.round(point.y));
-  node.style.setProperty("--shirt", palettes[data.color] || palettes[0]);
-  node.style.setProperty("--facing", data.facing);
-  node.classList.toggle("walking", walking || sprite.until > performance.now());
+  if (moved) {
+    sprite.x = point.x;
+    sprite.y = point.y;
+    node.style.left = point.x + "%";
+    node.style.top = point.y + "%";
+    node.style.zIndex = String(Math.round(point.y));
+  }
+  if (sprite.color !== data.color) node.style.setProperty("--shirt", palettes[data.color] || palettes[0]);
+  if (sprite.facing !== data.facing) node.style.setProperty("--facing", data.facing);
+  sprite.color = data.color;
+  sprite.facing = data.facing;
+  if (key === "mine" || data.seat) node.classList.toggle("walking", walking);
   node.classList.toggle("seated", Boolean(data.seat));
-  if (label.textContent !== data.name) label.textContent = data.name;
-  wave.hidden = !(data.waveUntil > Date.now());
+  const regular = key === "mine" && window.cafeIsRegular();
+  if (sprite.name !== data.name || sprite.regular !== regular) {
+    sprite.name = data.name;
+    sprite.regular = regular;
+    label.textContent = data.name;
+    if (regular) {
+      const star = document.createElement("span");
+      star.className = "regular-star";
+      star.textContent = " ★";
+      label.append(star);
+    }
+  }
+  if (sprite.waveUntil !== data.waveUntil) {
+    clearTimeout(sprite.hideWave);
+    sprite.waveUntil = data.waveUntil;
+    const remaining = data.waveUntil - Date.now();
+    wave.hidden = remaining <= 0;
+    if (!wave.hidden) sprite.hideWave = setTimeout(() => { wave.hidden = true; }, remaining);
+  }
   return sprite;
 }
 
@@ -102,7 +129,7 @@ function drawSelf(walking = false) {
 }
 
 function draw() {
-  drawSelf();
+  drawSelf(wasWalking);
   const visible = new Set(["mine"]);
   for (const peer of peers) {
     const space = peer.seat?.split(":")[0] || "hall";
@@ -114,6 +141,8 @@ function draw() {
   }
   for (const [id, sprite] of visitors) {
     if (visible.has(id)) continue;
+    clearTimeout(sprite.stopWalking);
+    clearTimeout(sprite.hideWave);
     sprite.node.remove();
     visitors.delete(id);
   }
@@ -184,10 +213,13 @@ window.cafeWorld = {
     const legs = routeToSeat(location, previous, seat, seating.position);
     if (!legs.length) return Promise.resolve();
     pressed.clear();
+    touchPressed.clear();
     path = [];
+    camera.track();
     return new Promise((resolve) => {
       journey = { legs, showSpace, resolve, leg: null };
       startLeg();
+      requestFrame();
     });
   },
   cancelWalk() {
@@ -252,7 +284,7 @@ async function pulse() {
     disconnected();
   } finally {
     pulsing = false;
-    pulseTimer = setTimeout(pulse, document.hidden ? 8500 : connected ? 1150 : 3200);
+    pulseTimer = setTimeout(pulse, document.hidden ? 8500 : !connected ? 3200 : peers.length ? 1150 : 2600);
   }
 }
 
@@ -277,12 +309,21 @@ function canMove() {
   return !seating.current() && !seating.phase() && !document.querySelector("dialog[open]");
 }
 
+function startMovement() {
+  if (firstMove) {
+    firstMove = false;
+    if (!reducedMotion.matches) camera.track();
+  }
+  requestFrame();
+}
+
 scene.addEventListener("click", (event) => {
   if (event.target.closest("button") || !canMove()) return;
   scene.focus({ preventScroll: true });
   const box = scene.getBoundingClientRect();
   const target = { x: (event.clientX - box.left) * 100 / box.width, y: (event.clientY - box.top) * 100 / box.height };
   path = pathTo(location, target);
+  if (path.length) startMovement();
 });
 
 document.addEventListener("keydown", (event) => {
@@ -297,20 +338,51 @@ document.addEventListener("keydown", (event) => {
   event.preventDefault();
   pressed.add(event.code);
   path = [];
+  startMovement();
 });
 document.addEventListener("keyup", (event) => pressed.delete(event.code));
-window.addEventListener("blur", () => pressed.clear());
+const touchPad = document.getElementById("touch-pad");
+touchPad.addEventListener("pointerdown", (event) => {
+  const button = event.target.closest("button[data-direction]");
+  if (!button || !canMove() || event.button !== 0) return;
+  button.setPointerCapture(event.pointerId);
+  touchPressed.set(event.pointerId, button.dataset.direction);
+  path = [];
+  startMovement();
+});
+for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
+  touchPad.addEventListener(type, (event) => touchPressed.delete(event.pointerId));
+}
+touchPad.addEventListener("click", (event) => {
+  const direction = directions.get(event.target.closest("button")?.dataset.direction);
+  if (!direction || event.detail !== 0 || !canMove()) return;
+  path = pathTo(location, { x: location.x + direction[0] * 3, y: location.y + direction[1] * 3 });
+  if (path.length) startMovement();
+});
+window.addEventListener("blur", () => { pressed.clear(); touchPressed.clear(); });
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) pressed.clear();
-  else if (!pulsing) { clearTimeout(pulseTimer); pulse(); }
+  if (document.hidden) {
+    pressed.clear();
+    touchPressed.clear();
+    cancelAnimationFrame(frameId);
+    frameId = 0;
+    lastFrame = 0;
+  } else {
+    requestFrame();
+    if (!pulsing) { clearTimeout(pulseTimer); pulse(); }
+  }
 });
 
-let lastFrame = performance.now();
+let frameId = 0;
+let lastFrame = 0;
 let wasWalking = false;
-let wasWaving = false;
 let lastPhase = seating.phase();
+function requestFrame() {
+  if (!frameId && !document.hidden) frameId = requestAnimationFrame(animate);
+}
 function animate(time) {
-  const dt = Math.min((time - lastFrame) / 1000, .04);
+  frameId = 0;
+  const dt = lastFrame ? Math.min((time - lastFrame) / 1000, .04) : 0;
   lastFrame = time;
   const seat = seating.current();
   if (lastSeat && !seat) Object.assign(location, spawn);
@@ -323,7 +395,7 @@ function animate(time) {
   } else if (canMove()) {
     let dx = 0;
     let dy = 0;
-    for (const key of pressed) {
+    for (const key of [...pressed, ...touchPressed.values()]) {
       const [x, y] = directions.get(key);
       dx += x;
       dy += y;
@@ -342,25 +414,23 @@ function animate(time) {
       if (dx) facing = dx < 0 ? -1 : 1;
     }
     if (path.length && Math.hypot(path[0].x - location.x, path[0].y - location.y) < .06) path.shift();
+    else if (path.length && dt && !walking) path = [];
   }
-  const waving = waveUntil > Date.now();
   const phase = seating.phase();
-  if (seat !== lastSeat || phase !== lastPhase) draw();
-  else if (walking || walking !== wasWalking || waving !== wasWaving) drawSelf(walking);
-  for (const [id, sprite] of visitors) {
-    if (id !== "mine" && sprite.until && sprite.until <= time) {
-      sprite.until = 0;
-      sprite.node.classList.remove("walking");
-    }
-  }
+  const changed = seat !== lastSeat || phase !== lastPhase;
+  const motionChanged = walking !== wasWalking;
   wasWalking = walking;
-  wasWaving = waving;
+  if (changed) draw();
+  else if (walking || motionChanged) drawSelf(walking);
   lastPhase = phase;
   lastSeat = seat;
-  requestAnimationFrame(animate);
+  if (journey || ((pressed.size || touchPressed.size || path.length) && canMove())) requestFrame();
+  else lastFrame = 0;
 }
 
+document.addEventListener("cafe-seat-phase", requestFrame);
+document.addEventListener("cafe-regular", () => drawSelf(wasWalking));
+seating.placeRoomDoors(roomPortals);
 draw();
-requestAnimationFrame(animate);
 pulse();
 

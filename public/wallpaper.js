@@ -10,7 +10,7 @@
   const status = document.getElementById("wall-status");
   const apply = document.getElementById("wall-apply");
   const reset = document.getElementById("wall-reset");
-  const defaultImage = "./pc-wallpaper.png";
+  const defaultImage = "./pc-wallpaper.webp";
   const defaultSetting = { original: null, pixelated: null, usePixel: true };
   const urls = new WeakMap();
   let active = defaultSetting;
@@ -46,10 +46,10 @@
     request.onerror = () => reject(request.error);
   })).then((saved) => {
     if (saved?.original instanceof Blob && saved.pixelated instanceof Blob) active = saved;
-    show(desktopImage, active);
   }).catch(() => {
     // Wallpaper can still be changed for this visit when browser storage is unavailable.
   });
+  window.prepareCafeWallpaper = () => initialized.then(() => show(desktopImage, active));
 
   async function save(setting) {
     const db = await database;

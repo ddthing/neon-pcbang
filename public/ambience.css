@@ -24,11 +24,6 @@ body[data-cafe-light="night"] .cafe-night-veil { opacity: .22; }
 body[data-cafe-light="night"] :is(.ambient-lamp, .counter-neon) { opacity: .72; }
 .entry-reflections { opacity: .19; }
 .counter-steam use { opacity: 0; }
-.ambience-control.u013 { margin-left: auto; }
-.ambience-control .u013-txt b { font-size: 11px; }
-.ambience-control .rain-switch-slot { width: 59px; height: 32px; }
-.ambience-control .u013-sw { transform: scale(.42); }
-.ambience-control .u013-sw:disabled { opacity: .65; cursor: default; }
 
 .wallpaper-life {
   display: none;
@@ -50,22 +45,20 @@ body[data-cafe-light="night"] :is(.ambient-lamp, .counter-neon) { opacity: .72; 
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  body[data-ambience="on"] .cafe-night-veil { transition: opacity 4s ease; }
-  body[data-ambience="on"] .ambient-lamp { animation: lamp-breathe 8s var(--offset) ease-in-out infinite alternate; }
-  body[data-ambience="on"] .counter-neon { animation: lamp-breathe 6.4s ease-in-out infinite alternate; }
-  body[data-ambience="on"] .kiosk-glass-scan { animation: kiosk-glass-scan 8s ease-in-out infinite; }
-  body[data-ambience="on"] .counter-steam use { animation: cafe-steam 6s var(--offset) steps(14, end) infinite; }
-  body[data-ambience="on"] .entry-reflections { animation: entry-glimmer 7.7s ease-in-out infinite alternate; }
-  body[data-ambience="on"] .pc-screen.is-on::after { animation: monitor-glimmer 9s var(--screen-offset) steps(13, end) infinite; }
+  .cafe-night-veil { transition: opacity 4s ease; }
+  .ambient-lamp { animation: lamp-breathe 8s var(--offset) ease-in-out infinite alternate; }
+  .counter-neon { animation: lamp-breathe 6.4s ease-in-out infinite alternate; }
+  .kiosk-glass-scan { animation: kiosk-glass-scan 8s ease-in-out infinite; }
+  .counter-steam use { animation: cafe-steam 6s var(--offset) steps(14, end) infinite; }
+  .entry-reflections { animation: entry-glimmer 7.7s ease-in-out infinite alternate; }
+  .pc-screen.is-on::after { animation: monitor-glimmer 9s var(--screen-offset) steps(13, end) infinite; }
   .pc-screen.is-on { animation: monitor-start .28s steps(3, end); }
 
   .scene:not([data-ambience-active]) :is(.window-view, #cafe-ambience) *,
   .scene:not([data-ambience-active]) .pc-screen.is-on::after {
     animation-play-state: paused;
   }
-  body[data-ambience="off"] .window-view * { animation: none; transition: none; }
-
-  body[data-ambience="on"] .pc-desktop[open] .pc-wallpaper[data-default] + .wallpaper-life { display: block; }
+  .pc-desktop[open] .pc-wallpaper[data-default] + .wallpaper-life { display: block; }
   .wall-shadow { animation: wall-shadow 36s -11s linear infinite; }
   .wall-birds { animation: wall-birds 33s -13s steps(50, end) infinite; }
   .wall-birds use { transform-box: fill-box; transform-origin: center; animation: bird-wings .85s steps(2, end) infinite alternate; }

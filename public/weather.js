@@ -80,7 +80,7 @@ layer.innerHTML = `<svg viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/sv
   <g class="hall-sky" mask="url(#hall-panes)">
     <svg x="275" y="43" width="1005" height="90" viewBox="0 0 1040 90" preserveAspectRatio="none"><use href="#cafe-sky"/></svg>
   </g>
-  <image class="hall-sky" href="./pcbang-hall-pastel.png" width="1536" height="1024" clip-path="url(#cafe-pendant-glass)"/>
+  <image class="hall-sky" href="./pcbang-hall-pastel.webp" width="1536" height="1024" clip-path="url(#cafe-pendant-glass)"/>
   ${Object.keys(roomPanes).map(space => `<g class="room-sky ${space}" clip-path="url(#panes-${space})">
     <svg x="0" y="0" width="370" height="555" viewBox="38 0 218 90" preserveAspectRatio="none"><use href="#cafe-sky"/></svg>
   </g>`).join("")}

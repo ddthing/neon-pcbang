@@ -1,8 +1,6 @@
 const layer = document.getElementById("cafe-ambience");
 const scene = layer.closest(".scene");
-const control = document.getElementById("ambience-control");
 const motion = matchMedia("(prefers-reduced-motion: reduce)");
-const preference = "neon-pcbang-ambience";
 const artwork = {
   hall: document.getElementById("lobby-art"),
   rooms: document.getElementById("rooms-art"),
@@ -67,15 +65,6 @@ layer.innerHTML = `<div class="plant-tiles"></div>
   </svg>`;
 
 const plantLayer = layer.querySelector(".plant-tiles");
-const switchButton = control.querySelector("button");
-let preferred = true;
-try { preferred = localStorage.getItem(preference) !== "off"; } catch {}
-const syncSwitch = connectCafeSwitch(control, (enabled) => {
-  preferred = enabled;
-  try { localStorage.setItem(preference, enabled ? "on" : "off"); } catch {}
-  refresh();
-  return true;
-});
 
 let visible = false;
 let active = false;
@@ -102,7 +91,8 @@ function selectSpace() {
     });
     const context = canvas.getContext("2d");
     context.imageSmoothingEnabled = false;
-    return { canvas, context, x: x + ox, y: y + oy, w, h };
+    const profile = Array.from({ length: h }, (_, row) => Math.sin(Math.PI * row / h));
+    return { canvas, context, x: x + ox, y: y + oy, w, h, profile, lastBend: null };
   });
   plantLayer.replaceChildren(...tiles.map(tile => tile.canvas));
 }
@@ -110,13 +100,18 @@ function selectSpace() {
 function paintPlants() {
   if (source.complete && source.naturalWidth) {
     const now = performance.now() / 1000;
-    for (const [index, { context, x, y, w, h }] of tiles.entries()) {
-      const breeze = 2.2 * Math.sin(now * .9 + index * 2.1) + Math.sin(now * 1.6 + index);
-      for (let row = 0; row < h; row += 2) {
-        // Taper to zero at the patch edges so the pot and floor stay anchored.
-        const shift = Math.round(breeze * Math.sin(Math.PI * row / h));
-        const strip = Math.min(2, h - row);
-        context.drawImage(source, x - shift, y + row, w, strip, 0, row, w, strip);
+    for (const [index, tile] of tiles.entries()) {
+      const { context, x, y, w, h, profile } = tile;
+      const bend = Math.round(4.4 * Math.sin(now * .9 + index * 2.1) + 2 * Math.sin(now * 1.6 + index));
+      if (bend === tile.lastBend) continue;
+      tile.lastBend = bend;
+      // Adjacent rows with the same displacement can be painted as one strip.
+      for (let row = 0; row < h;) {
+        const shift = Math.round(bend * profile[row] / 2);
+        let end = row + 1;
+        while (end < h && Math.round(bend * profile[end] / 2) === shift) end++;
+        context.drawImage(source, x - shift, y + row, w, end - row, 0, row, w, end - row);
+        row = end;
       }
     }
   }
@@ -124,14 +119,9 @@ function paintPlants() {
 }
 
 function refresh() {
-  const enabled = preferred && !motion.matches;
   const wasActive = active;
-  active = enabled && visible && !document.hidden;
-  document.body.dataset.ambience = enabled ? "on" : "off";
+  active = !motion.matches && visible && !document.hidden;
   scene.toggleAttribute("data-ambience-active", active);
-  switchButton.disabled = motion.matches;
-  control.title = motion.matches ? "시스템에서 동작 줄이기를 사용 중이에요." : "";
-  syncSwitch(enabled);
   plantLayer.hidden = !active;
   if (active) {
     selectSpace();

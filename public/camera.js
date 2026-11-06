@@ -1,10 +1,10 @@
 export function createCafeCamera(scene) {
   const viewport = scene.parentElement;
   const button = document.getElementById("cafe-fullscreen");
+  const overviewButton = document.getElementById("cafe-overview");
   const floorButton = document.getElementById("game-view-floor");
   const pcButton = document.getElementById("game-view-pc");
-  let active = false;
-  let native = false;
+  let overview = true;
   let busy = false;
   let position;
   let bounds;
@@ -16,9 +16,9 @@ export function createCafeCamera(scene) {
       pcButton.hidden = !seat;
       lastSeat = seat;
     }
-    if (!active || !bounds || !point) return;
+    if (!bounds || !point) return;
     const { width, height, worldWidth, worldHeight } = bounds;
-    const clamp = (target, overscan) => Math.min(0, Math.max(-overscan, target));
+    const clamp = (target, overscan) => overscan < 0 ? -overscan / 2 : Math.min(0, Math.max(-overscan, target));
     const x = clamp(width * .5 - worldWidth * point.x / 100, worldWidth - width);
     const y = clamp(height * .53 - worldHeight * point.y / 100, worldHeight - height);
     scene.style.setProperty("--camera-x", Math.round(x) + "px");
@@ -26,9 +26,10 @@ export function createCafeCamera(scene) {
   }
 
   function resize() {
-    if (!active) return;
     const { clientWidth: width, clientHeight: height } = viewport;
-    const worldWidth = Math.ceil(Math.max(width, height * 1.5) * 1.25);
+    const worldWidth = overview
+      ? Math.floor(Math.min(width, height * 1.5))
+      : Math.ceil(Math.max(width, height * 1.5) * 1.12);
     const worldHeight = Math.ceil(worldWidth * 2 / 3);
     bounds = { width, height, worldWidth, worldHeight };
     scene.style.setProperty("--camera-width", worldWidth + "px");
@@ -36,58 +37,41 @@ export function createCafeCamera(scene) {
     follow(position, lastSeat);
   }
 
-  function setView(value) {
-    active = value;
-    document.body.classList.toggle("cafe-fullscreen", value);
-    button.setAttribute("aria-pressed", String(value));
-    button.querySelector("span").textContent = value ? "전체화면 나가기" : "전체화면";
-    if (value) {
-      resize();
-      scene.focus({ preventScroll: true });
-      requestAnimationFrame(() => {
-        if (active) scene.classList.add("camera-ready");
-      });
-    } else {
-      scene.classList.remove("camera-ready");
-      for (const key of ["width", "height", "x", "y"]) scene.style.removeProperty("--camera-" + key);
-      if (!document.querySelector("dialog[open]")) button.focus({ preventScroll: true });
-    }
+  function setOverview(value) {
+    if (value === overview) return;
+    overview = value;
+    scene.classList.toggle("camera-ready", !overview);
+    overviewButton.textContent = overview ? "가까이 보기" : "전체 지도";
+    resize();
   }
 
+  overviewButton.addEventListener("click", () => {
+    setOverview(!overview);
+    scene.focus({ preventScroll: true });
+  });
   button.addEventListener("click", async () => {
     if (busy) return;
-    if (active) {
-      if (native && document.fullscreenElement) {
-        try { await document.exitFullscreen(); } catch { setView(false); }
-      } else setView(false);
-      return;
-    }
-    setView(true);
-    if (!document.fullscreenEnabled || !document.documentElement.requestFullscreen) return;
     busy = true;
     try {
-      await document.documentElement.requestFullscreen();
-      native = document.fullscreenElement === document.documentElement;
-      if (!active && native) await document.exitFullscreen();
-    } catch { /* The in-page game view also works in embeds and on mobile. */ }
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+      scene.focus({ preventScroll: true });
+    } catch {
+      setOverview(!overview);
+      scene.focus({ preventScroll: true });
+    }
     finally { busy = false; }
   });
   document.addEventListener("fullscreenchange", () => {
-    if (document.fullscreenElement === document.documentElement && active) {
-      native = true;
-      resize();
-    } else if (native) {
-      native = false;
-      setView(false);
-    }
+    const native = Boolean(document.fullscreenElement);
+    button.setAttribute("aria-pressed", String(native));
+    button.querySelector("span").textContent = native ? "전체화면 나가기" : "전체화면";
+    resize();
   });
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape" || !active || native || document.querySelector("dialog[open]")) return;
-    event.preventDefault();
-    setView(false);
-  });
+  if (!document.fullscreenEnabled) button.hidden = true;
   new ResizeObserver(resize).observe(viewport);
+  if (matchMedia("(orientation: portrait)").matches) setOverview(false);
   floorButton.addEventListener("click", () => document.getElementById("open-floor").click());
   pcButton.addEventListener("click", () => document.getElementById("open-monitor").click());
-  return { follow };
+  return { follow, track: () => setOverview(false) };
 }
