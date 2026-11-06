@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 116 116" fill="none" shape-rendering="crispEdges">
+  <defs>
+    <linearGradient id="counter-wall" x1="66" y1="20" x2="64" y2="92" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3b2f30"/>
+      <stop offset=".3" stop-color="#4a3935"/>
+      <stop offset=".7" stop-color="#55443d"/>
+      <stop offset="1" stop-color="#473634"/>
+    </linearGradient>
+    <linearGradient id="counter-front" x1="66" y1="83" x2="66" y2="93" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#47312a"/>
+      <stop offset=".48" stop-color="#5b4132"/>
+      <stop offset="1" stop-color="#392721"/>
+    </linearGradient>
+    <linearGradient id="warm-light" x1="24" y1="32" x2="105" y2="79" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#dbad84" stop-opacity=".09"/>
+      <stop offset=".5" stop-color="#edd2ac" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#daa980" stop-opacity=".12"/>
+    </linearGradient>
+    <clipPath id="clerk-shape">
+      <path d="m34 90-5-2-3-4 1-4-4-4-1-6-4-4-2-5-3-3v-6l3-3-2-3 1-5 4-3 1-7 5-7 7-3 1-5 6-3 8 2 7 1 8-1 8-3 7-2 6 4 3 7 1 6 5-3 6-5 7-1 6 3 4 6-1 6-4 5-7 3-4 3-3 7-3 6-2 7-4 4-2 7-4 5-5 2-4 4-4 1-4 4-4 2H30l-4-4-1-4z"/>
+      <ellipse cx="90" cy="59" rx="14" ry="22"/>
+      <path d="M22 82h18v11H22zm49 0h17v11H71z"/>
+    </clipPath>
+  </defs>
+  <path fill="#362923" d="M17 25h95v2H17z"/>
+  <path fill="#806555" fill-opacity=".76" d="M18 24h93v1H18z"/>
+  <!-- Mask only the baked attendant and her counter shadow. Shelves and the menu sign stay exposed. -->
+  <g clip-path="url(#clerk-shape)">
+    <path fill="url(#counter-wall)" d="M13 15h102v77H13z"/>
+    <path fill="url(#warm-light)" d="M18 25h92v63H18z"/>
+    <path fill="#352b29" fill-opacity=".11" d="M39 29h41v2H39zm-11 9h77v1H28zm-3 37h80v1H25zM35 82h55v1H35z"/>
+    <path fill="#2a211f" fill-opacity=".28" d="M22 85h67v2H22z"/>
+    <path fill="#bd9872" d="M22 87h67v2H22z"/>
+    <path fill="url(#counter-front)" d="M22 89h67v4H22z"/>
+  </g>
+</svg>

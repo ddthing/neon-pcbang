@@ -20,12 +20,16 @@
   <link rel="stylesheet" href="./game-shell.css">
   <link rel="stylesheet" href="./lucian-corner.css">
   <link rel="stylesheet" href="./corner-shop.css">
+  <link rel="stylesheet" href="./chat.css">
+  <link rel="stylesheet" href="./cafe-delivery.css">
   <script src="./boot.js" defer></script>
   <script src="./lucian-motion.js" defer></script>
   <script src="./visit.js" defer></script>
   <script src="./cafe-screen-shapes.js" defer></script>
   <script src="./app.js" defer></script>
   <script src="./wallpaper.js" defer></script>
+  <script src="./chat.js" type="module"></script>
+  <script src="./cafe-delivery.js" type="module"></script>
   <script src="./walk.js" type="module"></script>
   <script src="./weather.js" type="module"></script>
   <script src="./ambience.js" type="module"></script>
@@ -101,12 +105,17 @@
         </div>
         <div class="scene-viewport">
           <div class="scene" data-space="lobby" tabindex="0" aria-label="매장 이동 화면. 방향키 또는 W A S D로 움직이세요.">
-            <img id="lobby-art" src="./corner-hall-timber.webp" fetchpriority="high" width="1536" height="1024" draggable="false" alt="우드 바닥의 픽셀 아트 PC방에 1인·2인·5인·6인 게임룸과 고양이 점원이 있는 매점이 보이는 모습">
+            <img id="lobby-art" src="./corner-hall-timber.webp" fetchpriority="high" width="1536" height="1024" draggable="false" alt="우드 바닥의 픽셀 아트 PC방에 1인·2인·5인·6인 게임룸과 매점이 보이는 모습">
             <img id="rooms-art" data-src="./pcbang-rooms-pastel.webp" width="1536" height="1024" draggable="false" alt="" hidden>
+            <img class="cafe-empty-counter" id="cafe-empty-counter" src="./cafe-counter-empty.svg" width="116" height="116" fetchpriority="low" alt="" hidden>
             <div id="window-view" class="window-view" aria-hidden="true"></div>
             <div id="cafe-ambience" aria-hidden="true"></div>
             <div id="monitor-layer" aria-hidden="true"></div>
             <div class="cafe-avatars" id="cafe-avatars" aria-hidden="true"></div>
+            <div id="cafe-delivery-clerk" class="cafe-delivery-clerk" aria-hidden="true" hidden>
+              <div class="cafe-clerk-body"><img src="./cafe-clerk-walk.svg" alt="" fetchpriority="low"><span class="cafe-clerk-tray"></span></div>
+            </div>
+            <div id="cafe-delivery-trays" class="cafe-delivery-trays"></div>
             <button id="seat-marker" class="seat-marker mono" type="button" hidden></button>
             <button id="kiosk-pin" class="kiosk-pin" type="button" aria-label="입구 키오스크에서 자리 고르기"><span>자리 선택기</span></button>
             <button class="stage-room-door snack-counter" type="button" data-open="snack-board">매점 주문표</button>
@@ -137,6 +146,21 @@
             <input id="cafe-name" type="text" maxlength="12" pattern="[\p{L}\p{N} _·\-]{1,12}" autocomplete="off">
             <button class="walk-button" type="submit">저장</button>
           </form>
+          <div class="cafe-chat-controls">
+            <form class="cafe-chat-form" id="cafe-chat-form">
+              <label class="pc-sr-only" for="cafe-chat-input">채팅</label>
+              <input id="cafe-chat-input" type="text" maxlength="80" autocomplete="off" placeholder="같은 공간의 손님에게 말하기" required>
+              <button class="walk-button" type="submit">보내기</button>
+              <p class="pc-sr-only" id="cafe-chat-status" role="status"></p>
+            </form>
+            <details class="cafe-chat-options" id="cafe-chat-options">
+              <summary class="walk-button">채팅 설정</summary>
+              <div class="cafe-chat-options-panel">
+                <label><input type="checkbox" id="cafe-chat-mute"> 다른 손님 말풍선 숨기기</label>
+                <div id="cafe-chat-list"></div>
+              </div>
+            </details>
+          </div>
         </div>
         <p class="walk-guests" id="cafe-guests" hidden></p>
         <div class="room-foot">
@@ -293,7 +317,7 @@
         <div class="pc-panel-heading"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg><h3 id="pc-launcher-title" tabindex="-1">게임 런처</h3><span class="mono">04 GAMES</span></div>
         <div class="pc-apps">
           <button class="pc-app" type="button" data-open="arcade"><span class="pc-app-icon lilac" aria-hidden="true">▦</span><span><strong>모퉁이 벽돌깨기</strong><small>공을 튕겨 벽돌을 깨요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
-          <button class="pc-app" type="button" data-open="merge"><span class="pc-app-icon sage mono" aria-hidden="true">2²</span><span><strong>픽셀 머지 2048</strong><small>같은 숫자를 밀어서 합쳐요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="merge"><span class="pc-app-icon sage mono" aria-hidden="true">2²</span><span><strong>2048</strong><small>같은 숫자를 밀어서 합쳐요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
           <button class="pc-app" type="button" data-open="mines"><span class="pc-app-icon cream" aria-hidden="true"><svg><use href="./icons.svg#mine"/></svg></span><span><strong>지뢰찾기</strong><small>안전한 칸을 모두 열어요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
           <button class="pc-app" type="button" data-open="sudoku"><span class="pc-app-icon sage mono" aria-hidden="true">9</span><span><strong>스도쿠</strong><small>빈칸에 숫자 1~9를 채워요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
         </div>
@@ -353,8 +377,8 @@
   </dialog>
   <dialog id="merge" aria-labelledby="merge-title">
     <div class="dialog-inner">
-      <div class="dialog-head"><span class="panel-index mono"><span>02</span> / ARCADE</span><button class="close" type="button" data-close aria-label="머지 게임 닫기">×</button></div>
-      <h2 id="merge-title">픽셀 머지 2048</h2>
+      <div class="dialog-head"><span class="panel-index mono"><span>02</span> / ARCADE</span><button class="close" type="button" data-close aria-label="2048 닫기">×</button></div>
+      <h2 id="merge-title">2048</h2>
       <p class="panel-copy">같은 숫자의 타일을 합쳐 2048을 만들어 보세요.</p>
       <div class="merge-hud mono">
         <div class="ux u018"><span>점수</span><strong id="merge-score" class="u018-num">0</strong></div>
@@ -364,18 +388,15 @@
         <span>목표 <strong id="merge-progress">2 / 2048</strong></span>
         <div class="u093-bar" aria-hidden="true"><i></i></div>
       </div>
-      <div class="ux merge-board mono" id="merge-board" role="table" aria-label="머지 게임 4행 4열" aria-describedby="merge-help" tabindex="0" autofocus></div>
+      <div class="ux merge-board mono" id="merge-board" role="table" aria-label="2048 보드 4행 4열" aria-describedby="merge-help" tabindex="0" autofocus></div>
       <p class="game-status" id="merge-status" role="status">게임을 불러오는 중이에요.</p>
       <div class="merge-controls">
-        <div class="merge-directions" role="group" aria-label="타일 밀기">
-          <button class="walk-button" type="button" data-direction="left" aria-label="왼쪽으로 밀기" disabled>←</button>
-          <button class="walk-button" type="button" data-direction="up" aria-label="위로 밀기" disabled>↑</button>
-          <button class="walk-button" type="button" data-direction="down" aria-label="아래로 밀기" disabled>↓</button>
-          <button class="walk-button" type="button" data-direction="right" aria-label="오른쪽으로 밀기" disabled>→</button>
-        </div>
+        <p class="dialog-note merge-help" id="merge-help">
+          <span class="merge-swipe-demo" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M7 10V4a1.5 1.5 0 0 1 3 0v5l1.6-.6 3.8 1.2c1 .3 1.6 1.2 1.4 2.3L16 17H9l-4-4a1.6 1.6 0 0 1 2-2.5l1 .8"/></svg></span>
+          <span>방향키를 누르거나 보드를 스와이프하세요.</span>
+        </p>
         <button class="walk-button" id="merge-reset" type="button" disabled>새 게임</button>
       </div>
-      <p class="dialog-note" id="merge-help">방향키, 화면 버튼, 보드 스와이프로 타일을 밀어요.</p>
     </div>
   </dialog>
   <dialog id="mines" aria-labelledby="mines-title">
@@ -418,10 +439,20 @@
   <dialog id="focus" aria-labelledby="focus-title">
     <div class="dialog-inner">
       <div class="dialog-head"><span class="panel-index mono"><span>02</span> / FOCUS</span><button class="close" type="button" data-close aria-label="집중 모드 닫기">×</button></div>
-      <h2 id="focus-title">25분 집중 모드</h2>
-      <p class="panel-copy">할 일 하나만 정하고, 내 속도로 시작해요.</p>
-      <div class="timer mono" id="timer" role="timer">25:00</div>
+      <h2 id="focus-title">집중 모드</h2>
+      <p class="panel-copy">집중할 시간을 정하고, 내 속도로 시작해요.</p>
+      <div class="focus-settings">
+        <label for="focus-minutes">집중 시간</label>
+        <div class="focus-minutes-field"><input class="mono" type="number" id="focus-minutes" min="1" max="120" step="1" placeholder="예: 30" inputmode="numeric" aria-describedby="focus-minutes-unit focus-duration-error" required><span id="focus-minutes-unit">분</span></div>
+        <label class="focus-sound"><input type="checkbox" id="focus-sound" checked> 완료 효과음</label>
+      </div>
+      <p id="focus-duration-error" class="focus-duration-error" role="status"></p>
+      <div class="timer mono" id="timer" role="timer">00:00</div>
       <p class="timer-note" id="timer-note">창을 닫아도 타이머는 계속 돌아가요.</p>
+      <div class="ux u093 focus-completion" id="focus-complete" role="status" hidden>
+        <span class="u093-bdg" aria-hidden="true"><svg viewBox="0 0 42 42"><path d="M10 22l7 7 15-16"/></svg></span>
+        <div><strong>집중 완료!</strong><p>잠깐 쉬어가요.</p></div>
+      </div>
       <div class="timer-buttons">
         <button class="primary dialog-action" id="timer-toggle" type="button">집중 시작</button>
         <button class="secondary dialog-action" id="timer-reset" type="button">초기화</button>

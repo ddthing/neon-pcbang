@@ -4,7 +4,8 @@
 
 - **이동:** 방향키, WASD, 또는 바닥 누르기.
 - **화면:** 기본 화면은 비율을 유지하면서 창을 채우고 내 캐릭터를 따라갑니다. 오른쪽 위의 전체 지도 버튼으로 매장을 한 번에 볼 수 있어요.
-- **매점:** 메뉴 검색과 카테고리로 먹거리를 찾아 주문하세요. 실시간 주문표에는 닉네임과 좌석 없이 주문번호와 메뉴, 준비 상태만 보여요.
+- **매점**은 접수 순서대로 주문을 배달해요. 고양이 알바생이 쟁반을 들고 자리에 다녀옵니다. 실시간 주문표에는 주문번호, 메뉴, 상태가 표시돼요.
+- **채팅**은 같은 공간에 있는 손님에게 잠깐 말풍선으로 표시돼요. 채팅 설정에서 특정 손님이나 다른 손님 모두의 말풍선을 숨길 수 있어요.
 - **단골 쿠폰:** 한국 시간 기준 하루 착석 시간 30분을 채우면 도장 1개를 받을 수 있어요. 10개를 모아 매점의 단골 메뉴로 바꿀 수 있습니다. 이 브라우저에 저장된 손님 정보로 쿠폰을 이어서 사용해요.
 - **창밖:** [Open-Meteo](https://open-meteo.com/)의 서울 날씨와 서울의 일출·일몰 시각을 씁니다. 날씨를 가져오지 못하면 한국 시간에 맞춘 풍경을 보여줍니다.
 - **제목 글꼴**은 귀댕이의 [뚝딱감자체](https://blog.naver.com/guidang2/224435435470)이며, [눈누의 웹폰트 주소](https://noonnu.cc/font_page/1969)를 사용합니다.
@@ -61,6 +62,8 @@ npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_invitation_access.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_invite_form_tokens.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0004_invite_code_vault.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0005_cafe_delivery.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0006_cafe_chat.sql
 npm start
 ```
 

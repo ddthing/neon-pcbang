@@ -48,12 +48,11 @@
 #coupon-card .u353-gd { max-width: 270px; }
 #coupon-card .u353-bk svg { fill: none; stroke: #865b43; stroke-width: 1.4; }
 #coupon-card .u353-stp { display: grid; place-items: center; z-index: 2; width: 40px; height: 46px; color: #f6e0b4; background: #635043; border-radius: 14px 14px 5px 5px; border-bottom: 6px solid #8f6148; }
-.delivery-scene, .delivery-banner { color: #372c24; background: #f4ddba; border: 1px solid #a6825d; box-shadow: 0 3px #49382a; z-index: 5; pointer-events: none; }
-.delivery-scene { position: absolute; left: var(--x); top: var(--y); padding: 4px 7px; border-radius: 4px; animation: delivery-land .65s cubic-bezier(.23,.9,.45,1.2) both; }
+.delivery-banner { color: #372c24; background: #f4ddba; border: 1px solid #a6825d; box-shadow: 0 3px #49382a; z-index: 5; pointer-events: none; }
 .delivery-banner { position: sticky; bottom: 4px; display: flex; align-items: center; gap: 10px; width: fit-content; margin: 0 auto 9px; padding: 8px 14px; border-radius: 4px; font-size: 13px; animation: delivery-land .4s ease-out both; }
 .delivery-banner span { font-size: 21px; }
 @keyframes delivery-land { from { opacity: 0; transform: translate(-16px,-26px) scale(.65); } to { opacity: 1; transform: translate(0,-10px) scale(1); } }
 @media (prefers-reduced-motion: reduce) {
-  .delivery-banner, .delivery-scene { animation: none; }
+  .delivery-banner { animation: none; }
   #coupon-card .u353-in, #cafe-boot .u256-ct { transition: none; }
 }

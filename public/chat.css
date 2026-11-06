@@ -1,0 +1,149 @@
+.cafe-chat-controls {
+  display: flex;
+  flex: 0 1 250px;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.cafe-chat-form {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  margin: 0;
+}
+.cafe-chat-form input {
+  min-width: 0;
+  width: 100%;
+  height: 30px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #292825;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.cafe-chat-form input:focus-visible,
+.cafe-chat-form button:focus-visible,
+.cafe-chat-options :is(summary, input, button):focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 2px;
+}
+.cafe-chat-form input::placeholder { color: #afa79a; }
+.cafe-chat-form .walk-button { flex: none; }
+.cafe-chat-form .walk-button:disabled { cursor: default; opacity: .52; }
+.cafe-chat-form .cafe-chat-feedback {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 4px);
+  z-index: 6;
+  width: max-content;
+  max-width: min(260px, 78vw);
+  margin: 0;
+  padding: 4px 7px;
+  border: 1px solid #8e765c;
+  border-radius: 4px;
+  background: #302b25;
+  color: #f0dfc8;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+.cafe-chat-options { position: relative; flex: none; }
+.cafe-chat-options > summary { list-style: none; cursor: pointer; }
+.cafe-chat-options > summary::-webkit-details-marker { display: none; }
+.cafe-chat-options-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 5px);
+  z-index: 12;
+  display: grid;
+  gap: 7px;
+  width: min(250px, 82vw);
+  max-height: min(38dvh, 220px);
+  overflow: auto;
+  padding: 9px;
+  border: 1px solid #76664f;
+  border-radius: 5px;
+  background: #302b25;
+  color: #e5ddcf;
+  box-shadow: 0 6px 22px #0008;
+  font-size: 11px;
+}
+.cafe-chat-options-panel > label { display: flex; align-items: center; gap: 6px; line-height: 1.4; }
+.cafe-chat-options-panel input { accent-color: var(--mint); }
+#cafe-chat-list { display: grid; gap: 4px; }
+.cafe-chat-mute-player {
+  width: 100%;
+  min-height: 28px;
+  padding: 4px 6px;
+  border: 1px solid #625a4f;
+  border-radius: 4px;
+  background: #403a33;
+  color: #e5ddcf;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: left;
+}
+.cafe-chat-mute-player:hover { background: #51493f; }
+.cafe-speech-bubble {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  width: max-content;
+  max-width: min(180px, 68cqw);
+  padding: 4px 7px;
+  overflow-wrap: anywhere;
+  border: 1px solid #cfbd9f;
+  border-radius: 4px;
+  background: #fff0d9;
+  box-shadow: 0 2px #3a3027aa;
+  color: #3b332d;
+  font-family: inherit;
+  font-size: clamp(9px, .72cqw, 13px);
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  white-space: pre-wrap;
+  transform: translate(-50%, 0);
+  pointer-events: none;
+}
+.cafe-speech-bubble::after {
+  position: absolute;
+  left: calc(50% - 4px);
+  bottom: -5px;
+  width: 7px;
+  height: 7px;
+  border-right: 1px solid #cfbd9f;
+  border-bottom: 1px solid #cfbd9f;
+  background: #fff0d9;
+  content: "";
+  transform: rotate(45deg);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cafe-speech-bubble.is-arriving { animation: cafe-speech-arrive .2s cubic-bezier(.2,.8,.25,1.2) both; }
+}
+@keyframes cafe-speech-arrive {
+  from { opacity: 0; transform: translate(-50%, 5px) scale(.94); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+@media (max-width: 700px) {
+  .cafe-chat-controls { order: 5; flex: 1 1 100%; }
+  .cafe-chat-form { flex: 1 1 auto; }
+  .cafe-chat-form input { font-size: 12px; }
+  .cafe-fullscreen .cafe-chat-options-panel { bottom: calc(100% + 8px); }
+}
+@media (max-width: 380px) {
+  .cafe-chat-options > summary { width: 34px; overflow: hidden; white-space: nowrap; font-size: 0; }
+  .cafe-chat-options > summary::before { content: "⚙"; font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cafe-speech-bubble.is-arriving { animation: none; }
+}

@@ -184,26 +184,23 @@
   box-shadow:inset 0 0 0 3px var(--ux-surface-3);transition:box-shadow .4s .6s;
 }
 .shop-delivery-progress .u087-dots span.on{box-shadow:inset 0 0 0 5px #22C3A6}
-.shop-delivery-progress .u087-truck-lane{position:absolute;left:8px;right:8px;top:-3px;height:34px}
-.shop-delivery-progress .u087-truck{
-  position:absolute;left:0;top:0;width:44px;height:34px;
+.shop-delivery-progress .u087-clerk-lane{position:absolute;left:8px;right:8px;top:-3px;height:34px}
+.shop-delivery-progress .u087-clerk{
+  position:absolute;left:0;top:0;width:30px;height:30px;
   transition:left 1s cubic-bezier(.5,0,.2,1);
 }
-.shop-delivery-progress.is-done .u087-truck{left:calc(100% - 44px)}
-.shop-delivery-progress .u087-truck svg{width:44px;height:34px}
-.shop-delivery-progress.is-moving .u087-truck svg{animation:u087-bump .25s ease-in-out infinite}
+.shop-delivery-progress .u087-clerk > svg{display:block;width:30px;height:30px}
+.shop-delivery-progress.is-moving .u087-clerk > svg{animation:u087-bump .25s ease-in-out infinite}
 @keyframes u087-bump{50%{transform:translateY(-2px) rotate(-1deg)}}
 .shop-delivery-progress .u087-flag{
-  position:absolute;left:12px;top:-2px;width:24px;height:24px;border-radius:50%;display:grid;
+  position:absolute;right:-7px;top:-5px;width:16px;height:16px;border:1px solid #302c26;border-radius:50%;display:grid;
   place-items:center;background:var(--ux-mint);color:var(--ux-accent-ink);transform:scale(0);
   transition:transform .5s var(--ux-spring) .2s;
 }
-.shop-delivery-progress .u087-flag svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.shop-delivery-progress .u087-flag svg{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .shop-delivery-progress.is-done .u087-flag{transform:none}
-.shop-delivery-progress.is-done .u087-truck svg{opacity:.25;transition:opacity .4s}
 .shop-delivery-progress .u087-labs{display:flex;justify-content:space-between;margin:1px 0 0;font-size:10px;font-weight:700;color:var(--ux-ink-3)}
-.shop-delivery-progress .u087-labs span{width:70px;text-align:left;transition:color .4s}
-.shop-delivery-progress .u087-labs span:last-child{text-align:right}
+.shop-delivery-progress .u087-labs span{flex:1;min-width:0;text-align:center;transition:color .4s}
 .shop-delivery-progress .u087-labs span.on{color:var(--ux-ink)}
 .shop-delivery-progress .u087-log{margin:6px 0 0;padding:0;list-style:none}
 .shop-delivery-progress .u087-log li{position:relative;padding:0 0 3px 14px}
@@ -224,10 +221,9 @@
 
 @media (prefers-reduced-motion:reduce){
   .shop-actions #place-order.done:not(:disabled),.shop-delivery-progress .u087-log li.new,
-  .shop-delivery-progress.is-moving .u087-truck svg{animation:none}
+  .shop-delivery-progress.is-moving .u087-clerk > svg{animation:none}
   .u051-cart b,.shop-delivery-progress .u087-line i,.shop-delivery-progress .u087-dots span,
-  .shop-delivery-progress .u087-truck,.shop-delivery-progress .u087-flag,
-  .shop-delivery-progress.is-done .u087-truck svg{transition:none}
+  .shop-delivery-progress .u087-clerk,.shop-delivery-progress .u087-flag{transition:none}
 }
 @media (max-width:360px){
   .shop-actions{gap:6px}

@@ -268,7 +268,14 @@ function createCafeFocusMotion(dialog) {
   clock.className = "u100-clk cafe-focus-flip";
   clock.setAttribute("aria-hidden", "true");
 
-  for (const part of ["mt", "mo", "st", "so"]) {
+  for (let index = 0; index < 5; index += 1) {
+    if (index === 3) {
+      const colon = document.createElement("span");
+      colon.className = "u100-co";
+      colon.setAttribute("aria-hidden", "true");
+      colon.innerHTML = "<i></i><i></i>";
+      clock.append(colon);
+    }
     const face = document.createElement("span");
     face.className = "u100-fl";
     face.setAttribute("aria-hidden", "true");
@@ -276,26 +283,20 @@ function createCafeFocusMotion(dialog) {
       '<span class="u100-ft"><b>0</b></span><span class="u100-fb"><b>0</b></span>';
     digits.push({
       value: "",
+      face,
       top: face.querySelector(".u100-t b"),
       bottom: face.querySelector(".u100-b b"),
       topFlip: face.querySelector(".u100-ft"),
       bottomFlip: face.querySelector(".u100-fb"),
     });
     clock.append(face);
-    if (part === "mo") {
-      const colon = document.createElement("span");
-      colon.className = "u100-co";
-      colon.setAttribute("aria-hidden", "true");
-      colon.innerHTML = "<i></i><i></i>";
-      clock.append(colon);
-    }
   }
 
   progress.className = "cafe-focus-progress";
   progress.setAttribute("aria-hidden", "true");
   progress.append(bar);
   screenReader.className = "cafe-focus-sr";
-  screenReader.textContent = "25:00";
+  screenReader.textContent = "";
   timer.replaceChildren(screenReader, clock, progress);
   timer.dataset.flipReady = "true";
 
@@ -345,18 +346,22 @@ function createCafeFocusMotion(dialog) {
     };
   }
 
-  function update(display, remainingRatio, isRunning = false) {
+  function update(display, remainingRatio, isRunning = false, durationMs) {
     const previous = screenReader.textContent;
     if (previous !== display) screenReader.textContent = display;
     if (!dialog.open || document.hidden) return;
     const nextRatio = Math.max(0, Math.min(1, Number(remainingRatio) || 0));
-    const [minutes = "00", seconds = "00"] = display.split(":");
-    const next = minutes.padStart(2, "0").slice(-2) + seconds.padStart(2, "0").slice(-2);
+    const [minutes = "0", seconds = "00"] = display.split(":");
+    const minuteValue = Number(minutes) || 0;
+    const next = String(minuteValue).padStart(3, "0") + seconds.padStart(2, "0");
     const animate = showing && !motion.matches;
     showing = true;
+    digits[0].face.classList.toggle("u100-empty-leading", minuteValue < 100);
     next.split("").forEach((digit, index) => paintDigit(digits[index], digit, animate));
-    timer.classList.toggle("warn", nextRatio > 0 && nextRatio <= 10 / (25 * 60));
-    timer.classList.toggle("done", nextRatio === 0);
+    const hasDuration = Number.isFinite(durationMs) && durationMs > 0;
+    timer.classList.toggle("warn", hasDuration && nextRatio > 0 && nextRatio * durationMs <= 10_000);
+    timer.classList.toggle("done", hasDuration && nextRatio === 0);
+    timer.classList.toggle("empty", !hasDuration);
     clock.classList.toggle("run", isRunning && !motion.matches);
     progress.classList.toggle("is-animated", animate);
     bar.style.setProperty("--p", String(nextRatio));

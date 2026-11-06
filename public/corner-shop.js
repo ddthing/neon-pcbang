@@ -8,6 +8,7 @@ const couponDialog = $("#snack-coupon");
 const seating = window.cafeSeating;
 const reduced = matchMedia("(prefers-reduced-motion: reduce)");
 const stateKey = "corner-cafe-order";
+const deliveryNoticeKey = "corner-cafe-delivery-notices";
 const storage = {
   get(store, key) { try { return window[store].getItem(key); } catch { return null; } },
   set(store, key, value) { try { window[store].setItem(key, value); } catch {} },
@@ -23,9 +24,10 @@ const element = (tag, className, content = "") => {
   node.textContent = content;
   return node;
 };
-let data, catalog, sending = false, inFlight, retryId, order, orderTick, pollTimer;
+let data, catalog, sending = false, inFlight, retryId, order, pollTimer;
 let clockOffset = 0, deliveryMotionTimer;
 try { order = JSON.parse(storage.get("sessionStorage", stateKey)); } catch {}
+const deliveredNotices = readDeliveryNotices();
 const serverNow = () => Date.now() + clockOffset;
 const cart = new Map();
 const controls = new Map();
@@ -52,8 +54,29 @@ const deliveryProgress = createDeliveryProgress();
 receipt.append(deliveryProgress.root);
 const flyingItems = new Set();
 let progressOrderId = "";
-let progressStage = -1;
+let progressStage = "";
 let buttonFeedbackTimer;
+const statusLabels = {
+  queued: "대기 중",
+  preparing: "준비 중",
+  delivering: "배달 중",
+  delivered: "배달 완료",
+  canceled: "취소됨",
+};
+function orderStatus(value) {
+  if (value.status === "cancelled") return "canceled";
+  if (statusLabels[value.status]) return value.status;
+  if (value.delivered || value.readyAt <= serverNow()) return "delivered";
+  return "preparing";
+}
+
+function orderStatusLabel(value) {
+  const status = orderStatus(value);
+  const step = value.queuePosition || value.position;
+  return status === "queued" && Number.isInteger(step) && step > 0
+    ? `대기 ${step}번`
+    : statusLabels[status];
+}
 
 function createDeliveryProgress() {
   const root = element("section", "ux u087 shop-delivery-progress");
@@ -72,23 +95,21 @@ function createDeliveryProgress() {
 
   const dots = element("span", "u087-dots");
   dots.setAttribute("aria-hidden", "true");
-  const endpoints = Array.from({ length: 2 }, () => element("span", ""));
+  const endpoints = Array.from({ length: 4 }, () => element("span", ""));
   dots.append(...endpoints);
 
-  const truck = element("span", "u087-truck");
-  truck.setAttribute("aria-hidden", "true");
-  truck.innerHTML = '<svg viewBox="0 0 44 34"><rect x="2" y="6" width="24" height="18" rx="3" fill="#06B6D4"/><path d="M26 11h8l6 7v6H26z" fill="#22C3A6"/><path d="M29 13.5h4l3.5 4H29z" fill="#E6FBF7"/><circle cx="10" cy="26" r="4" fill="#16151B" stroke="#fff" stroke-width="2"/><circle cx="33" cy="26" r="4" fill="#16151B" stroke="#fff" stroke-width="2"/><rect x="6" y="10" width="10" height="3" rx="1.5" fill="#fff" opacity=".7"/></svg>';
+  const clerk = element("span", "u087-clerk");
+  clerk.setAttribute("aria-hidden", "true");
+  clerk.innerHTML = '<svg viewBox="0 0 28 28" shape-rendering="crispEdges"><path fill="#39332e" d="M3 8h3V3h5V1h6v2h5v5h3v8h-4v4H7v-4H3z"/><path fill="#dda66c" d="M6 8h16v7h-2v4H8v-4H6z"/><path fill="#f0d5b2" d="M8 8h2v4H8zm10 0h2v4h-2z"/><path fill="#403832" d="M9 10h2v2H9zm8 0h2v2h-2z"/><path fill="#a95751" d="M12 13h4v2h-4z"/><path fill="#f2e5cf" d="M4 3h6V1h8v2h6v4h-3V5H7v2H4z"/><path fill="#a87852" d="M2 12h4v2H2zm20 0h4v2h-4z"/><path fill="#93ab93" d="M6 19h16v2h3v6H3v-6h3z"/><path fill="#e8d8ba" d="M10 20h8v6h-8z"/></svg>';
   const flag = element("span", "u087-flag");
   flag.innerHTML = '<svg viewBox="0 0 14 14"><path d="M3 7.4l2.6 2.6L11 4.6"/></svg>';
-  truck.append(flag);
-  const lane = element("span", "u087-truck-lane");
-  lane.append(truck);
+  clerk.append(flag);
+  const lane = element("span", "u087-clerk-lane");
+  lane.append(clerk);
   track.append(line, dots, lane);
 
   const labels = element("div", "u087-labs");
-  const startLabel = element("span", "", "주문 접수");
-  const finishLabel = element("span", "", "배달 완료");
-  labels.append(startLabel, finishLabel);
+  for (const label of ["대기", "준비", "배달", "도착"]) labels.append(element("span", "", label));
 
   const log = element("ol", "u087-log");
   const ordered = element("li", "");
@@ -100,7 +121,26 @@ function createDeliveryProgress() {
   }
   root.append(heading, track, labels, log);
 
-  return { root, reference, message, track, fill, endpoints, labels, log, ordered, accepted };
+  return { root, reference, message, track, lane, fill, endpoints, clerk, labels, log, ordered, accepted };
+}
+
+function readDeliveryNotices() {
+  try {
+    const saved = JSON.parse(storage.get("sessionStorage", deliveryNoticeKey));
+    return new Set(Array.isArray(saved) ? saved.filter((id) => typeof id === "string" && /^[a-f0-9-]{36}$/i.test(id)) : []);
+  } catch { return new Set(); }
+}
+
+function saveDeliveryNotices() {
+  storage.set("sessionStorage", deliveryNoticeKey, JSON.stringify([...deliveredNotices]));
+}
+
+function wasDeliveryNotified(id) {
+  if (deliveredNotices.has(id)) return true;
+  deliveredNotices.add(id);
+  while (deliveredNotices.size > 32) deliveredNotices.delete(deliveredNotices.values().next().value);
+  saveDeliveryNotices();
+  return false;
 }
 
 function updateCartBadge(count) {
@@ -162,61 +202,76 @@ function flyItem(item, source) {
   };
 }
 
-function addOrderLogEntry(entry, message, time, animate) {
-  const [title, timestamp] = entry.querySelectorAll("b, small");
-  setText(title, message);
-  setText(timestamp, time);
-  entry.classList.toggle("new", animate && !reduced.matches && !document.hidden);
-  deliveryProgress.log.prepend(entry);
+function minuteLabel(timestamp) {
+  if (!timestamp) return "";
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit",
+  }).format(timestamp);
 }
 
-function updateDeliveryProgress(waiting) {
-  const stage = Number(!waiting);
+function updateDeliveryProgress() {
+  if (!order) return;
+  const status = orderStatus(order);
   const newOrder = order.id !== progressOrderId;
-  const changed = newOrder || stage !== progressStage;
-  const animateArrival = !newOrder && progressStage === 0 && stage === 1;
+  const changed = newOrder || status !== progressStage;
+  const stage = { queued: 0, preparing: 1, delivering: 2, delivered: 3, canceled: 0 }[status];
+  const animateArrival = !newOrder && status === "delivered" && progressStage !== "delivered";
   deliveryProgress.reference.textContent = "주문 " + order.id.slice(0, 8).toUpperCase();
-  setText(deliveryProgress.message, waiting ? "주문을 준비하고 있어요." : "배달이 도착했어요.");
-  deliveryProgress.root.classList.toggle("is-done", !waiting);
+  setText(deliveryProgress.message, {
+    queued: "앞 주문 배달을 기다리고 있어요.",
+    preparing: "순서가 되어 음식을 준비하고 있어요.",
+    delivering: "고양이 알바생이 쟁반을 들고 가고 있어요.",
+    delivered: "배달이 도착했어요.",
+    canceled: "주문이 취소됐어요.",
+  }[status]);
+  deliveryProgress.root.classList.toggle("is-done", status === "delivered");
+  deliveryProgress.root.classList.toggle("is-canceled", status === "canceled");
+  deliveryProgress.root.classList.toggle("is-moving", status === "delivering");
+  const departure = Number(order.startAt);
+  const arrival = Number(order.readyAt);
+  const remainingTrip = arrival - departure;
+  const tripProgress = status === "delivered" ? 1
+    : status === "delivering" && Number.isFinite(remainingTrip) && remainingTrip > 0
+      ? Math.max(0, Math.min(1, (serverNow() - departure) / remainingTrip)) : 0;
+  const clerkDistance = Math.max(0, deliveryProgress.lane.clientWidth - deliveryProgress.clerk.offsetWidth);
+  deliveryProgress.clerk.style.left = Math.round(clerkDistance * tripProgress) + "px";
   if (animateArrival) {
-    deliveryProgress.root.classList.add("is-moving");
     clearTimeout(deliveryMotionTimer);
     deliveryMotionTimer = setTimeout(() => deliveryProgress.root.classList.remove("is-moving"), 1000);
   }
 
-  deliveryProgress.fill.style.setProperty("--p", String(stage));
+  deliveryProgress.fill.style.setProperty("--p", String(stage / 3));
   deliveryProgress.track.setAttribute("role", "progressbar");
-  deliveryProgress.track.setAttribute("aria-label", "주문 진행 단계");
+  deliveryProgress.track.setAttribute("aria-label", "주문 배달 진행 단계");
   deliveryProgress.track.setAttribute("aria-valuemin", "1");
-  deliveryProgress.track.setAttribute("aria-valuemax", "2");
+  deliveryProgress.track.setAttribute("aria-valuemax", "4");
   deliveryProgress.track.setAttribute("aria-valuenow", String(stage + 1));
-  deliveryProgress.track.setAttribute("aria-valuetext", waiting ? "주문 접수" : "배달 완료");
+  deliveryProgress.track.setAttribute("aria-valuetext", orderStatusLabel(order));
   deliveryProgress.endpoints.forEach((point, index) => point.classList.toggle("on", index <= stage));
   deliveryProgress.labels.querySelectorAll("span").forEach((label, index) => label.classList.toggle("on", index === stage));
 
-  if (changed) {
-    deliveryProgress.log.replaceChildren(deliveryProgress.accepted);
-    if (order.createdAt) {
-      const time = new Intl.DateTimeFormat("ko-KR", {
-        timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit",
-      }).format(order.createdAt);
-      deliveryProgress.accepted.querySelector("small").textContent = time;
-    } else {
-      deliveryProgress.accepted.querySelector("small").textContent = "";
-    }
-    setText(deliveryProgress.accepted.querySelector("b"), "주문이 접수됐어요.");
-    if (stage === 1) {
-      const arrivalTime = new Intl.DateTimeFormat("ko-KR", {
-        timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit",
-      }).format(order.readyAt);
-      addOrderLogEntry(deliveryProgress.ordered, "준비한 상품이 도착했어요.", arrivalTime, animateArrival);
-    }
-    if (newOrder && stage === 0) deliveryProgress.log.append(deliveryProgress.accepted);
+  if (!changed) return;
+  deliveryProgress.log.replaceChildren(deliveryProgress.accepted);
+  deliveryProgress.accepted.querySelector("small").textContent = minuteLabel(order.createdAt);
+  setText(deliveryProgress.accepted.querySelector("b"), "주문을 접수했어요.");
+  const stateMessages = {
+    queued: "앞 주문 배달을 기다리고 있어요.",
+    preparing: "알바생이 음식을 준비하고 있어요.",
+    delivering: "고양이 알바생이 배달 중이에요.",
+    delivered: "쟁반이 도착했어요.",
+    canceled: "주문이 취소됐어요.",
+  };
+  const eventTime = status === "delivered" ? order.readyAt
+    : status === "delivering" ? order.startAt : order.createdAt;
+  setText(deliveryProgress.ordered.querySelector("b"), stateMessages[status]);
+  deliveryProgress.ordered.querySelector("small").textContent = minuteLabel(eventTime);
+  deliveryProgress.log.append(deliveryProgress.ordered);
+  if (!newOrder && status === "delivered") {
+    deliveryProgress.ordered.classList.add("new");
+    setTimeout(() => deliveryProgress.ordered.classList.remove("new"), 550);
   }
-  if (newOrder || stage !== progressStage) {
-    progressOrderId = order.id;
-    progressStage = stage;
-  }
+  progressOrderId = order.id;
+  progressStage = status;
 }
 
 function clearShopAnimations() {
@@ -231,7 +286,9 @@ function clearShopAnimations() {
 
 function updateShop() {
   const seat = currentSeat();
-  const waiting = order && order.readyAt > serverNow();
+  const orderState = order ? orderStatus(order) : "";
+  const clerkReturning = Boolean(order && orderState === "delivered" && order.returnAt > serverNow());
+  const waiting = ["queued", "preparing", "delivering"].includes(orderState) || clerkReturning;
   const eligible = data && data.loyalty.balance >= data.loyalty.couponStamps;
   setText($("#order-location"), seat ? "내 자리 " + seating.label(seat) + "로 가져다드려요." : "자리에 앉으면 주문할 수 있어요.");
   reward.hidden = !catalog || !eligible;
@@ -246,12 +303,15 @@ function updateShop() {
   }
   rewardToggle.disabled = sending || (!rewardToggle.checked && quantity >= 30);
   submit.disabled = !seat || sending || !quantity || waiting;
-  setText(submit, waiting ? "주문 조리 중" : quantity ? "내 자리로 주문하기 · " + quantity + "개" : "내 자리로 주문하기");
+  setText(submit, waiting
+    ? clerkReturning ? "알바생이 카운터로 돌아오고 있어요."
+      : { queued: "대기 순서 " + orderStatusLabel(order), preparing: "조리 중", delivering: "배달 중" }[orderState]
+    : quantity ? "내 자리로 주문하기 · " + quantity + "개" : "내 자리로 주문하기");
   $("#order-receipt").hidden = !order;
   if (order) {
-    setText($("#order-status"), "주문 " + order.id.slice(0, 8).toUpperCase() + (waiting ? " · 조리 중" : " · 준비 완료"));
-    setText($("#order-items"), lineText(order.items));
-    updateDeliveryProgress(waiting);
+    setText($("#order-status"), "주문 " + order.id.slice(0, 8).toUpperCase() + " · " + orderStatusLabel(order));
+    setText($("#order-items"), lineText(Array.isArray(order.items) ? order.items : []));
+    updateDeliveryProgress();
   }
 }
 
@@ -395,9 +455,12 @@ function renderBoard() {
       });
     } else row.node.style.transform = "translateY(" + index * 42 + "px)";
     row.index = index;
-    const ready = entry.readyAt <= serverNow();
-    row.status.style.setProperty("--c", ready ? "#c4d6ac" : "#efcaa4");
-    setText(row.status, ready ? "준비 완료" : "조리 중");
+    const statusState = orderStatus(entry);
+    const status = statusLabels[statusState];
+    row.status.style.setProperty("--c",
+      statusState === "canceled" ? "#c39b89"
+        : statusState === "delivered" ? "#c4d6ac" : "#efcaa4");
+    setText(row.status, status);
   });
   boardBody.style.height = orders.length * 42 + "px";
   boardEmpty.hidden = Boolean(orders.length);
@@ -469,51 +532,51 @@ function stamp(index) {
   setTimeout(() => { stamping = false; updateCoupon(); }, 560);
 }
 
-function showDelivery() {
-  const seat = currentSeat();
-  if (!seat || seat !== order.seat) return;
-  const location = seating.position(seat);
-  if (location) {
-    const tray = element("div", "delivery-scene", "🍱");
-    tray.setAttribute("aria-hidden", "true");
-    tray.style.setProperty("--x", location.x + "%");
-    tray.style.setProperty("--y", (location.y - 4) + "%");
-    $(".scene").append(tray);
-    setTimeout(() => tray.remove(), 3600);
-  }
+function showDelivery(delivered) {
+  if (!delivered || wasDeliveryNotified(delivered.id)) return;
   const opened = [...document.querySelectorAll("dialog[open]")].at(-1);
   if (opened) {
     const banner = element("div", "delivery-banner");
-    const icon = element("span", "", "🍱");
+    const icon = element("span", "", "🐱");
     icon.setAttribute("aria-hidden", "true");
-    banner.append(icon, element("strong", "", "먹거리가 도착했어요!"));
+    banner.append(icon, element("strong", "", "알바생이 쟁반을 배달했어요!"));
     banner.setAttribute("role", "status");
     opened.append(banner);
     setTimeout(() => banner.remove(), 3800);
   }
   window.recordCafeStamp?.("snack");
 }
-function watchDelivery() {
-  clearTimeout(orderTick);
-  if (!order || order.delivered) return;
-  const wait = order.readyAt - serverNow();
-  if (wait > 0) { orderTick = setTimeout(watchDelivery, wait + 20); return; }
-  order.delivered = true;
+
+function updateOwnOrder(incoming, now) {
+  const previous = order ? orderStatus(order) : null;
+  if (!incoming) {
+    order = null;
+    storage.set("sessionStorage", stateKey, "");
+    updateShop();
+    return;
+  }
+  const next = {
+    ...incoming,
+    status: orderStatus(incoming),
+    createdAt: Number.isFinite(incoming.createdAt) ? incoming.createdAt : now,
+    items: Array.isArray(incoming.items) ? incoming.items : [],
+  };
+  const changedOrder = order?.id !== next.id;
+  order = next;
   storage.set("sessionStorage", stateKey, JSON.stringify(order));
-  showDelivery();
+  if (order.status === "delivered" && (changedOrder || previous !== "delivered")) showDelivery(order);
   updateShop();
-  if (boardDialog.open) renderBoard();
 }
 
-function applyData(result, animateStamp = false) {
+function applyData(result, animateStamp = false, rejectedOrder = false) {
   const previousBalance = data?.loyalty.balance ?? 0;
   data = result;
   clockOffset = result.now - Date.now();
   if (animateStamp && result.loyalty.claimed && result.loyalty.balance > previousBalance) stamp(previousBalance);
+  if (Object.hasOwn(result, "order") && !(rejectedOrder && !result.order)) updateOwnOrder(result.order, result.now);
   if (boardDialog.open) renderBoard();
   updateCoupon();
-  updateShop();
-  watchDelivery();
+  if (!Object.hasOwn(result, "order")) updateShop();
 }
 async function request(action, params = {}) {
   const visitor = storage.get("sessionStorage", "neon-cafe-visitor");
@@ -564,14 +627,12 @@ submit.addEventListener("click", () => action(async () => {
       coupon: rewardToggle.checked,
     });
     if (result.order) {
-      order = { ...result.order, createdAt: result.now };
-      storage.set("sessionStorage", stateKey, JSON.stringify(order));
       cart.clear();
       retryId = null;
       rewardToggle.checked = false;
       setText(shopFeedback, "");
     } else setText(shopFeedback, "좌석이나 쿠폰 상태가 바뀌었거나 이미 조리 중인 주문이 있어요.");
-    applyData(result);
+    applyData(result, false, Boolean(result.rejected));
   } catch { setText(shopFeedback, "주문을 확인하지 못했어요. 다시 눌러주세요."); }
 }));
 claim.addEventListener("click", () => action(async () => {
@@ -595,7 +656,10 @@ shop.addEventListener("close", clearShopAnimations);
 reduced.addEventListener("change", () => {
   if (reduced.matches) clearShopAnimations();
 });
-document.addEventListener("cafe-seat-phase", () => { updateShop(); refresh(); });
+document.addEventListener("cafe-seat-phase", () => {
+  updateShop();
+  refresh();
+});
 fetch("./snack-menu.json").then((response) => {
   if (!response.ok) throw Error("catalog");
   return response.json();
@@ -605,5 +669,4 @@ fetch("./snack-menu.json").then((response) => {
   renderCatalog();
 }).catch(() => menuBody.append(element("p", "shop-menu-empty", "매점 메뉴를 불러올 수 없어요. 새로고침해 주세요.")));
 updateShop();
-watchDelivery();
 refresh();

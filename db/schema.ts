@@ -34,7 +34,14 @@ export const orders = sqliteTable("cafe_orders", {
   coupon: integer().notNull().default(0),
   createdAt: integer("created_at").notNull(),
   readyAt: integer("ready_at").notNull(),
+  visitorId: text("visitor_id"),
+  startAt: integer("start_at").notNull().default(0),
+  returnAt: integer("return_at").notNull().default(0),
+  leftAt: integer("left_at"),
 }, (table) => [
   index("cafe_orders_recent").on(table.createdAt),
   index("cafe_orders_member").on(table.memberId, table.coupon, table.readyAt),
+  index("cafe_orders_attendant").on(table.startAt, table.returnAt, table.leftAt),
+  index("cafe_orders_visitor").on(table.visitorId, table.leftAt, table.readyAt),
+  index("cafe_orders_return").on(table.returnAt),
 ]);

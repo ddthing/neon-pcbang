@@ -5,6 +5,7 @@ import { BOARD_SIZE, createMergeBoard, moveMergeBoard, canMoveMergeBoard } from 
 
 const goal = 2048;
 const bestKey = "neon-pcbang-merge-best";
+const swipeHintKey = "neon-pcbang-2048-swipe-seen";
 const arrowKeys = new Map([
   ["ArrowLeft", "left"], ["ArrowUp", "up"], ["ArrowDown", "down"], ["ArrowRight", "right"],
 ]);
@@ -23,8 +24,17 @@ export function initMerge() {
   const progress = document.getElementById("merge-progress");
   const progressBar = dialog.querySelector(".u093-bar");
   const reset = document.getElementById("merge-reset");
-  const controls = [...dialog.querySelectorAll("[data-direction]")];
+  const hint = dialog.querySelector(".merge-swipe-demo");
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
+  let showHint = true;
+  try { showHint = !sessionStorage.getItem(swipeHintKey); } catch {}
+  hint.classList.toggle("is-new", showHint);
+  function finishHint() {
+    if (!hint.classList.contains("is-new")) return;
+    hint.classList.remove("is-new");
+    try { sessionStorage.setItem(swipeHintKey, "1"); } catch {}
+  }
+  hint.addEventListener("animationend", finishHint, { once: true });
   const canvas = document.createElement("canvas");
   canvas.className = "u093-cf";
   canvas.setAttribute("aria-hidden", "true");
@@ -97,7 +107,6 @@ export function initMerge() {
     progress.textContent = `${Math.min(highest, goal)} / ${goal}`;
     progressBar.style.setProperty("--p", Math.min(highest / goal, 1));
     showScore();
-    controls.forEach((button) => { button.disabled = finished; });
   }
 
   // Lucian #022 uses the same ring and paired dots for each merged tile.
@@ -195,6 +204,7 @@ export function initMerge() {
 
   function move(direction) {
     if (finished) return;
+    finishHint();
     const result = moveMergeBoard(values, direction);
     if (!result.changed) {
       status.textContent = "이쪽으로는 움직일 수 없어요.";
@@ -211,7 +221,6 @@ export function initMerge() {
     }
     const won = !reachedGoal && values.some((value) => value >= goal);
     finished = !canMoveMergeBoard(values);
-    const directionFocused = controls.includes(document.activeElement);
     paint();
     if (!motion.matches) {
       for (const index of result.merged) {
@@ -237,7 +246,6 @@ export function initMerge() {
       celebrate();
     }
     if (won || finished) window.recordCafeStamp("game");
-    if (finished && directionFocused) reset.focus();
     status.textContent = won
       ? (finished ? "2048 달성! 더 움직일 수 없어요." : "2048 달성! 더 큰 타일에도 도전해 보세요.")
       : finished ? "더 움직일 수 없어요. 새 게임으로 다시 도전해 보세요."
@@ -250,7 +258,6 @@ export function initMerge() {
     event.preventDefault();
     move(direction);
   });
-  controls.forEach((button) => button.addEventListener("click", () => move(button.dataset.direction)));
   board.addEventListener("pointerdown", (event) => {
     if (!event.isPrimary || event.button !== 0) return;
     swipe = { id: event.pointerId, x: event.clientX, y: event.clientY };
