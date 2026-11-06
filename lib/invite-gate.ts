@@ -22,37 +22,28 @@ function esc(value: unknown) {
   return String(value ?? "").replace(/[&<>"']/g, (s) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s]!));
 }
 
-const csrfCookieHttps = "__Host-pcbang_csrf";
-const csrfCookieLocal = "pcbang_csrf";
-function csrfCookieName(request: Request) {
-  return new URL(request.url).protocol === "https:" ? csrfCookieHttps : csrfCookieLocal;
-}
-function getNamedCookie(request: Request, name: string) {
-  const pair = (request.headers.get("Cookie") || "").split(";")
-    .map((part) => part.trim()).find((part) => part.startsWith(name + "="));
-  return pair?.slice(name.length + 1) || "";
-}
-function csrfCookieValue(request: Request) {
-  return getNamedCookie(request, csrfCookieName(request));
-}
-function csrfForForm(request: Request) {
-  const existing = csrfCookieValue(request);
-  if (/^[a-f0-9]{64}$/.test(existing)) return existing;
+function secureRandomHex() {
   return Array.from(crypto.getRandomValues(new Uint8Array(32)),
     (value) => value.toString(16).padStart(2, "0")).join("");
 }
 
-function page(title: string, body: string, status = 200, request?: Request) {
+async function pageWithForm(db: DB, title: string, html: string, status = 200) {
+  const now = Date.now();
+  const token = secureRandomHex();
+  // Keep an unguessable, single-use token on the server, not in a browser cookie.
+  // A cross-origin attacker cannot read the HTML containing the token.
+  await db.prepare("DELETE FROM invite_form_tokens WHERE expires_at <= ?").bind(now).run();
+  await db.prepare("INSERT INTO invite_form_tokens (token_hash, expires_at) VALUES (?, ?)")
+    .bind(await digest(token), now + 30 * 60_000).run();
+  const safeHtml = html.replace(/(<form\\b[^>]*>)/gi,
+    '$1<input type="hidden" name="csrf" value="' + token + '">');
+  return page(title, safeHtml, status);
+}
+
+function page(title: string, body: string, status = 200) {
   const headers = new Headers({ "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer",
     "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" });
-  if (request && /<form\b/i.test(body)) {
-    const token = csrfForForm(request);
-    body = body.replace(/(<form\b[^>]*>)/gi, '$1<input type="hidden" name="csrf" value="' + token + '">');
-    const secure = new URL(request.url).protocol === "https:";
-    headers.set("Set-Cookie", csrfCookieName(request) + "=" + token +
-      "; Path=/; HttpOnly; SameSite=Strict; Max-Age=7200" + (secure ? "; Secure" : ""));
-  }
   return new Response(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · 길모퉁이PC방</title><style>
   :root{font-family:system-ui,-apple-system,sans-serif;color:#4b4150;background:#f4efed;color-scheme:light}
   *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}
@@ -91,43 +82,33 @@ async function accessMode(db: DB): Promise<"invite" | "public"> {
   return setting?.value === "public" ? "public" : "invite";
 }
 type FormResult = { params: URLSearchParams; error?: never } | { params?: never; error: string };
-async function form(request: Request): Promise<FormResult> {
-  const expectedOrigin = new URL(request.url).origin;
-  const origin = request.headers.get("Origin");
-  const site = request.headers.get("Sec-Fetch-Site");
-  // A browser-generated Origin or Fetch Metadata header is a reliable
-  // same-origin signal, even if its separate CSRF cookie was rejected.
-  const originMatches = origin === expectedOrigin;
-  if (origin && !originMatches) return { error: "ORIGIN" };
-  if (site && !["same-origin", "none"].includes(site) &&
-      !(site === "same-site" && originMatches)) return { error: "SITE" };
+async function form(request: Request, db: DB): Promise<FormResult> {
   if (!request.headers.get("Content-Type")?.toLowerCase().startsWith("application/x-www-form-urlencoded")) {
     return { error: "CONTENT_TYPE" };
   }
   const input = await request.text();
   if (input.length > 2048) return { error: "SIZE" };
   const params = new URLSearchParams(input);
-  const submitted = params.get("csrf") || "";
-  const cookie = csrfCookieValue(request);
-  const csrfMatches = /^[a-f0-9]{64}$/.test(submitted) && /^[a-f0-9]{64}$/.test(cookie) && equal(submitted, cookie);
-  // Keep protecting all POST actions if both browser headers are unavailable:
-  // they must then supply the server-issued double-submit cookie and form token.
-  if (!csrfMatches && !originMatches && site !== "same-origin") return { error: "FORM_TOKEN" };
+  const token = params.get("csrf") || "";
+  if (!/^[a-f0-9]{64}$/.test(token)) return { error: "FORM_TOKEN" };
+  const used = await db.prepare("DELETE FROM invite_form_tokens WHERE token_hash = ? AND expires_at > ?")
+    .bind(await digest(token), Date.now()).run();
+  if (!used.meta.changes) return { error: "FORM_TOKEN" };
   params.delete("csrf");
   return { params };
 }
-function invitePage(message = "", request?: Request) {
-  return page("초대코드 입장", `<p class="hint">GILMOTUNGI PC BANG · PRIVATE ENTRY</p><h1>길모퉁이PC방</h1>
+async function invitePage(db: DB, message = "") {
+  return pageWithForm(db, "초대코드 입장", `<p class="hint">GILMOTUNGI PC BANG · PRIVATE ENTRY</p><h1>길모퉁이PC방</h1>
   <p>초대받은 손님만 입장할 수 있어요. 전달받은 초대코드를 입력해주세요.</p>
   ${message ? `<p class="error">${esc(message)}</p>` : ""}
   <form method="post" action="/auth/redeem"><label for="code">초대코드</label><input id="code" name="code" maxlength="64" autocomplete="one-time-code" required placeholder="XXXX-XXXX-XXXX-XXXX"><p><button type="submit">PC방 입장하기</button></p></form>
-  <p class="hint">초대코드가 없다면 관리자에게 문의해주세요.</p>`, 200, request);
+  <p class="hint">초대코드가 없다면 관리자에게 문의해주세요.</p>`);
 }
-function adminLogin(message = "", request?: Request) {
-  return page("관리자 로그인", `<p class="hint">PRIVATE ACCESS · ADMIN</p><h1>관리자 로그인</h1>
+async function adminLogin(db: DB, message = "") {
+  return pageWithForm(db, "관리자 로그인", `<p class="hint">PRIVATE ACCESS · ADMIN</p><h1>관리자 로그인</h1>
   ${message ? `<p class="error">${esc(message)}</p>` : ""}
   <form method="post" action="/auth/admin-login"><label for="password">관리자 비밀번호</label><input type="password" id="password" name="password" maxlength="256" required autocomplete="current-password"><p><button>로그인</button></p></form>
-  <p><a href="/invite">초대코드 입력으로 돌아가기</a></p>`, 200, request);
+  <p><a href="/invite">초대코드 입력으로 돌아가기</a></p>`);
 }
 async function currentSession(db: DB, request: Request) {
   const token = getCookie(request);
@@ -154,7 +135,7 @@ function generateCode() {
   const str = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
   return str.match(/.{1,6}/g)!.join("-");
 }
-async function adminPanel(db: DB, created = "", request?: Request) {
+async function adminPanel(db: DB, created = "") {
   const mode = await accessMode(db);
   const { results } = await db.prepare(`SELECT id, label, created_at, expires_at, max_uses, uses, revoked_at
     FROM invite_codes ORDER BY created_at DESC LIMIT 100`).all<{
@@ -165,7 +146,7 @@ async function adminPanel(db: DB, created = "", request?: Request) {
     const status = item.revoked_at ? "회수됨" : item.expires_at < now ? "만료됨" : item.uses >= item.max_uses ? "사용 완료" : "사용 가능";
     return `<tr><td>${esc(item.label || "초대권")}</td><td>${status}</td><td>${item.uses}/${item.max_uses}</td><td>${new Date(item.expires_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}</td><td>${item.revoked_at ? "" : `<form method="post" action="/auth/invite-revoke"><input type="hidden" name="id" value="${esc(item.id)}"><button>회수</button></form>`}</td></tr>`;
   }).join("");
-  return page("초대코드 관리", `<p class="hint">GILMOTUNGI PC BANG · ADMIN</p><h1>초대코드 관리</h1>
+  return pageWithForm(db, "초대코드 관리", `<p class="hint">GILMOTUNGI PC BANG · ADMIN</p><h1>초대코드 관리</h1>
   <form method="post" action="/auth/admin-logout"><button>관리자 로그아웃</button></form>
   <h2>사이트 공개 설정</h2>
   <p>현재 상태: <strong>${mode === "public" ? "정식 공개 · 초대코드 불필요" : "베타 초대제 · 초대코드 필수"}</strong></p>
@@ -185,7 +166,7 @@ async function adminPanel(db: DB, created = "", request?: Request) {
   <p><button>초대코드 생성</button></p></form>
   <h2>최근 발급 코드</h2><p class="hint">코드 원문은 보안상 저장하지 않습니다. 회수하면 이 코드로 입장한 사용자도 차단됩니다.</p>
   <div style="overflow-x:auto"><table><thead><tr><th>메모</th><th>상태</th><th>사용</th><th>만료일</th><th>관리</th></tr></thead><tbody>${rows || '<tr><td colspan="5">발급된 코드가 없습니다.</td></tr>'}</tbody></table></div>
-  <p class="hint">최근 100개까지 표시됩니다.</p><p><a href="/">PC방으로 이동</a></p>`, 200, request);
+  <p class="hint">최근 100개까지 표시됩니다.</p><p><a href="/">PC방으로 이동</a></p>`);
 }
 async function rateLimit(db: DB, request: Request, success: boolean) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
@@ -229,18 +210,18 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
     if (mode === "public" && !isAuthRoute) return null;
     const session = await currentSession(db, request);
     const admin = session?.role === "admin";
-    if (path === "/invite") return mode === "public" || session ? go("/") : invitePage(url.searchParams.get("error") ? "초대코드를 다시 확인해주세요." : "", request);
-    if (path === "/admin/login") return admin ? go("/admin") : adminLogin(url.searchParams.get("error") ? "로그인에 실패했습니다." : "", request);
-    if (path === "/admin") return admin ? adminPanel(db, "", request) : go("/admin/login");
+    if (path === "/invite") return mode === "public" || session ? go("/") : invitePage(db, url.searchParams.get("error") ? "초대코드를 다시 확인해주세요." : "");
+    if (path === "/admin/login") return admin ? go("/admin") : adminLogin(db, url.searchParams.get("error") ? "로그인에 실패했습니다." : "");
+    if (path === "/admin") return admin ? adminPanel(db) : go("/admin/login");
     if (path.startsWith("/auth/")) {
       if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
-      const parsed = await form(request);
+      const parsed = await form(request, db);
       if (!parsed.params) {
         // Codes indicate which browser request validation failed without
         // printing passwords, tokens, cookies, or other sensitive values.
         const reason = parsed.error || "UNKNOWN";
         return page("요청 확인", `<h1>로그인 요청을 확인할 수 없습니다</h1>
-          <p>관리자 비밀번호가 틀렸다는 뜻은 아닙니다. 페이지를 새로 연 뒤 다시 제출해주세요.</p>
+          <p>관리자 비밀번호를 확인하기 전 요청이 거부되었습니다. 로그인 페이지를 새로 열어주세요.</p>
           <p class="hint">요청 확인 코드: ${esc(reason)}</p><p><a href="/admin/login">관리자 로그인으로 돌아가기</a></p>`, 403);
       }
       const input = parsed.params;
@@ -259,7 +240,7 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
         return go("/", await createSession(db, "user", invite.id, request));
       }
       if (path === "/auth/admin-login") {
-        if (await blockedLogin(db, request)) return adminLogin("로그인 시도가 너무 많습니다. 15분 뒤 다시 시도해주세요.", request);
+        if (await blockedLogin(db, request)) return adminLogin(db, "로그인 시도가 너무 많습니다. 15분 뒤 다시 시도해주세요.");
         const pass = input.get("password") || "";
         const valid = equal(await digest(pass), await digest(env.NEON_ADMIN_PASSWORD));
         if (!valid) {
@@ -292,7 +273,7 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
         const now = Date.now();
         await db.prepare(`INSERT INTO invite_codes (id, code_hash, label, created_at, expires_at, max_uses, uses)
           VALUES (?, ?, ?, ?, ?, ?, 0)`).bind(crypto.randomUUID(), await digest(code), label, now, now + days * 86400_000, count).run();
-        return adminPanel(db, code, request);
+        return adminPanel(db, code);
       }
       if (path === "/auth/invite-revoke") {
         const id = input.get("id") || "";
