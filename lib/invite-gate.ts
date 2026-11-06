@@ -1,8 +1,10 @@
-// Invitation-only admission for the PC bang. All decisions are made at the Worker boundary.
+// Beta invitation gate and administrator-controlled public launch mode.
 type DB = D1Database;
 type GateEnv = { DB?: DB; NEON_ADMIN_PASSWORD?: string; ASSETS?: { fetch(request: Request): Promise<Response> } };
 const cookieName = "cafe_access";
-const userLife = 30 * 86400_000;
+// The admission record never expires. The browser cookie lasts a year and is renewed on each visit.
+const userLife = 365 * 86400_000;
+const userSessionExpiry = 253402300799000;
 const adminLife = 12 * 3600_000;
 const enc = new TextEncoder();
 
@@ -47,6 +49,16 @@ function cookie(value: string, request: Request, seconds: number) {
   return `${cookieName}=${value}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${seconds}${new URL(request.url).protocol === "https:" ? "; Secure" : ""}`;
 }
 function clearCookie(request: Request) { return cookie("", request, 0); }
+// Called only on authenticated page loads (after gate() has authorized the request).
+export function renewUserCookie(request: Request) {
+  const token = getCookie(request);
+  return /^u_[a-f0-9]{64}$/.test(token) ? cookie(token, request, Math.floor(userLife / 1000)) : null;
+}
+async function accessMode(db: DB): Promise<"invite" | "public"> {
+  const setting = await db.prepare("SELECT value FROM invite_settings WHERE key = 'site_access'")
+    .first<{ value: string }>();
+  return setting?.value === "public" ? "public" : "invite";
+}
 function permittedPost(request: Request) {
   const origin = request.headers.get("Origin");
   return origin === new URL(request.url).origin && request.headers.get("Content-Type")?.startsWith("application/x-www-form-urlencoded");
@@ -72,7 +84,7 @@ function adminLogin(message = "") {
 }
 async function currentSession(db: DB, request: Request) {
   const token = getCookie(request);
-  if (!/^[a-f0-9]{64}$/.test(token)) return null;
+  if (!/^[ua]_[a-f0-9]{64}$/.test(token)) return null;
   const hash = await digest(token);
   const now = Date.now();
   return db.prepare(`SELECT s.id, s.role, s.invite_id FROM invite_sessions s
@@ -82,10 +94,12 @@ async function currentSession(db: DB, request: Request) {
     LIMIT 1`).bind(hash, now).first<{ id: string; role: string; invite_id: string | null }>();
 }
 async function createSession(db: DB, role: "admin" | "user", inviteId: string | null, request: Request) {
-  const token = Array.from(crypto.getRandomValues(new Uint8Array(32)), (n) => n.toString(16).padStart(2, "0")).join("");
+  const token = (role === "user" ? "u_" : "a_") +
+    Array.from(crypto.getRandomValues(new Uint8Array(32)), (n) => n.toString(16).padStart(2, "0")).join("");
   const life = role === "admin" ? adminLife : userLife;
   await db.prepare("INSERT INTO invite_sessions (id, token_hash, role, invite_id, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)")
-    .bind(crypto.randomUUID(), await digest(token), role, inviteId, Date.now(), Date.now() + life).run();
+    .bind(crypto.randomUUID(), await digest(token), role, inviteId, Date.now(),
+      role === "user" ? userSessionExpiry : Date.now() + life).run();
   return cookie(token, request, Math.floor(life / 1000));
 }
 function generateCode() {
@@ -94,6 +108,7 @@ function generateCode() {
   return str.match(/.{1,6}/g)!.join("-");
 }
 async function adminPanel(db: DB, created = "") {
+  const mode = await accessMode(db);
   const { results } = await db.prepare(`SELECT id, label, created_at, expires_at, max_uses, uses, revoked_at
     FROM invite_codes ORDER BY created_at DESC LIMIT 100`).all<{
     id: string; label: string; created_at: number; expires_at: number; max_uses: number; uses: number; revoked_at: number | null;
@@ -105,6 +120,16 @@ async function adminPanel(db: DB, created = "") {
   }).join("");
   return page("초대코드 관리", `<p class="hint">GILMOTUNGI PC BANG · ADMIN</p><h1>초대코드 관리</h1>
   <form method="post" action="/auth/admin-logout"><button>관리자 로그아웃</button></form>
+  <h2>사이트 공개 설정</h2>
+  <p>현재 상태: <strong>${mode === "public" ? "정식 공개 · 초대코드 불필요" : "베타 초대제 · 초대코드 필수"}</strong></p>
+  ${mode === "invite"
+    ? `<p class="hint">정식 공개로 전환하면 모든 방문자가 초대코드 없이 PC방을 이용할 수 있습니다. 기존 초대코드와 인증 기록은 삭제되지 않습니다.</p>
+       <form method="post" action="/auth/access-mode"><input type="hidden" name="mode" value="public">
+       <label><input type="checkbox" name="confirm" value="yes" required style="width:auto"> 초대 제한이 모든 사용자에게 해제되는 것을 확인했습니다.</label>
+       <p><button type="submit">정식 공개로 전환</button></p></form>`
+    : `<p class="hint">누구나 입장할 수 있습니다. 초대제로 돌아가면 기존 초대 인증 사용자만 입장할 수 있습니다.</p>
+       <form method="post" action="/auth/access-mode"><input type="hidden" name="mode" value="invite">
+       <button type="submit">베타 초대제로 전환</button></form>`}
   ${created ? `<h2>새 초대코드</h2><p class="hint">코드는 지금 한 번만 표시됩니다. 복사해서 초대할 사람에게 전달하세요.</p><p class="code"><strong>${esc(created)}</strong></p>` : ""}
   <h2>새 코드 발급</h2><form method="post" action="/auth/invite-create">
   <label for="label">메모 (선택)</label><input id="label" name="label" maxlength="40" placeholder="예: 친구 초대">
@@ -151,9 +176,13 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
     return new Response("Method Not Allowed", { status: 405, headers: { Allow: "GET, HEAD, POST" } });
   }
   try {
+    const mode = await accessMode(db);
+    // Public release does not require invitations for pages, assets, or APIs.
+    // Administrator authentication and management endpoints remain protected.
+    if (mode === "public" && !isAuthRoute) return null;
     const session = await currentSession(db, request);
     const admin = session?.role === "admin";
-    if (path === "/invite") return session ? go("/") : invitePage(url.searchParams.get("error") ? "초대코드를 다시 확인해주세요." : "");
+    if (path === "/invite") return mode === "public" || session ? go("/") : invitePage(url.searchParams.get("error") ? "초대코드를 다시 확인해주세요." : "");
     if (path === "/admin/login") return admin ? go("/admin") : adminLogin(url.searchParams.get("error") ? "로그인에 실패했습니다." : "");
     if (path === "/admin") return admin ? adminPanel(db) : go("/admin/login");
     if (path.startsWith("/auth/")) {
@@ -161,6 +190,7 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
       const input = await form(request);
       if (!input) return page("요청 오류", "<h1>잘못된 요청입니다</h1>", 403);
       if (path === "/auth/redeem") {
+        if (mode === "public") return go("/");
         const code = (input.get("code") || "").trim().toUpperCase();
         if (!/^[0-9A-F]{6}(?:-[0-9A-F]{6}){3}$/.test(code)) return go("/invite?error=1");
         const now = Date.now();
@@ -189,6 +219,13 @@ export async function gate(request: Request, env: GateEnv): Promise<Response | n
         return go(path === "/auth/admin-logout" ? "/admin/login" : "/invite", clearCookie(request));
       }
       if (!admin) return new Response("Forbidden", { status: 403 });
+      if (path === "/auth/access-mode") {
+        const next = input.get("mode");
+        if (next !== "public" && next !== "invite") return new Response("Bad Request", { status: 400 });
+        if (next === "public" && input.get("confirm") !== "yes") return new Response("Confirmation Required", { status: 400 });
+        await db.prepare("UPDATE invite_settings SET value = ? WHERE key = 'site_access'").bind(next).run();
+        return go("/admin");
+      }
       if (path === "/auth/invite-create") {
         const label = (input.get("label") || "").trim().slice(0, 40);
         const count = Number(input.get("count"));
