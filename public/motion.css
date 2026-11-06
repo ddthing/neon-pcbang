@@ -1,0 +1,32 @@
+.floor-scroll.zoomed .floor-seat { font-size: 12px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .kiosk-pin span { animation: kiosk-nudge 1.6s ease-in-out 3; }
+  .kiosk-pin:is(:hover, :focus-visible) span { animation: none; transform: translate(-50%, -3px); }
+  .scene img:not([hidden]) { animation: scene-arrive .32s ease-out both; }
+  .seat-marker:not([hidden]) { animation: seat-marker-arrive .26s cubic-bezier(.2,.8,.2,1) both; }
+  dialog[open] { animation: screen-arrive .24s cubic-bezier(.2,.8,.2,1) both; }
+  dialog[open]::backdrop { animation: scene-arrive .2s ease-out both; }
+  .floor-seat { transition: background-color .16s ease, border-color .16s ease; }
+  .floor-seat[aria-pressed="true"] { animation: seat-tap .22s cubic-bezier(.2,.8,.2,1); }
+  .enter, .enter svg, .activity .chevron { transition: transform .18s ease, background-color .18s ease; }
+  .enter:is(:hover, :focus-visible):not(:disabled) svg, .activity:is(:hover, :focus-visible) .chevron { transform: translateX(3px); }
+  .enter:active:not(:disabled) { transform: translateY(2px); }
+}
+@keyframes kiosk-nudge {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -4px); }
+}
+@keyframes scene-arrive { from { opacity: .45; } to { opacity: 1; } }
+@keyframes screen-arrive {
+  from { opacity: 0; transform: translateY(8px) scale(.988); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes seat-tap {
+  0%, 100% { transform: scale(1); }
+  38% { transform: scale(.91); }
+}
+@keyframes seat-marker-arrive {
+  from { opacity: 0; transform: translate(-50%, -65%) scale(.9); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}

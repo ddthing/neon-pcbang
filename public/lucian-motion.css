@@ -1,0 +1,87 @@
+/* Lucian UX/UI Prompt #013 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#013 */
+/* Lucian UX/UI Prompt #070 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#070 */
+.ux,.ux *,.ux *::before,.ux *::after{box-sizing:border-box}
+.ux{
+  font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+  color:var(--ux-ink);-webkit-font-smoothing:antialiased;letter-spacing:-.01em;
+  -webkit-tap-highlight-color:transparent;
+  word-break:keep-all;overflow-wrap:break-word;
+}
+/* :where()로 명시도를 0으로 둬서, 요소 클래스가 버튼·입력의 색과 글꼴을 덮어쓸 수 있게 합니다 */
+:where(.ux) :is(button,input,textarea,select){font:inherit;color:inherit}
+:where(.ux) button{cursor:pointer}
+.ux :focus-visible{outline:2px solid var(--ux-accent);outline-offset:3px}
+.ux [hidden]{display:none!important}
+/* 모션 줄이기: 전환은 즉시 끝나고, 무한 반복은 한 번으로 줄여 최종 상태가 보이게 합니다 */
+@media (prefers-reduced-motion:reduce){
+  .ux,.ux *,.ux *::before,.ux *::after{
+    animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important;scroll-behavior:auto!important;
+  }
+}
+
+.ux {
+  --ux-surface: var(--panel);
+  --ux-surface-2: #45433f;
+  --ux-surface-3: #53514e;
+  --ux-ink: var(--text);
+  --ux-ink-3: var(--sub);
+  --ux-line: #dcd4c838;
+  --ux-accent: var(--violet);
+  --ux-mint: var(--mint);
+  --ux-danger: #e6bcb3;
+  --ux-shadow-strong: #161614a3;
+  --ux-ease: cubic-bezier(.2,.8,.2,1);
+  --ux-spring: cubic-bezier(.34,1.45,.64,1);
+  font-family: inherit;
+}
+.rain-switch-slot { position: relative; width: 70px; height: 38px; }
+.u013 .u013-sw { position: absolute; left: 0; top: 0; transform: scale(.5); transform-origin: top left; }
+
+.u013{--on:linear-gradient(135deg,#b9c8b8,#a9b9aa 55%,#aab7bb);position:relative;display:flex;align-items:center;gap:8px}
+.u013-sw{position:relative;width:140px;height:76px;border:0;padding:0;border-radius:999px;background:var(--ux-surface-3);touch-action:none;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.12),inset 0 0 0 1px var(--ux-line);transition:box-shadow .5s var(--ux-ease)}
+.u013-sw::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--on);opacity:0;transition:opacity .45s var(--ux-ease)}
+.u013-sw:focus-visible{outline:2px solid var(--ux-accent);outline-offset:4px}
+.u013.is-on .u013-sw::before{opacity:1}
+.u013.is-on .u013-sw{box-shadow:inset 0 2px 6px rgba(0,0,0,.12),0 16px 30px -16px rgba(172,190,174,.45)}
+/* 손잡이: 왼쪽(left)과 폭(width)을 따로 움직여, 이동하는 동안 늘어났다가 줄어듭니다 */
+.u013-knob{position:absolute;top:8px;left:8px;width:60px;height:60px;border-radius:999px;background:#fff;display:grid;place-items:center;
+  box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 6px 14px -4px rgba(0,0,0,.28),0 0 0 .5px rgba(0,0,0,.06);
+  transition:left .5s var(--ux-spring),width .32s var(--ux-ease)}
+.u013.is-on .u013-knob{left:72px}
+.u013.is-stretch .u013-knob{width:84px;transition:left .5s var(--ux-spring),width .18s var(--ux-ease)}
+.u013.is-on.is-stretch .u013-knob{left:48px}
+.u013.is-drag .u013-knob{transition:width .2s var(--ux-ease)}
+.u013-knob svg{width:24px;height:24px;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.u013-x{stroke:#A3A0AA;stroke-dasharray:14;stroke-dashoffset:0;transition:stroke-dashoffset .3s var(--ux-ease) .1s}
+.u013-v{stroke:#4b6858;stroke-dasharray:20;stroke-dashoffset:20;transition:stroke-dashoffset .35s var(--ux-ease)}
+.u013.is-on .u013-x{stroke-dashoffset:14;transition-delay:0s}
+.u013.is-on .u013-v{stroke-dashoffset:0;transition-delay:.18s}
+.u013-txt{text-align:right;white-space:nowrap}
+.u013-txt b{display:block;font-size:12px;font-weight:740;letter-spacing:-.03em}
+.u013-sub{position:relative;display:block;height:20px;margin-top:0;overflow:hidden;font-size:10px;color:var(--ux-ink-3)}
+.u013-sub span{display:block;line-height:20px;transition:transform .5s var(--ux-spring),opacity .3s var(--ux-ease)}
+.u013-sub span+span{position:absolute;left:0;right:0;top:0;transform:translateY(100%);opacity:0;color:var(--ux-mint);font-weight:620}
+.u013.is-on .u013-sub span:first-child{transform:translateY(-100%);opacity:0}
+.u013.is-on .u013-sub span+span{transform:none;opacity:1}
+
+.u070{position:fixed;right:16px;bottom:16px;z-index:5;width:350px;max-width:calc(100% - 32px);pointer-events:none}
+.u070-zone{position:absolute;left:0;right:0;bottom:0;height:300px;outline:none;pointer-events:none}
+.u070-t{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;min-height:68px;padding:12px 12px 12px 14px;border-radius:20px;background:var(--ux-surface);box-shadow:0 0 0 1px var(--ux-line),0 16px 30px -18px var(--ux-shadow-strong);transform-origin:50% 100%;transform:translate(var(--dx,0px),var(--y,0px)) scale(var(--s,1));opacity:var(--o,1);transition:transform .5s var(--ux-spring),opacity .35s;pointer-events:auto;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.u070-t.drag{transition:none}
+.u070-t.enter{transform:translateY(90px) scale(.9);opacity:0}
+.u070-t.leave{transform:translate(var(--dx,0px),var(--y,0px)) scale(var(--s,1));opacity:0;pointer-events:none}
+.u070-t.leave.side{transform:translate(calc(var(--dir,1) * 420px),var(--y,0px)) rotate(calc(var(--dir,1) * 8deg))}
+.u070-t>*{transition:opacity .25s}
+.u070-t.back>*{opacity:0}
+.u070-ic{width:36px;height:36px;flex:none;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c)}
+.u070-ic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.u070-tx{flex:1;min-width:0}
+.u070-tx b{display:block;font-size:14px;font-weight:780;letter-spacing:-.02em}
+.u070-tx small{display:block;margin-top:2px;font-size:12.5px;font-weight:600;color:var(--ux-ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u070-x{width:30px;height:30px;flex:none;border:0;padding:0;border-radius:50%;display:grid;place-items:center;background:none;color:var(--ux-ink-3)}
+.u070-x:hover{background:var(--ux-surface-2);color:var(--ux-ink)}
+.u070-x svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.u070-bar{position:absolute;left:16px;right:16px;bottom:0;height:2px;border-radius:2px;background:var(--c);opacity:.5;transform-origin:0 50%;transform:scaleX(var(--left,1))}
+.u070-live{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}

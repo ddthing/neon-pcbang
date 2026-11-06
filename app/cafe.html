@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#272624">
+  <meta name="description" content="서울의 날씨가 창밖으로 흐르는 픽셀 아트 동네 PC방. 캐릭터로 매장을 돌아다니고 자리를 골라보세요.">
+  <meta property="og:title" content="네온 PC방 · 우리 동네 PC방">
+  <meta property="og:description" content="서울의 하늘 아래, 키오스크에서 자리를 고르고 잠깐 쉬어가요.">
+  <link rel="icon" href="./icons.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./floor.css">
+  <link rel="stylesheet" href="./lucian-motion.css">
+  <link rel="stylesheet" href="./motion.css">
+  <link rel="stylesheet" href="./pc.css">
+  <link rel="stylesheet" href="./walk.css">
+  <link rel="stylesheet" href="./weather.css">
+  <script src="./lucian-motion.js" defer></script>
+  <script src="./app.js" defer></script>
+  <script src="./game.js" defer></script>
+  <script src="./wallpaper.js" defer></script>
+  <script src="./walk.js" type="module"></script>
+  <script src="./weather.js" type="module"></script>
+  <title>네온 PC방 · 우리 동네 PC방</title>
+</head>
+<body>
+  <a class="skip" href="#main">본문으로 건너뛰기</a>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="./" aria-label="네온 PC방 홈">
+        <span class="brand-icon"><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg></span>
+        <span>네온 PC방<small>NEON PC BANG</small></span>
+      </a>
+      <div class="top-actions">
+        <span class="open-status mono"><i></i> 24H OPEN</span>
+        <!-- Lucian UX/UI Prompt #013 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#013 -->
+        <div class="ux u013">
+          <div class="u013-txt">
+            <b class="u013-lab" id="rain-label">빗소리</b>
+            <span class="u013-sub" aria-hidden="true"><span>꺼짐</span><span>켜짐</span></span>
+          </div>
+          <div class="rain-switch-slot">
+            <button class="u013-sw" type="button" role="switch" aria-checked="false" aria-labelledby="rain-label">
+              <span class="u013-knob" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path class="u013-x" d="M7.5 7.5l9 9M16.5 7.5l-9 9"/><path class="u013-v" d="M5.5 12.5l4.5 4.5 8.5-9"/></svg>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell" id="main">
+    <section class="intro" aria-labelledby="title">
+      <div>
+        <p class="overline mono"><span></span> 서울 · 골목 2층</p>
+        <h1 id="title">어서 와요, <em>네온 PC방!</em></h1>
+        <p class="intro-text">캐릭터로 매장을 돌아다니고, 입구의 키오스크에서 자리를 골라보세요.</p>
+      </div>
+      <div class="clock">
+        <svg aria-hidden="true"><use href="./icons.svg#clock"/></svg>
+        <div><small class="mono">SEOUL / KST</small><time class="mono" id="clock">--:--</time></div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <section class="room panel" aria-labelledby="room-title">
+        <div class="room-head">
+          <div class="window-title"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <h2 id="room-title">PC방 입구</h2></div>
+          <div class="room-hud">
+            <a class="window-weather mono" id="window-weather" href="https://open-meteo.com/" target="_blank" rel="noopener" aria-label="날씨 출처: Open-Meteo">서울 · 날씨 연결 중</a>
+            <span class="room-live" id="cafe-connection" role="status">매장 연결 중</span>
+            <button class="walk-button view-button" id="cafe-fullscreen" type="button" aria-pressed="false">
+              <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4m4 0h4v4m0 4v4h-4m-4 0H2v-4"/></svg>
+              <span>전체화면</span>
+            </button>
+          </div>
+        </div>
+        <div class="scene-viewport">
+          <div class="scene" data-space="lobby" tabindex="0" aria-label="매장 이동 화면. 방향키 또는 W A S D로 움직이세요.">
+            <img id="lobby-art" src="./pcbang-hall-pastel.png" width="1536" height="1024" alt="회색과 크림색의 대형 픽셀 아트 PC방에 PC 좌석 네 줄과 게임룸, 고양이 점원이 있는 카운터가 보이는 모습">
+            <img id="rooms-art" src="./pcbang-rooms-pastel.png" width="1536" height="1024" alt="" hidden>
+            <div id="window-view" class="window-view" aria-hidden="true"></div>
+            <div id="monitor-layer" aria-hidden="true"></div>
+            <div class="cafe-avatars" id="cafe-avatars" aria-hidden="true"></div>
+            <button id="seat-marker" class="seat-marker mono" type="button" hidden></button>
+            <button id="kiosk-pin" class="kiosk-pin" type="button" aria-label="입구 키오스크에서 자리 고르기"><span>자리 선택기</span></button>
+          </div>
+        </div>
+        <div class="walk-controls">
+          <p class="walk-guide"><strong>캐릭터 조작</strong><span>방향키 · WASD · 바닥 누르기</span></p>
+          <button class="walk-button" id="cafe-wave" type="button">👋 손 흔들기</button>
+          <div class="game-view-actions">
+            <button class="walk-button" id="game-view-floor" type="button">좌석도</button>
+            <button class="walk-button" id="game-view-pc" type="button" hidden>내 PC</button>
+          </div>
+          <form class="walk-name" id="cafe-name-form">
+            <label for="cafe-name">내 닉네임</label>
+            <input id="cafe-name" type="text" maxlength="12" pattern="[\p{L}\p{N} _·\-]{1,12}" autocomplete="off">
+            <button class="walk-button" type="submit">저장</button>
+          </form>
+        </div>
+        <p class="walk-guests" id="cafe-guests" hidden></p>
+        <div class="room-foot">
+          <p><svg aria-hidden="true"><use href="./icons.svg#cursor"/></svg><span id="room-hint">입구 왼쪽의 민트색 키오스크를 눌러보세요.</span></p>
+          <span class="mono" id="room-count">102석</span>
+        </div>
+      </section>
+
+      <aside class="controls" aria-label="PC방 이용 메뉴">
+        <section class="kiosk" id="kiosk" aria-labelledby="kiosk-title">
+          <div class="kiosk-top"><span><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg> NEON PC</span><span class="kiosk-led"><i></i> 키오스크</span></div>
+          <div class="kiosk-screen">
+            <p class="kiosk-label mono">NEON PC · 2F</p>
+            <h2 id="kiosk-title" tabindex="-1">어디에 앉을까요?</h2>
+            <p class="kiosk-copy" id="kiosk-copy">전체 좌석도에서 앉고 싶은 자리를 골라요.</p>
+            <div class="kiosk-counts" id="kiosk-counts"><span><strong>88</strong> 일반석</span><span><strong>14</strong> 룸 좌석</span></div>
+            <div id="stage-seated" hidden>
+              <div class="ticket"><span class="mono">MY SEAT</span><strong id="ticket-seat"></strong><small>이용 시간 <time class="mono" id="session-time">00:00</time></small></div>
+              <button class="primary enter" id="open-monitor" type="button"><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg> 내 PC 열기</button>
+            </div>
+            <button class="primary enter" id="open-floor" type="button"><span>전체 좌석도 열기</span><svg aria-hidden="true"><use href="./icons.svg#arrow"/></svg></button>
+            <button class="kiosk-text-button" id="leave" type="button" hidden>자리 비우고 입구로</button>
+          </div>
+          <div class="kiosk-bottom" aria-hidden="true"><span></span><i></i><span></span></div>
+        </section>
+
+        <section class="panel activities" aria-labelledby="activities-title">
+          <p class="panel-index mono"><span>✦</span> DESK MENU</p>
+          <h2 id="activities-title">자리에서 할 일</h2>
+          <button type="button" class="activity" data-open="arcade">
+            <span class="activity-icon violet"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg></span>
+            <span><strong>오락실</strong><small>네온 벽돌깨기 한 판</small></span>
+            <svg class="chevron" aria-hidden="true"><use href="./icons.svg#chevron"/></svg>
+          </button>
+          <button type="button" class="activity" data-open="focus">
+            <span class="activity-icon mint"><svg aria-hidden="true"><use href="./icons.svg#clock"/></svg></span>
+            <span><strong>집중 모드</strong><small id="focus-subtitle">25분 타이머 켜기</small></span>
+            <svg class="chevron" aria-hidden="true"><use href="./icons.svg#chevron"/></svg>
+          </button>
+          <button type="button" class="activity" data-open="snacks">
+            <span class="activity-icon peach"><svg aria-hidden="true"><use href="./icons.svg#bowl"/></svg></span>
+            <span><strong>매점</strong><small id="snack-subtitle">내 자리로 간식 주문하기</small></span>
+            <svg class="chevron" aria-hidden="true"><use href="./icons.svg#chevron"/></svg>
+          </button>
+        </section>
+      </aside>
+    </div>
+
+    <footer class="footer">
+      <span class="mono">NEON PC BANG <span class="footer-dot">✦</span> 우리 동네 PC방</span>
+      <span>함께 둘러보는 온라인 PC방</span>
+    </footer>
+  </main>
+
+  <dialog class="floor-kiosk" id="floor-kiosk" aria-labelledby="floor-title">
+    <div class="floor-top">
+      <div><p class="mono">NEON PC · 2F</p><h2 id="floor-title" tabindex="-1">좌석 선택</h2></div>
+      <button class="close" type="button" data-close aria-label="좌석도 닫기">×</button>
+    </div>
+    <div class="floor-layout">
+      <div class="floor-map">
+        <div class="floor-toolbar">
+          <p><strong>전체 102석</strong><span>일반석 88 · 룸 좌석 14</span></p>
+          <button id="floor-zoom" type="button" aria-pressed="false">＋ 확대</button>
+        </div>
+        <div class="floor-scroll" id="floor-scroll" role="region" aria-label="전체 좌석도" tabindex="0">
+          <div class="floor-plan">
+            <div class="floor-service">
+              <div class="floor-fixture">매점</div>
+              <div class="floor-fixture counter"><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg>카운터</div>
+              <div class="floor-here"><i aria-hidden="true"></i>현 위치<br><small>키오스크</small></div>
+            </div>
+            <div id="floor-banks" class="floor-banks" aria-label="일반석"></div>
+            <div id="floor-rooms" class="floor-rooms" aria-label="룸 좌석"></div>
+            <div class="floor-entrance">↑ 입구</div>
+          </div>
+        </div>
+        <ul class="floor-legend">
+          <li><i class="available"></i>선택 가능</li><li><i class="chosen"></i>선택한 자리</li><li><i class="my-seat"></i>내 자리</li><li><i class="taken"></i>이용 중</li>
+        </ul>
+      </div>
+      <div class="floor-actions">
+        <p class="floor-instruction">좌석을 누르고 오른쪽에서 확인하세요.</p>
+        <label for="floor-select">좌석 번호로 고르기</label>
+        <select id="floor-select"><option value="">좌석을 선택하세요</option></select>
+        <div class="floor-ticket" role="status"><span>선택한 좌석</span><strong id="floor-selection">선택 대기</strong><small id="floor-detail">좌석도에서 자리를 눌러주세요.</small></div>
+        <button class="primary enter" id="enter" type="button" disabled><span>이 자리로 입장</span><svg aria-hidden="true"><use href="./icons.svg#arrow"/></svg></button>
+        <p id="floor-feedback" class="walk-feedback" role="status"></p>
+        <p class="floor-note">같은 매장의 좌석 상태가 표시돼요.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="pc-desktop" id="pc-desktop" aria-labelledby="pc-title">
+    <div class="pc-statusbar">
+      <span class="mono"><i></i> NEON OS</span>
+      <button class="close" type="button" data-close aria-label="PC 화면 닫기">×</button>
+    </div>
+    <div class="pc-workspace">
+      <img class="pc-wallpaper pixel" id="pc-wallpaper-image" src="./pc-wallpaper.png" alt="">
+      <h2 class="pc-sr-only" id="pc-title" tabindex="-1">네온 PC 바탕화면</h2>
+      <div class="pc-shortcuts" aria-label="바탕화면 바로가기">
+        <button class="pc-shortcut" type="button" data-launcher><span class="pc-app-icon sage"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg></span>게임 런처</button>
+        <button class="pc-shortcut" type="button" data-open="focus"><span class="pc-app-icon lilac"><svg aria-hidden="true"><use href="./icons.svg#clock"/></svg></span>집중 모드</button>
+        <button class="pc-shortcut" type="button" data-wallpaper><span class="pc-app-icon cream"><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg></span>배경 설정</button>
+      </div>
+      <section class="pc-cafe" aria-labelledby="pc-cafe-title">
+        <div class="pc-panel-heading"><span class="pc-status-dot"></span><h3 id="pc-cafe-title">네온 PC방</h3></div>
+        <p id="pc-seat" class="mono"></p>
+        <dl><dt>이용 시간</dt><dd><time class="mono" id="pc-session-time">00:00</time></dd></dl>
+        <button class="primary enter" type="button" data-open="snacks"><svg aria-hidden="true"><use href="./icons.svg#bowl"/></svg>먹거리 주문</button>
+        <p id="pc-order-summary">내 자리로 간식 보내기</p>
+        <button class="pc-end" id="pc-end" type="button">사용 종료</button>
+      </section>
+      <section class="pc-launcher" aria-labelledby="pc-launcher-title">
+        <div class="pc-panel-heading"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg><h3 id="pc-launcher-title" tabindex="-1">게임 런처</h3><span class="mono">02 GAMES</span></div>
+        <div class="pc-apps">
+          <button class="pc-app" type="button" data-open="arcade"><span class="pc-app-icon lilac" aria-hidden="true">▦</span><span><strong>네온 벽돌깨기</strong><small>공을 튕겨 벽돌을 깨요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="pairs"><span class="pc-app-icon sage" aria-hidden="true">◆</span><span><strong>픽셀 짝맞추기</strong><small>같은 그림 8쌍을 찾아요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+        </div>
+      </section>
+    </div>
+    <div class="pc-taskbar" role="group" aria-label="작업 표시줄">
+      <details class="pc-start" id="pc-start">
+        <summary><i aria-hidden="true"></i>시작</summary>
+        <div class="pc-start-menu">
+          <button type="button" data-launcher>게임 런처</button>
+          <button type="button" data-open="snacks">먹거리 주문</button>
+          <button type="button" data-wallpaper>바탕화면 설정</button>
+        </div>
+      </details>
+      <button class="pc-task" type="button" data-launcher><svg aria-hidden="true"><use href="./icons.svg#game"/></svg>게임</button>
+      <button class="pc-task" type="button" data-wallpaper><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg>배경</button>
+      <time class="mono" id="pc-clock">--:--</time>
+    </div>
+    <div class="pc-bezel mono"><span>NEON PC</span><i aria-hidden="true"></i></div>
+  </dialog>
+
+  <dialog id="wallpaper" aria-labelledby="wallpaper-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono">NEON OS / PERSONALIZE</span><button class="close" type="button" data-close aria-label="바탕화면 설정 닫기">×</button></div>
+      <h2 id="wallpaper-title">바탕화면 설정</h2>
+      <p class="panel-copy">사진을 고르면 픽셀 효과가 자동으로 적용돼요.</p>
+      <img class="wall-preview pixel" id="wall-preview" src="./pc-wallpaper.png" alt="바탕화면 미리보기">
+      <label class="wall-file-label" for="wall-file">배경 이미지 고르기</label>
+      <input class="wall-file" type="file" id="wall-file" accept="image/png,image/jpeg,image/webp" aria-describedby="wall-help">
+      <p class="wall-help" id="wall-help">PNG, JPG, WebP · 최대 12MB · 이 브라우저에 저장</p>
+      <label class="wall-effect"><input type="checkbox" id="wall-pixel" checked disabled><span>픽셀 효과</span><small id="wall-effect-label">기본 픽셀 배경</small></label>
+      <p id="wall-status" class="wall-status" role="status"></p>
+      <div class="wall-actions">
+        <button class="secondary dialog-action" id="wall-reset" type="button">기본 배경</button>
+        <button class="primary enter" id="wall-apply" type="button">적용</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="arcade" aria-labelledby="arcade-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>01</span> / ARCADE</span><button class="close" type="button" data-close aria-label="오락실 닫기">×</button></div>
+      <h2 id="arcade-title">네온 벽돌깨기</h2>
+      <p class="panel-copy">패들을 움직여 빛나는 벽돌을 모두 깨보세요.</p>
+      <div class="game-hud mono"><span>점수 <strong id="score">000</strong></span><span>남은 공 <strong id="lives">3</strong></span></div>
+      <canvas id="game" width="480" height="270" aria-label="벽돌깨기 게임 화면" tabindex="0"></canvas>
+      <p class="game-status" id="game-status" role="status">아래 버튼으로 시작해요.</p>
+      <button class="primary dialog-action" id="game-action" type="button">게임 시작</button>
+      <p class="dialog-note">← → 키 또는 마우스·터치로 패들을 움직여요.</p>
+    </div>
+  </dialog>
+  <dialog id="pairs" aria-labelledby="pairs-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>02</span> / ARCADE</span><button class="close" type="button" data-close aria-label="짝맞추기 닫기">×</button></div>
+      <h2 id="pairs-title">픽셀 짝맞추기</h2>
+      <p class="panel-copy">카드 두 장을 뒤집어 같은 그림을 찾아요.</p>
+      <div class="pair-hud mono"><span>시도 <strong id="pair-moves">0</strong></span><span>짝 <strong id="pair-count">0 / 8</strong></span></div>
+      <div class="pair-grid" id="pair-grid" role="group" aria-label="짝맞추기 카드"></div>
+      <p class="game-status" id="pair-status" role="status">카드를 한 장 골라주세요.</p>
+      <button class="secondary dialog-action" id="pair-reset" type="button">새 게임</button>
+    </div>
+  </dialog>
+  <dialog id="focus" aria-labelledby="focus-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>02</span> / FOCUS</span><button class="close" type="button" data-close aria-label="집중 모드 닫기">×</button></div>
+      <h2 id="focus-title">25분 집중 모드</h2>
+      <p class="panel-copy">할 일 하나만 정하고, 내 속도로 시작해요.</p>
+      <div class="timer mono" id="timer" role="timer">25:00</div>
+      <p class="timer-note" id="timer-note">창을 닫아도 타이머는 계속 돌아가요.</p>
+      <div class="timer-buttons">
+        <button class="primary dialog-action" id="timer-toggle" type="button">집중 시작</button>
+        <button class="secondary dialog-action" id="timer-reset" type="button">초기화</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog id="snacks" aria-labelledby="snacks-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>03</span> / SNACK BAR</span><button class="close" type="button" data-close aria-label="매점 닫기">×</button></div>
+      <h2 id="snacks-title">네온 매점</h2>
+      <p class="panel-copy" id="order-location">자리에 앉으면 주문할 수 있어요.</p>
+      <div class="snack-list" id="order-menu"></div>
+      <div class="order-receipt" id="order-receipt" tabindex="-1" hidden>
+        <strong id="order-status" role="status"></strong>
+        <p id="order-items"></p>
+      </div>
+      <button class="primary enter" id="place-order" type="button" disabled>내 자리로 주문하기</button>
+      <p class="dialog-note">가상 매점 · 무료 체험</p>
+    </div>
+  </dialog>
+  <!-- Lucian UX/UI Prompt #070 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#070 -->
+  <div class="ux u070">
+    <div class="u070-zone" role="region" aria-label="PC방 알림" tabindex="-1">
+      <div class="u070-live" aria-live="polite"></div>
+    </div>
+  </div>
+</body>
+</html>
