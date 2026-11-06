@@ -34,13 +34,20 @@ jobs:
           NEON_WORKER_NAME: neon-pcbang
           NEON_D1_NAME: neon-pcbang
           NEON_D1_ID: 8d873905-9310-405a-9af2-d9743056bbb2
+      - name: Validate administrator secret configuration
+        env:
+          NEON_ADMIN_PASSWORD: ${{ secrets.NEON_ADMIN_PASSWORD }}
+        run: |
+          if [ ${#NEON_ADMIN_PASSWORD} -lt 16 ]; then
+            echo 'NEON_ADMIN_PASSWORD must be configured as a repository Actions Secret with at least 16 characters.' >&2
+            exit 1
+          fi
       - name: Apply database migrations and deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           NEON_ADMIN_PASSWORD: ${{ secrets.NEON_ADMIN_PASSWORD }}
         run: |
-          test ${#NEON_ADMIN_PASSWORD} -ge 16 || (echo 'NEON_ADMIN_PASSWORD must be at least 16 characters' >&2; exit 1)
           npx --no-install wrangler d1 migrations apply DB --remote --config dist/server/wrangler.json
           printf '%s' "$NEON_ADMIN_PASSWORD" | npx --no-install wrangler secret put NEON_ADMIN_PASSWORD --config dist/server/wrangler.json
           npx --no-install wrangler deploy --config dist/server/wrangler.json
