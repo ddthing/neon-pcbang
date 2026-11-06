@@ -214,6 +214,7 @@ function renderRoom() {
     $("#room-hint").textContent = "입구 왼쪽의 민트색 키오스크를 눌러보세요.";
   }
   updateSessionTime();
+  scheduleClock();
   document.dispatchEvent(new Event("cafe-seat-phase"));
 }
 
@@ -465,6 +466,14 @@ $("#leave").addEventListener("click", leaveSeat);
 $("#pc-end").addEventListener("click", leaveSeat);
 
 
+const gameLoaders = {
+  arcade: () => import("./game.js").then(({ initArcade }) => initArcade()),
+  mines: () => import("./game.js").then(({ initMines }) => initMines()),
+  sudoku: () => import("./sudoku.js").then(({ initSudoku }) => initSudoku()),
+  merge: () => import("./merge.js").then(({ initMerge }) => initMerge()),
+};
+const requestedGames = new Set();
+
 document.querySelectorAll("[data-open]").forEach((button) => {
   button.addEventListener("click", () => {
     if (hub.contains(button) && hub.open) hub.close();
@@ -472,6 +481,13 @@ document.querySelectorAll("[data-open]").forEach((button) => {
     const origin = button.closest("dialog");
     if (origin?.matches("#snacks, #snack-board, #snack-coupon")) origin.close();
     if (!next.open) next.showModal();
+    const load = gameLoaders[next.id];
+    if (!load || requestedGames.has(next.id)) return;
+    requestedGames.add(next.id);
+    load().catch(() => {
+      requestedGames.delete(next.id);
+      next.querySelector(".game-status").textContent = "게임을 불러오지 못했어요. 페이지를 새로고침해 주세요.";
+    });
   });
 });
 document.querySelectorAll("[data-close]").forEach((button) => {
@@ -503,11 +519,13 @@ $("#timer-toggle").addEventListener("click", () => {
   }
   saveState(focusKey, focus);
   renderTimer();
+  scheduleClock();
 });
 $("#timer-reset").addEventListener("click", () => {
   Object.assign(focus, { remaining: focusDuration, end: null });
   saveState(focusKey, focus);
   renderTimer();
+  scheduleClock();
 });
 
 const seoulTime = new Intl.DateTimeFormat("ko-KR", {
@@ -517,6 +535,14 @@ const seoulTime = new Intl.DateTimeFormat("ko-KR", {
   hourCycle: "h23"
 });
 let lastClock;
+let clockTimeout;
+function scheduleClock() {
+  clearTimeout(clockTimeout);
+  if (document.hidden) return;
+  const interval = room.since || focus.end ? 1000 : 60_000;
+  clockTimeout = setTimeout(tick, interval - Date.now() % interval);
+}
+
 function tick() {
   const time = seoulTime.format(new Date());
   if (time !== lastClock) {
@@ -526,6 +552,7 @@ function tick() {
   }
   updateSessionTime();
   if (focus.end) renderTimer();
+  scheduleClock();
 }
 
 let rainContext;
@@ -614,4 +641,7 @@ renderRoom();
 if (room.space) window.recordCafeStamp("seat");
 renderTimer();
 tick();
-setInterval(tick, 1000);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) clearTimeout(clockTimeout);
+  else tick();
+});

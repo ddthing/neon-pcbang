@@ -65,7 +65,7 @@ function connectCafeSwitch(root, requestChange) {
   var zone = root.querySelector('.u070-zone'), live = root.querySelector('.u070-live');
   var ICON = { ok: '<svg viewBox="0 0 18 18"><path d="M4 9.4l3.2 3.2L14 5.6"/></svg>', err: '<svg viewBox="0 0 18 18"><path d="M9 5v5M9 13h.01"/></svg>', info: '<svg viewBox="0 0 18 18"><path d="M3.5 4.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg>' };
   var K = { ok: 'var(--ux-mint)', err: 'var(--ux-danger)', info: 'var(--ux-accent)' };
-  var list = [], open = false, DUR = 4500, last = 0;
+  var list = [], open = false, DUR = 4500, last = 0, frame = null;
   // 접혀 있을 때는 뒤 알림을 작게 겹치고, 펼치면 높이만큼 위로 쌓아 목록처럼 보여 줍니다
   function layout() {
     var acc = 0;
@@ -86,6 +86,33 @@ function connectCafeSwitch(root, requestChange) {
     if (dir) { t.el.style.setProperty('--dir', dir); t.el.classList.add('side'); }
     setTimeout(function () { t.el.remove(); }, 450);
     layout();
+    if (!list.length) stopLoop();
+  }
+  function stopLoop() {
+    if (frame !== null) cancelAnimationFrame(frame);
+    frame = null;
+    last = 0;
+  }
+  function startLoop() {
+    if (frame !== null || open || !list.length || !root.isConnected) return;
+    last = performance.now();
+    frame = requestAnimationFrame(loop);
+  }
+  function advance(now) {
+    var dt = now - last; last = now;
+    list.slice().forEach(function (t, i) {
+      if (i > 0) return;
+      t.left -= dt;
+      t.el.style.setProperty('--left', Math.max(0, t.left / DUR).toFixed(3));
+      if (t.left <= 0) remove(t);
+    });
+  }
+  function pauseLoop() {
+    if (frame === null) return;
+    cancelAnimationFrame(frame);
+    frame = null;
+    if (list.length) advance(performance.now());
+    last = 0;
   }
   function push(k, message) {
     var el = document.createElement('div');
@@ -102,7 +129,7 @@ function connectCafeSwitch(root, requestChange) {
     el.classList.remove('enter');
     layout();
     live.textContent = k === 'err' ? '' : message;
-    if (!last) { last = performance.now(); requestAnimationFrame(loop); }
+    startLoop();
     el.querySelector('.u070-x').addEventListener('click', function () { remove(t); });
     // 옆으로 밀어 닫기
     var sx = 0, dx = 0, down = false;
@@ -113,18 +140,19 @@ function connectCafeSwitch(root, requestChange) {
   }
   // 펼쳐 둔 동안은 남은 시간이 줄지 않습니다
   function loop(now) {
-    if (!root.isConnected) return;
-    var dt = now - last; last = now;
-    if (!open) list.slice().forEach(function (t, i) {
-      if (i > 0) return;
-      t.left -= dt;
-      t.el.style.setProperty('--left', Math.max(0, t.left / DUR).toFixed(3));
-      if (t.left <= 0) remove(t);
-    });
-    if (list.length) requestAnimationFrame(loop);
+    frame = null;
+    if (!root.isConnected || open || !list.length) { last = 0; return; }
+    advance(now);
+    if (list.length && !open) frame = requestAnimationFrame(loop);
     else last = 0;
   }
-  function setOpen(v) { if (open === v) return; open = v; layout(); }
+  function setOpen(v) {
+    if (open === v) return;
+    if (v) pauseLoop();
+    open = v;
+    layout();
+    if (!open) startLoop();
+  }
   zone.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') setOpen(true); });
   zone.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse' && !zone.contains(document.activeElement)) setOpen(false); });
   zone.addEventListener('focusin', function () { setOpen(true); });

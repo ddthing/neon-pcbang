@@ -134,19 +134,6 @@
   #pc-seat { font-size: 10px; }
 }
 
-.pair-hud { display: flex; justify-content: space-between; margin: 13px 0 8px; font-size: 12px; color: var(--sub); }
-.pair-hud strong { color: var(--mint); }
-.pair-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-.pair-card {
-  display: grid; place-items: center; min-height: 45px; aspect-ratio: 1.25;
-  border: 1px solid #797067; border-radius: 5px; color: var(--peach); background: #48433f;
-  font-size: clamp(19px, 6vw, 30px); font-weight: 750;
-}
-.pair-card:hover { border-color: #c7cabc; }
-.pair-card.revealed { color: #4c4353; background: #d6cbdc; }
-.pair-card.matched { color: #405b4b; background: #c6d5c2; border-color: #a3b39f; cursor: default; }
-#pair-reset { min-height: 38px; margin-top: 10px; }
-
 @media (min-width: 620px) {
   .pc-launcher { width: min(720px, 100%); }
   .pc-apps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -261,8 +248,6 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .pc-screen.is-on { animation: monitor-power .32s steps(4, end) both; }
-  .pair-card { transition: background-color .16s ease, color .16s ease; }
-  .pair-card.revealed, .pair-card.matched { animation: card-flip .18s ease-out; }
   .pc-app-icon { transition: transform .18s ease; }
   .pc-app:hover .pc-app-icon, .pc-app:focus-visible .pc-app-icon { transform: translateY(-2px); }
 }
@@ -270,4 +255,3 @@
   from { filter: brightness(.25); }
   to { filter: brightness(1); }
 }
-@keyframes card-flip { from { transform: scaleX(.4); } to { transform: scaleX(1); } }

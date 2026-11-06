@@ -9,6 +9,8 @@ export function createCafeCamera(scene) {
   let position;
   let bounds;
   let lastSeat;
+  let cameraX;
+  let cameraY;
 
   function follow(point, seat) {
     position = point;
@@ -21,8 +23,16 @@ export function createCafeCamera(scene) {
     const clamp = (target, overscan) => overscan < 0 ? -overscan / 2 : Math.min(0, Math.max(-overscan, target));
     const x = clamp(width * .5 - worldWidth * point.x / 100, worldWidth - width);
     const y = clamp(height * .53 - worldHeight * point.y / 100, worldHeight - height);
-    scene.style.setProperty("--camera-x", Math.round(x) + "px");
-    scene.style.setProperty("--camera-y", Math.round(y) + "px");
+    const nextX = Math.round(x);
+    const nextY = Math.round(y);
+    if (nextX !== cameraX) {
+      scene.style.setProperty("--camera-x", nextX + "px");
+      cameraX = nextX;
+    }
+    if (nextY !== cameraY) {
+      scene.style.setProperty("--camera-y", nextY + "px");
+      cameraY = nextY;
+    }
   }
 
   function resize() {
