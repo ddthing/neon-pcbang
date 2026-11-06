@@ -31,9 +31,9 @@ jobs:
       - name: Configure Cloudflare Worker
         run: node scripts/configure-github-worker.mjs
         env:
-          NEON_WORKER_NAME: ${{ vars.NEON_WORKER_NAME }}
-          NEON_D1_NAME: ${{ vars.NEON_D1_NAME }}
-          NEON_D1_ID: ${{ vars.NEON_D1_ID }}
+          NEON_WORKER_NAME: neon-pcbang
+          NEON_D1_NAME: neon-pcbang
+          NEON_D1_ID: 8d873905-9310-405a-9af2-d9743056bbb2
       - name: Apply database migrations and deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
