@@ -108,7 +108,7 @@
       input.value = "";
       message("");
       render();
-      panel.showModal();
+      openCafeWindow(panel, button);
     });
   });
 

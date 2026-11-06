@@ -112,7 +112,16 @@
             <button class="stage-room-door snack-counter" type="button" data-open="snack-board">매점 주문표</button>
             <div id="room-doors" aria-label="룸 입구"></div>
           </div>
-          <p class="seat-journey mono" id="seat-journey" role="status"></p>
+          <div class="seat-journey ux u042" id="seat-journey" aria-hidden="true" hidden>
+            <ol class="u042-steps">
+              <li class="u042-line"><i></i></li>
+              <li class="u042-st" data-phase="walking"><span class="u042-dot"><span>1</span><svg viewBox="0 0 16 16"><path d="M3.5 8.4l3 3 6-6.4"/></svg></span><small>이동</small></li>
+              <li class="u042-st" data-phase="sitting"><span class="u042-dot"><span>2</span><svg viewBox="0 0 16 16"><path d="M3.5 8.4l3 3 6-6.4"/></svg></span><small>착석</small></li>
+              <li class="u042-st" data-phase="booting"><span class="u042-dot"><span>3</span><svg viewBox="0 0 16 16"><path d="M3.5 8.4l3 3 6-6.4"/></svg></span><small>PC 켜기</small></li>
+            </ol>
+            <p class="mono" id="seat-journey-label"></p>
+          </div>
+          <p class="pc-sr-only" id="seat-journey-status" role="status"></p>
           <div class="cafe-joystick" id="cafe-joystick" aria-hidden="true"><span></span></div>
         </div>
         <div class="walk-controls">

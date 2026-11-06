@@ -110,10 +110,8 @@ body {
 .hub-menu .kiosk { box-shadow: inset 0 0 0 3px #cbd4c8; }
 @media (prefers-reduced-motion: no-preference) {
   #title > span { animation: sign-glint 6s ease-in-out infinite alternate; }
-  .visit-stamps .stamp-new { animation: stamp-land .33s cubic-bezier(.2,.85,.25,1.2); }
 }
 @keyframes sign-glint { 55%, 100% { opacity: .55; transform: scale(.8); } }
-@keyframes stamp-land { 0% { transform: scale(1.17) rotate(-5deg); } 100% { transform: none; } }
 @media (max-width: 900px) {
   .shell { width: min(740px, calc(100% - 30px)); }
   .layout { grid-template-columns: minmax(0, 1fr); }

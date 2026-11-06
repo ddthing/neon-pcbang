@@ -2,7 +2,6 @@ export function createCafeCamera(scene) {
   const viewport = scene.parentElement;
   const button = document.getElementById("cafe-fullscreen");
   const overviewButton = document.getElementById("cafe-overview");
-  const floorButton = document.getElementById("game-view-floor");
   const pcButton = document.getElementById("game-view-pc");
   let overview = false;
   let busy = false;
@@ -81,7 +80,6 @@ export function createCafeCamera(scene) {
   if (!document.fullscreenEnabled) button.hidden = true;
   new ResizeObserver(resize).observe(viewport);
   scene.classList.add("camera-ready");
-  floorButton.addEventListener("click", () => document.getElementById("open-floor").click());
   pcButton.addEventListener("click", () => document.getElementById("open-monitor").click());
   return { follow, track: () => setOverview(false) };
 }

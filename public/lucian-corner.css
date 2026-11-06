@@ -1,3 +1,5 @@
+/* Lucian UX/UI Prompt #051 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#051 */
+/* Lucian UX/UI Prompt #087 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#087 */
 /* Lucian UX/UI Prompt #227 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#227 */
 
 .u227{position:relative;width:340px;height:340px;border-radius:30px;overflow:hidden;background:var(--ux-surface);box-shadow:0 0 0 1px var(--ux-line),0 30px 60px -36px var(--ux-shadow-strong);color:var(--ux-ink)}
@@ -125,3 +127,110 @@
 .u242-it i{flex:none;width:58px;height:58px;border-radius:14px}
 .u242-end{height:160px}
 @media (prefers-reduced-motion: reduce){.u242-ul,.u242-cb{transition:none}}
+
+.u051-cart{
+  position:relative;flex:none;width:44px;height:44px;display:grid;place-items:center;
+  border-radius:50%;background:var(--ux-surface);color:var(--ux-ink);
+  box-shadow:0 6px 14px -8px var(--ux-shadow-strong);
+}
+.u051-cart>span{font-size:20px;line-height:1}
+.u051-cart>svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.u051-cart b{
+  position:absolute;right:-3px;top:-3px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;
+  background:var(--ux-ink);color:var(--ux-page);font-size:11px;font-weight:800;line-height:20px;
+  text-align:center;font-variant-numeric:tabular-nums;transform:scale(0);
+  transition:transform .45s var(--ux-spring);
+}
+.u051-cart.has b{transform:scale(1)}
+.u051-fly{
+  position:absolute;z-index:1000;width:34px;height:34px;display:grid;place-items:center;border-radius:10px;
+  background:#494039;color:#f2e7d8;box-shadow:0 5px 12px -5px #0008;
+  font-size:20px;line-height:1;pointer-events:none;
+}
+
+.shop-actions{display:flex;align-items:center;gap:8px}
+.shop-actions #place-order{flex:1;min-width:0}
+.shop-actions #place-order.done:not(:disabled){animation:u051-check .42s var(--ux-spring)}
+@keyframes u051-check{
+  0%,100%{transform:scale(1)}
+  38%{transform:scale(.96)}
+  72%{transform:scale(1.025)}
+}
+
+.shop-delivery-progress{
+  --ux-surface:#34302b;--ux-surface-2:#2a2825;--ux-surface-3:#494039;
+  --ux-ink:#f0e4d2;--ux-ink-3:#bcb09f;--ux-line:#726654;
+  --ux-line-2:#887d6b;--ux-accent:#a8ba97;--ux-accent-ink:#20271e;
+  --ux-mint:#a8ba97;--ux-shadow-strong:#0008;
+  position:relative;width:100%;padding:10px 11px 8px;border:1px solid #655c4d;border-radius:6px;
+  background:#302c26;color:var(--ux-ink);overflow:hidden;
+}
+.shop-delivery-progress .u087-h small{display:block;font-size:10px;font-weight:700;color:var(--ux-ink-3)}
+.shop-delivery-progress .u087-h b{display:block;margin-top:2px;font-size:13px;font-weight:850}
+.shop-delivery-progress .u087-trk{position:relative;height:45px;margin:5px 11px 0}
+.shop-delivery-progress .u087-line{
+  position:absolute;left:8px;right:8px;top:27px;height:4px;border-radius:2px;
+  background:var(--ux-surface-3);
+}
+.shop-delivery-progress .u087-line i{
+  position:absolute;inset:0;border-radius:inherit;background:linear-gradient(90deg,#06B6D4,#22C3A6);
+  transform-origin:0 50%;transform:scaleX(var(--p,0));transition:transform 1s cubic-bezier(.5,0,.2,1);
+}
+.shop-delivery-progress .u087-dots{
+  position:absolute;left:0;right:0;top:21px;display:flex;justify-content:space-between;
+}
+.shop-delivery-progress .u087-dots span{
+  width:16px;height:16px;border-radius:50%;background:#302c26;
+  box-shadow:inset 0 0 0 3px var(--ux-surface-3);transition:box-shadow .4s .6s;
+}
+.shop-delivery-progress .u087-dots span.on{box-shadow:inset 0 0 0 5px #22C3A6}
+.shop-delivery-progress .u087-truck-lane{position:absolute;left:8px;right:8px;top:-3px;height:34px}
+.shop-delivery-progress .u087-truck{
+  position:absolute;left:0;top:0;width:44px;height:34px;
+  transition:left 1s cubic-bezier(.5,0,.2,1);
+}
+.shop-delivery-progress.is-done .u087-truck{left:calc(100% - 44px)}
+.shop-delivery-progress .u087-truck svg{width:44px;height:34px}
+.shop-delivery-progress.is-moving .u087-truck svg{animation:u087-bump .25s ease-in-out infinite}
+@keyframes u087-bump{50%{transform:translateY(-2px) rotate(-1deg)}}
+.shop-delivery-progress .u087-flag{
+  position:absolute;left:12px;top:-2px;width:24px;height:24px;border-radius:50%;display:grid;
+  place-items:center;background:var(--ux-mint);color:var(--ux-accent-ink);transform:scale(0);
+  transition:transform .5s var(--ux-spring) .2s;
+}
+.shop-delivery-progress .u087-flag svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.shop-delivery-progress.is-done .u087-flag{transform:none}
+.shop-delivery-progress.is-done .u087-truck svg{opacity:.25;transition:opacity .4s}
+.shop-delivery-progress .u087-labs{display:flex;justify-content:space-between;margin:1px 0 0;font-size:10px;font-weight:700;color:var(--ux-ink-3)}
+.shop-delivery-progress .u087-labs span{width:70px;text-align:left;transition:color .4s}
+.shop-delivery-progress .u087-labs span:last-child{text-align:right}
+.shop-delivery-progress .u087-labs span.on{color:var(--ux-ink)}
+.shop-delivery-progress .u087-log{margin:6px 0 0;padding:0;list-style:none}
+.shop-delivery-progress .u087-log li{position:relative;padding:0 0 3px 14px}
+.shop-delivery-progress .u087-log li:last-child{padding-bottom:0}
+.shop-delivery-progress .u087-log li::before{
+  content:"";position:absolute;left:2px;top:5px;width:6px;height:6px;border-radius:50%;
+  background:var(--ux-line-2);
+}
+.shop-delivery-progress .u087-log li::after{
+  content:"";position:absolute;left:4.5px;top:12px;bottom:-1px;width:1px;background:var(--ux-line-2);
+}
+.shop-delivery-progress .u087-log li:first-child::before{background:#22C3A6;box-shadow:0 0 0 3px #22C3A638}
+.shop-delivery-progress .u087-log li:last-child::after{display:none}
+.shop-delivery-progress .u087-log li.new{animation:u087-in .55s var(--ux-spring)}
+@keyframes u087-in{from{opacity:0;transform:translateY(-14px)}}
+.shop-delivery-progress .u087-log b{display:block;font-size:10.5px;font-weight:780}
+.shop-delivery-progress .u087-log small{display:block;margin-top:1px;font-size:9.5px;font-weight:600;color:var(--ux-ink-3)}
+
+@media (prefers-reduced-motion:reduce){
+  .shop-actions #place-order.done:not(:disabled),.shop-delivery-progress .u087-log li.new,
+  .shop-delivery-progress.is-moving .u087-truck svg{animation:none}
+  .u051-cart b,.shop-delivery-progress .u087-line i,.shop-delivery-progress .u087-dots span,
+  .shop-delivery-progress .u087-truck,.shop-delivery-progress .u087-flag,
+  .shop-delivery-progress.is-done .u087-truck svg{transition:none}
+}
+@media (max-width:360px){
+  .shop-actions{gap:6px}
+  .shop-actions .u051-cart{width:40px;height:40px}
+  .shop-delivery-progress{padding-inline:8px}
+}

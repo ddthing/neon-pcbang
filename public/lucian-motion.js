@@ -1,6 +1,98 @@
 /* Lucian UX/UI Prompt #013 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#013 */
+/* Lucian UX/UI Prompt #100 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#100 */
 /* Lucian UX/UI Prompt #070 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#070 */
+/* Lucian UX/UI Prompt #061 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#061 */
 "use strict";
+
+const cafeReducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const cafeWindowTransitions = new WeakMap();
+const cafeWindowBound = new WeakSet();
+const cafeActiveMotions = new Set();
+const cafeWindowTiming = { duration: 520, easing: "cubic-bezier(.2,.8,.2,1)" };
+
+cafeReducedMotion.addEventListener("change", () => {
+  if (cafeReducedMotion.matches) cafeActiveMotions.forEach((animation) => animation.cancel());
+});
+
+function trackCafeMotion(animation) {
+  cafeActiveMotions.add(animation);
+  const clear = () => cafeActiveMotions.delete(animation);
+  animation.finished.then(clear, clear);
+  return animation;
+}
+
+function cafeWindowOrigin(origin) {
+  if (cafeReducedMotion.matches || !(origin instanceof Element)) return null;
+  const rect = origin.getBoundingClientRect();
+  return rect.width && rect.height && rect.right > 0 && rect.bottom > 0 &&
+    rect.left < innerWidth && rect.top < innerHeight ? rect : null;
+}
+
+function cafeWindowFrames(source, target) {
+  const sx = Math.max(.045, source.width / target.width);
+  const sy = Math.max(.045, source.height / target.height);
+  return [
+    { transform: `translate(${source.left - target.left}px, ${source.top - target.top}px) scale(${sx}, ${sy})`, opacity: .25 },
+    { transform: "none", opacity: 1 },
+  ];
+}
+
+// Lucian #061 morphs the panel from its trigger. Transform and opacity keep it off the layout path.
+function openCafeWindow(dialog, origin, source = cafeWindowOrigin(origin)) {
+  if (!source) {
+    dialog.showModal();
+    return;
+  }
+  dialog.classList.add("u061-window");
+  dialog.showModal();
+  const entry = { origin, animation: trackCafeMotion(dialog.animate(cafeWindowFrames(source, dialog.getBoundingClientRect()), cafeWindowTiming)) };
+  cafeWindowTransitions.set(dialog, entry);
+  if (cafeWindowBound.has(dialog)) return;
+  cafeWindowBound.add(dialog);
+  dialog.addEventListener("cancel", (event) => {
+    if (event.defaultPrevented || !cafeWindowTransitions.has(dialog)) return;
+    event.preventDefault();
+    closeCafeWindow(dialog);
+  });
+  dialog.addEventListener("close", () => {
+    if (dialog.open) return;
+    const current = cafeWindowTransitions.get(dialog);
+    cafeWindowTransitions.delete(dialog);
+    dialog.classList.remove("u061-window");
+    current?.animation.cancel();
+  });
+}
+
+function closeCafeWindow(dialog) {
+  const entry = cafeWindowTransitions.get(dialog);
+  if (entry?.closing || !dialog.open) return;
+  const source = entry && cafeWindowOrigin(entry.origin);
+  if (!source) {
+    dialog.close();
+    return;
+  }
+  const moving = entry.animation.playState === "running";
+  const style = moving ? getComputedStyle(dialog) : null;
+  const from = moving ? { transform: style.transform, opacity: Number(style.opacity) } : null;
+  entry.animation.cancel();
+  entry.closing = true;
+  const frames = cafeWindowFrames(source, dialog.getBoundingClientRect()).reverse();
+  if (from) frames[0] = from;
+  entry.animation = trackCafeMotion(dialog.animate(frames, cafeWindowTiming));
+  const finish = () => {
+    if (dialog.open && cafeWindowTransitions.get(dialog) === entry) dialog.close();
+  };
+  entry.animation.finished.then(finish, finish);
+}
+
+function revealCafeView(view, direction) {
+  if (cafeReducedMotion.matches) return;
+  view.getAnimations().forEach((animation) => animation.cancel());
+  trackCafeMotion(view.animate([
+    { transform: `translateX(${direction * 40}px)`, opacity: .2 },
+    { transform: "none", opacity: 1 },
+  ], { duration: 420, easing: "cubic-bezier(.2,.8,.2,1)" }));
+}
 
 function connectCafeSwitch(root, requestChange) {
   var sw = root.querySelector('.u013-sw');
@@ -162,3 +254,128 @@ function connectCafeSwitch(root, requestChange) {
     push(event.detail.kind, event.detail.message);
   });
 })();
+
+function createCafeFocusMotion(dialog) {
+  const timer = dialog.querySelector("#timer");
+  const motion = matchMedia("(prefers-reduced-motion: reduce)");
+  const screenReader = document.createElement("span");
+  const clock = document.createElement("span");
+  const progress = document.createElement("div");
+  const bar = document.createElement("i");
+  const digits = [];
+  let showing = false;
+
+  clock.className = "u100-clk cafe-focus-flip";
+  clock.setAttribute("aria-hidden", "true");
+
+  for (const part of ["mt", "mo", "st", "so"]) {
+    const face = document.createElement("span");
+    face.className = "u100-fl";
+    face.setAttribute("aria-hidden", "true");
+    face.innerHTML = '<span class="u100-t"><b>0</b></span><span class="u100-b"><b>0</b></span>' +
+      '<span class="u100-ft"><b>0</b></span><span class="u100-fb"><b>0</b></span>';
+    digits.push({
+      value: "",
+      top: face.querySelector(".u100-t b"),
+      bottom: face.querySelector(".u100-b b"),
+      topFlip: face.querySelector(".u100-ft"),
+      bottomFlip: face.querySelector(".u100-fb"),
+    });
+    clock.append(face);
+    if (part === "mo") {
+      const colon = document.createElement("span");
+      colon.className = "u100-co";
+      colon.setAttribute("aria-hidden", "true");
+      colon.innerHTML = "<i></i><i></i>";
+      clock.append(colon);
+    }
+  }
+
+  progress.className = "cafe-focus-progress";
+  progress.setAttribute("aria-hidden", "true");
+  progress.append(bar);
+  screenReader.className = "cafe-focus-sr";
+  screenReader.textContent = "25:00";
+  timer.replaceChildren(screenReader, clock, progress);
+  timer.dataset.flipReady = "true";
+
+  function cancelFlips() {
+    clock.getAnimations().forEach((animation) => animation.cancel());
+    clock.classList.remove("run", "cafe-focus-shake");
+    for (const digit of digits) {
+      digit.topFlip.getAnimations().forEach((animation) => animation.cancel());
+      digit.bottomFlip.getAnimations().forEach((animation) => animation.cancel());
+      digit.bottom.textContent = digit.value || "0";
+    }
+  }
+
+  function paintDigit(digit, next, animate) {
+    if (next === digit.value) return;
+    const previous = digit.value;
+    digit.value = next;
+    digit.top.textContent = next;
+    digit.topFlip.firstElementChild.textContent = previous || next;
+    digit.bottomFlip.firstElementChild.textContent = next;
+    digit.topFlip.getAnimations().forEach((animation) => animation.cancel());
+    digit.bottomFlip.getAnimations().forEach((animation) => animation.cancel());
+
+    if (!animate || !previous) {
+      digit.bottom.textContent = next;
+      return;
+    }
+
+    digit.bottom.textContent = previous;
+    digit.topFlip.animate([
+      { transform: "perspective(320px) rotateX(0deg)", filter: "brightness(1)" },
+      { transform: "perspective(320px) rotateX(-90deg)", filter: "brightness(.6)" },
+    ], { duration: 240, easing: "cubic-bezier(.55,0,.9,.6)" });
+
+    const flip = digit.bottomFlip.animate([
+      { transform: "perspective(320px) rotateX(90deg)", filter: "brightness(1.5)" },
+      { transform: "perspective(320px) rotateX(0deg)", filter: "brightness(1)" },
+    ], {
+      duration: 300,
+      delay: 240,
+      easing: "cubic-bezier(.2,.9,.3,1.25)",
+      fill: "forwards",
+    });
+    flip.onfinish = () => {
+      digit.bottom.textContent = digit.value;
+      flip.cancel();
+    };
+  }
+
+  function update(display, remainingRatio, isRunning = false) {
+    const previous = screenReader.textContent;
+    if (previous !== display) screenReader.textContent = display;
+    if (!dialog.open || document.hidden) return;
+    const nextRatio = Math.max(0, Math.min(1, Number(remainingRatio) || 0));
+    const [minutes = "00", seconds = "00"] = display.split(":");
+    const next = minutes.padStart(2, "0").slice(-2) + seconds.padStart(2, "0").slice(-2);
+    const animate = showing && !motion.matches;
+    showing = true;
+    next.split("").forEach((digit, index) => paintDigit(digits[index], digit, animate));
+    timer.classList.toggle("warn", nextRatio > 0 && nextRatio <= 10 / (25 * 60));
+    timer.classList.toggle("done", nextRatio === 0);
+    clock.classList.toggle("run", isRunning && !motion.matches);
+    progress.classList.toggle("is-animated", animate);
+    bar.style.setProperty("--p", String(nextRatio));
+
+    if (nextRatio === 0 && previous !== display && animate) {
+      clock.classList.add("cafe-focus-shake");
+    }
+  }
+
+  function suspend() {
+    showing = false;
+    cancelFlips();
+  }
+
+  clock.addEventListener("animationend", (event) => {
+    if (event.animationName === "cafe-focus-shake") clock.classList.remove("cafe-focus-shake");
+  });
+  dialog.addEventListener("close", suspend);
+  document.addEventListener("visibilitychange", () => { if (document.hidden && dialog.open) suspend(); });
+  motion.addEventListener("change", () => { if (motion.matches && dialog.open) suspend(); });
+  return update;
+}

@@ -1,3 +1,5 @@
+// Lucian UX/UI Prompt #051 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#051
+// Lucian UX/UI Prompt #087 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#087
 // Adapted from Lucian UX/UI Prompt #227, #242, and #353 · MIT License (c) 2026 Seokwoooo.
 const $ = (selector, root = document) => root.querySelector(selector);
 const shop = $("#snacks");
@@ -22,7 +24,7 @@ const element = (tag, className, content = "") => {
   return node;
 };
 let data, catalog, sending = false, inFlight, retryId, order, orderTick, pollTimer;
-let clockOffset = 0;
+let clockOffset = 0, deliveryMotionTimer;
 try { order = JSON.parse(storage.get("sessionStorage", stateKey)); } catch {}
 const serverNow = () => Date.now() + clockOffset;
 const cart = new Map();
@@ -30,8 +32,202 @@ const controls = new Map();
 const reward = $("#order-reward");
 const rewardToggle = $("input", reward);
 const submit = $("#place-order");
+const receipt = $("#order-receipt");
 const shopFeedback = $("#shop-feedback");
 const couponFeedback = $("#coupon-feedback");
+const cartBadge = element("span", "u051-cart");
+cartBadge.setAttribute("aria-hidden", "true");
+const cartBadgeIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+cartBadgeIcon.setAttribute("viewBox", "0 0 24 24");
+cartBadgeIcon.setAttribute("aria-hidden", "true");
+cartBadgeIcon.innerHTML = '<path d="M4 5h2l1.8 9.2a1 1 0 0 0 1 .8h8.4a1 1 0 0 0 1-.8L19.5 8H7"/><circle cx="9.5" cy="19" r="1.3"/><circle cx="16.5" cy="19" r="1.3"/>';
+const cartBadgeCount = element("b", "", "0");
+cartBadge.append(cartBadgeIcon, cartBadgeCount);
+const shopActions = element("div", "shop-actions");
+const restoreSubmitFocus = document.activeElement === submit;
+submit.before(shopActions);
+shopActions.append(submit, cartBadge);
+if (restoreSubmitFocus) submit.focus({ preventScroll: true });
+const deliveryProgress = createDeliveryProgress();
+receipt.append(deliveryProgress.root);
+const flyingItems = new Set();
+let progressOrderId = "";
+let progressStage = -1;
+let buttonFeedbackTimer;
+
+function createDeliveryProgress() {
+  const root = element("section", "ux u087 shop-delivery-progress");
+  root.setAttribute("aria-hidden", "true");
+
+  const heading = element("div", "u087-h");
+  const reference = element("small", "");
+  const message = element("b", "");
+  heading.append(reference, message);
+
+  const track = element("div", "u087-trk");
+  const line = element("span", "u087-line");
+  line.setAttribute("aria-hidden", "true");
+  const fill = element("i", "");
+  line.append(fill);
+
+  const dots = element("span", "u087-dots");
+  dots.setAttribute("aria-hidden", "true");
+  const endpoints = Array.from({ length: 2 }, () => element("span", ""));
+  dots.append(...endpoints);
+
+  const truck = element("span", "u087-truck");
+  truck.setAttribute("aria-hidden", "true");
+  truck.innerHTML = '<svg viewBox="0 0 44 34"><rect x="2" y="6" width="24" height="18" rx="3" fill="#06B6D4"/><path d="M26 11h8l6 7v6H26z" fill="#22C3A6"/><path d="M29 13.5h4l3.5 4H29z" fill="#E6FBF7"/><circle cx="10" cy="26" r="4" fill="#16151B" stroke="#fff" stroke-width="2"/><circle cx="33" cy="26" r="4" fill="#16151B" stroke="#fff" stroke-width="2"/><rect x="6" y="10" width="10" height="3" rx="1.5" fill="#fff" opacity=".7"/></svg>';
+  const flag = element("span", "u087-flag");
+  flag.innerHTML = '<svg viewBox="0 0 14 14"><path d="M3 7.4l2.6 2.6L11 4.6"/></svg>';
+  truck.append(flag);
+  const lane = element("span", "u087-truck-lane");
+  lane.append(truck);
+  track.append(line, dots, lane);
+
+  const labels = element("div", "u087-labs");
+  const startLabel = element("span", "", "주문 접수");
+  const finishLabel = element("span", "", "배달 완료");
+  labels.append(startLabel, finishLabel);
+
+  const log = element("ol", "u087-log");
+  const ordered = element("li", "");
+  const accepted = element("li", "");
+  for (const [entry, title] of [[ordered, "준비한 상품이 도착했어요"], [accepted, "주문이 접수됐어요"]]) {
+    const detail = document.createElement("div");
+    detail.append(element("b", "", title), element("small", ""));
+    entry.append(detail);
+  }
+  root.append(heading, track, labels, log);
+
+  return { root, reference, message, track, fill, endpoints, labels, log, ordered, accepted };
+}
+
+function updateCartBadge(count) {
+  cartBadgeCount.textContent = String(count);
+  cartBadge.hidden = count === 0;
+  cartBadge.classList.toggle("has", count > 0);
+}
+
+function landCart() {
+  if (reduced.matches) return;
+  cartBadge.animate(
+    [{ transform: "none" }, { transform: "rotate(-12deg) scale(1.12)" }, { transform: "rotate(8deg)" }, { transform: "none" }],
+    { duration: 500, easing: "ease-out" },
+  );
+  cartBadgeCount.animate(
+    [{ transform: "scale(1)" }, { transform: "scale(1.45)" }, { transform: "scale(1)" }],
+    { duration: 400, easing: "cubic-bezier(.34,1.5,.64,1)" },
+  );
+}
+
+function flyItem(item, source) {
+  if (reduced.matches || !shop.open || document.hidden) return;
+  const start = source.getBoundingClientRect();
+  const target = cartBadge.getBoundingClientRect();
+  if (!start.width || !target.width) return;
+
+  const parent = shop.getBoundingClientRect();
+  const scaleX = parent.width / shop.offsetWidth || 1;
+  const scaleY = parent.height / shop.offsetHeight || 1;
+  const x = (start.left + start.width / 2 - parent.left) / scaleX - 17;
+  const y = (start.top + start.height / 2 - parent.top) / scaleY - 17;
+  const endX = (target.left + target.width / 2 - parent.left) / scaleX - 17;
+  const endY = (target.top + target.height / 2 - parent.top) / scaleY - 17;
+  const flyer = element("span", "u051-fly", item.icon);
+  flyer.setAttribute("aria-hidden", "true");
+  flyer.style.left = x + "px";
+  flyer.style.top = y + "px";
+  shop.append(flyer);
+
+  const frames = Array.from({ length: 13 }, (_, index) => {
+    const progress = index / 12;
+    const flyX = (endX - x) * progress;
+    const flyY = (endY - y) * progress - Math.sin(progress * Math.PI) * 36;
+    return {
+      transform: `translate(${flyX.toFixed(1)}px,${flyY.toFixed(1)}px) rotate(${(progress * 40).toFixed(1)}deg) scale(${(1.2 - progress * .85).toFixed(2)})`,
+      opacity: progress > .92 ? 0 : 1,
+    };
+  });
+  const flight = flyer.animate(frames, { duration: 720, easing: "cubic-bezier(.5,0,.3,1)" });
+  flyingItems.add(flight);
+  flight.onfinish = () => {
+    flyingItems.delete(flight);
+    flyer.remove();
+    landCart();
+  };
+  flight.oncancel = () => {
+    flyingItems.delete(flight);
+    flyer.remove();
+  };
+}
+
+function addOrderLogEntry(entry, message, time, animate) {
+  const [title, timestamp] = entry.querySelectorAll("b, small");
+  setText(title, message);
+  setText(timestamp, time);
+  entry.classList.toggle("new", animate && !reduced.matches && !document.hidden);
+  deliveryProgress.log.prepend(entry);
+}
+
+function updateDeliveryProgress(waiting) {
+  const stage = Number(!waiting);
+  const newOrder = order.id !== progressOrderId;
+  const changed = newOrder || stage !== progressStage;
+  const animateArrival = !newOrder && progressStage === 0 && stage === 1;
+  deliveryProgress.reference.textContent = "주문 " + order.id.slice(0, 8).toUpperCase();
+  setText(deliveryProgress.message, waiting ? "주문을 준비하고 있어요." : "배달이 도착했어요.");
+  deliveryProgress.root.classList.toggle("is-done", !waiting);
+  if (animateArrival) {
+    deliveryProgress.root.classList.add("is-moving");
+    clearTimeout(deliveryMotionTimer);
+    deliveryMotionTimer = setTimeout(() => deliveryProgress.root.classList.remove("is-moving"), 1000);
+  }
+
+  deliveryProgress.fill.style.setProperty("--p", String(stage));
+  deliveryProgress.track.setAttribute("role", "progressbar");
+  deliveryProgress.track.setAttribute("aria-label", "주문 진행 단계");
+  deliveryProgress.track.setAttribute("aria-valuemin", "1");
+  deliveryProgress.track.setAttribute("aria-valuemax", "2");
+  deliveryProgress.track.setAttribute("aria-valuenow", String(stage + 1));
+  deliveryProgress.track.setAttribute("aria-valuetext", waiting ? "주문 접수" : "배달 완료");
+  deliveryProgress.endpoints.forEach((point, index) => point.classList.toggle("on", index <= stage));
+  deliveryProgress.labels.querySelectorAll("span").forEach((label, index) => label.classList.toggle("on", index === stage));
+
+  if (changed) {
+    deliveryProgress.log.replaceChildren(deliveryProgress.accepted);
+    if (order.createdAt) {
+      const time = new Intl.DateTimeFormat("ko-KR", {
+        timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit",
+      }).format(order.createdAt);
+      deliveryProgress.accepted.querySelector("small").textContent = time;
+    } else {
+      deliveryProgress.accepted.querySelector("small").textContent = "";
+    }
+    setText(deliveryProgress.accepted.querySelector("b"), "주문이 접수됐어요.");
+    if (stage === 1) {
+      const arrivalTime = new Intl.DateTimeFormat("ko-KR", {
+        timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit",
+      }).format(order.readyAt);
+      addOrderLogEntry(deliveryProgress.ordered, "준비한 상품이 도착했어요.", arrivalTime, animateArrival);
+    }
+    if (newOrder && stage === 0) deliveryProgress.log.append(deliveryProgress.accepted);
+  }
+  if (newOrder || stage !== progressStage) {
+    progressOrderId = order.id;
+    progressStage = stage;
+  }
+}
+
+function clearShopAnimations() {
+  for (const flight of flyingItems) flight.cancel();
+  clearTimeout(buttonFeedbackTimer);
+  clearTimeout(deliveryMotionTimer);
+  submit.classList.remove("done");
+  cartBadge.getAnimations().forEach((animation) => animation.cancel());
+  cartBadgeCount.getAnimations().forEach((animation) => animation.cancel());
+  deliveryProgress.root.classList.remove("is-moving");
+}
 
 function updateShop() {
   const seat = currentSeat();
@@ -41,6 +237,7 @@ function updateShop() {
   reward.hidden = !catalog || !eligible;
   if (!eligible) rewardToggle.checked = false;
   const quantity = [...cart.values()].reduce((sum, count) => sum + count, 0) + Number(rewardToggle.checked);
+  updateCartBadge(quantity);
   for (const [id, row] of controls) {
     const count = cart.get(id) || 0;
     setText(row.count, count);
@@ -54,6 +251,7 @@ function updateShop() {
   if (order) {
     setText($("#order-status"), "주문 " + order.id.slice(0, 8).toUpperCase() + (waiting ? " · 조리 중" : " · 준비 완료"));
     setText($("#order-items"), lineText(order.items));
+    updateDeliveryProgress(waiting);
   }
 }
 
@@ -121,6 +319,12 @@ function renderCatalog() {
           else cart.delete(item.id);
           retryId = null;
           updateShop();
+          if (delta > 0) {
+            submit.classList.add("done");
+            clearTimeout(buttonFeedbackTimer);
+            buttonFeedbackTimer = setTimeout(() => submit.classList.remove("done"), 420);
+            flyItem(item, icon);
+          }
         });
       }
       controls.set(item.id, { count, minus, plus });
@@ -360,7 +564,7 @@ submit.addEventListener("click", () => action(async () => {
       coupon: rewardToggle.checked,
     });
     if (result.order) {
-      order = result.order;
+      order = { ...result.order, createdAt: result.now };
       storage.set("sessionStorage", stateKey, JSON.stringify(order));
       cart.clear();
       retryId = null;
@@ -383,7 +587,14 @@ const onDialog = new MutationObserver(() => {
   refresh();
 });
 for (const dialog of [shop, boardDialog, couponDialog]) onDialog.observe(dialog, { attributes: true, attributeFilter: ["open"] });
-document.addEventListener("visibilitychange", refresh);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) clearShopAnimations();
+  else refresh();
+});
+shop.addEventListener("close", clearShopAnimations);
+reduced.addEventListener("change", () => {
+  if (reduced.matches) clearShopAnimations();
+});
 document.addEventListener("cafe-seat-phase", () => { updateShop(); refresh(); });
 fetch("./snack-menu.json").then((response) => {
   if (!response.ok) throw Error("catalog");
