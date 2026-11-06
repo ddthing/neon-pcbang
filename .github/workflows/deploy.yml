@@ -9,6 +9,7 @@ on:
       - ".github/workflows/deploy.yml"
       - "lib/invite-gate.ts"
       - "tests/invite-gate.test.mjs"
+      - "tests/smoke-live-login.mjs"
 
 permissions:
   contents: read
@@ -53,3 +54,6 @@ jobs:
           npx --no-install wrangler d1 migrations apply DB --remote --config dist/server/wrangler.json
           printf '%s' "$NEON_ADMIN_PASSWORD" | npx --no-install wrangler secret put NEON_ADMIN_PASSWORD --config dist/server/wrangler.json
           npx --no-install wrangler deploy --config dist/server/wrangler.json
+
+      - name: Verify real production login request
+        run: node tests/smoke-live-login.mjs
