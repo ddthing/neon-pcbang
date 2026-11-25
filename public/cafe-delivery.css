@@ -1,8 +1,3 @@
-#cafe-empty-counter {
-  left: 8.268229%; top: 64.257813%; width: 7.552083%; height: 11.328125%;
-  pointer-events: none; animation: none; image-rendering: pixelated; z-index: 1;
-}
-
 .cafe-delivery-clerk {
   position: absolute; z-index: 2; left: var(--clerk-x, 11.9%); top: var(--clerk-y, 73.2%);
   width: 3.15cqw; aspect-ratio: 48 / 52; transform: translate(-50%, -95%);

@@ -79,10 +79,10 @@ test("beta invitation and public launch use one-time database-backed form tokens
   assert.equal((await gate(get("/app.js"), env)).headers.get("Location"), "/invite");
   assert.equal((await gate(get("/api/presence"), env)).status, 401);
   assert.equal(await gate(get("/invite-entry.css"), env), null);
-  assert.equal(await gate(get("/corner-hall-timber.webp"), env), null);
+  assert.equal(await gate(get("/pcbang-cozy-hall.png"), env), null);
   const entryHtml = await refreshForm("/invite");
   assert.match(entryHtml, /href="\/invite-entry\.css"/);
-  assert.match(entryHtml, /src="\/corner-hall-timber\.webp"/);
+  assert.match(entryHtml, /src="\/pcbang-cozy-hall\.png"/);
   assert.match(entryHtml, /<form method="post" action="\/auth\/redeem">/);
   const retryPage = await gate(post("/auth/redeem", { csrf: "expired", code: "invalid" }), env);
   assert.equal(retryPage.status, 403);

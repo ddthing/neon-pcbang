@@ -960,6 +960,8 @@ function tick() {
   if (time !== lastClock) {
     $("#clock").textContent = time;
     $("#pc-clock").textContent = time;
+    const hudClock = $("#hud-clock");
+    if (hudClock) hudClock.textContent = time;
     lastClock = time;
   }
   updateSessionTime();
@@ -993,19 +995,30 @@ function makeRain(AudioEngine) {
 }
 
 $(".hub-ambience").append($(".top-actions"));
+const hudRainBtn = $("#hud-rain-toggle");
+const rainSwitchBtn = document.querySelector(".top-actions .u013-sw");
+function syncHudRainButton(enabled) {
+  if (!hudRainBtn) return;
+  hudRainBtn.setAttribute("aria-pressed", String(enabled));
+  hudRainBtn.textContent = enabled ? "🌧️ 빗소리 ON" : "🌧️ 빗소리";
+}
+hudRainBtn?.addEventListener("click", () => rainSwitchBtn?.click());
 connectCafeSwitch(document.querySelector(".top-actions .u013"), async (enabled) => {
   const AudioEngine = window.AudioContext || window.webkitAudioContext;
   if (!AudioEngine) {
     notify("이 브라우저에서는 빗소리를 재생할 수 없어요.", "err");
+    syncHudRainButton(false);
     return false;
   }
   try {
     if (!rainContext) makeRain(AudioEngine);
     await rainContext.resume();
     rainGain.gain.setTargetAtTime(enabled ? .42 : 0, rainContext.currentTime, .13);
+    syncHudRainButton(enabled);
     return true;
   } catch {
     notify("빗소리를 켜지 못했어요. 잠시 후 다시 눌러주세요.", "err");
+    syncHudRainButton(false);
     return false;
   }
 });

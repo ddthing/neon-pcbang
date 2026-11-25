@@ -1,7 +1,6 @@
 import { deliveryRoutePoint, routeForDelivery } from "./world.js";
 
 const scene = document.querySelector(".scene");
-const emptyCounter = document.getElementById("cafe-empty-counter");
 const clerk = document.getElementById("cafe-delivery-clerk");
 const clerkBody = clerk.querySelector(".cafe-clerk-body");
 const trayLayer = document.getElementById("cafe-delivery-trays");
@@ -137,11 +136,9 @@ function stopPlayback() {
   frame = wake = 0;
 }
 
-// Counter open-kitchen base always covers the old static baked cat cleanly in hall view,
-// while our live sprite-sheet Cat Clerk stands behind the counter (idle / cooking) or walks out!
+// Live sprite-sheet Cat Clerk stands behind the counter (idle / cooking) or walks out with a tray
 function renderStationedClerk(mode = "idle") {
   const inHall = currentSpace() === "hall";
-  emptyCounter.hidden = !inHall;
   clerk.hidden = !inHall;
   if (!inHall) return;
   clerk.dataset.mode = mode; // "idle" | "cook"
@@ -157,7 +154,6 @@ function paintTrip() {
   frame = wake = 0;
   if (document.hidden) return;
   const inHall = currentSpace() === "hall";
-  emptyCounter.hidden = !inHall;
 
   if (!trip || !route) {
     renderStationedClerk("idle");

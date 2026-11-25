@@ -256,13 +256,12 @@ test("all cozy pixel sprite sheets, zone scenes, 흡연구역 labels, and cafe.h
   const requiredFiles = [
     "../public/sprites/snacks-atlas.png",
     "../public/sprites/cat-clerk-sheet.png",
-    "../public/sprites/hall-smoking-booth.png",
-    "../public/sprites/hall-terrace-door.png",
-    "../public/sprites/counter-open-kitchen.png",
     "../public/sprites/launcher-icons.png",
+    "../public/pcbang-cozy-hall.png",
     "../public/pcbang-smoking-booth.png",
     "../public/pcbang-night-terrace.png",
     "../public/pcbang-rooms-pixel.png",
+    "../public/pc-wallpaper-cozy.png",
     "../public/avatar-sprites.js",
   ];
   for (const rel of requiredFiles) {
@@ -273,7 +272,9 @@ test("all cozy pixel sprite sheets, zone scenes, 흡연구역 labels, and cafe.h
     "../public/cafe-clerk-walk.svg",
     "../public/cafe-counter-empty.svg",
     "../public/corner-hall.webp",
+    "../public/corner-hall-timber.webp",
     "../public/pc-wallpaper.png",
+    "../public/pc-wallpaper.webp",
     "../public/pcbang-hall-pastel.png",
     "../public/pcbang-hall-pastel.webp",
     "../public/pcbang-lobby.png",
@@ -284,6 +285,9 @@ test("all cozy pixel sprite sheets, zone scenes, 흡연구역 labels, and cafe.h
     "../public/room-pixel-atlas.png",
     "../public/room.png",
     "../public/sprites/relax-props.png",
+    "../public/sprites/hall-smoking-booth.png",
+    "../public/sprites/hall-terrace-door.png",
+    "../public/sprites/counter-open-kitchen.png",
   ];
   for (const rel of unusedLegacyFiles) {
     assert.ok(!existsSync(new URL(rel, import.meta.url)), `Unused legacy file still exists: ${rel}`);

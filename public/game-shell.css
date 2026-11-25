@@ -28,12 +28,12 @@ body {
 #title > span { display: inline-block; margin-left: .52em; color: #dfbe89; font: .31em/1 var(--mono); vertical-align: top; }
 .clock { border-color: #65594a; box-shadow: inset 0 0 0 2px #282520; }
 .layout { grid-template-columns: minmax(0, 1fr) 315px; gap: 16px; }
-.room { border-color: #746450; border-radius: 7px; box-shadow: 0 7px #191714, 0 18px 48px #11100e5c; }
-.room-head { background: linear-gradient(#433e35, #342f29); border-bottom: 1px solid #8f785e; }
-.room-foot { background: #292622; }
-.room-head .view-button { color: #e0eddb; border-color: #828e73; }
-.walk-controls { background: #302c26; }
-.walk-guide kbd { display: inline-block; padding: 1px 4px; border: 1px solid #756655; border-bottom-width: 2px; border-radius: 3px; color: #efdbc1; font: 10px var(--mono); }
+.room { border-color: #4c383d; border-radius: 8px; box-shadow: inset 0 0 0 2px #dc9666, 0 7px #261b1e, 0 18px 48px #11100e5c; }
+.room-head { background: linear-gradient(#5c444a, #423136); border-bottom: 2px solid #dc9666; }
+.room-foot { background: #332428; }
+.room-head .view-button { color: #fff5eb; border-color: #4c383d; background: #6e525a; }
+.walk-controls { background: #3b2d31; }
+.walk-guide kbd { display: inline-block; padding: 1px 4px; border: 1px solid #9e7b82; border-bottom-width: 2px; border-radius: 3px; background: #4c383d; color: #ffe7a8; font: 10px var(--mono); }
 .game-view-actions { display: inline-flex; }
 .walk-name { margin-left: auto; }
 .cafe-joystick {
@@ -89,8 +89,8 @@ body {
     radial-gradient(ellipse at center, #39342d, #1b1917 78%);
 }
 .cafe-fullscreen .scene { outline-offset: -2px; box-shadow: 0 0 0 1px #776753, 0 0 42px #0f0d0baa; }
-.stage-key { background: #c9d8be; color: #29392e; border-color: #d8e4d1; font-weight: 850; }
-.stage-key:hover { background: #d8e4cf; }
+.stage-key { background: #569e7c; color: #fff9f2; border-color: #4c383d; box-shadow: inset 0 -2px #3b7559, 0 2px 0 #261b1e; font-weight: 850; }
+.stage-key:hover { background: #66b28f; }
 .stage-room-door {
   position: absolute; z-index: 2; left: var(--x); top: var(--y); transform: translate(-50%, -50%);
   min-width: 45px; min-height: 25px; padding: 2px 7px; border: 1px solid #d0bca0; border-bottom: 3px solid #554735;

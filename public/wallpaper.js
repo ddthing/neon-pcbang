@@ -10,7 +10,7 @@
   const status = document.getElementById("wall-status");
   const apply = document.getElementById("wall-apply");
   const reset = document.getElementById("wall-reset");
-  const defaultImage = "./pc-wallpaper.webp";
+  const defaultImage = "./pc-wallpaper-cozy.png";
   const defaultSetting = { original: null, pixelated: null, usePixel: true };
   const urls = new WeakMap();
   let active = defaultSetting;

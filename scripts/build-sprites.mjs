@@ -8,7 +8,10 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.join(__dirname, "../public/sprites");
 mkdirSync(outDir, { recursive: true });
-rmSync(path.join(outDir, "relax-props.png"), { force: true });
+// Clean up crude legacy hall overlay PNGs if present
+for (const obsolete of ["relax-props.png", "hall-smoking-booth.png", "hall-terrace-door.png", "counter-open-kitchen.png"]) {
+  rmSync(path.join(outDir, obsolete), { force: true });
+}
 
 const OUTLINE = "#4c383d";
 
@@ -514,137 +517,99 @@ const catSheet = new PixelSurface(48 * 4, 52 * 4);
 catSheet.save("cat-clerk-sheet.png");
 
 // ============================================================================
-// 3. COZY HALL FACADE PROPS (Warm Timber & Mauve-Cream Glass, Zero Neon)
+// 3. 9 REMASTERED COZY PIXEL LAUNCHER ICONS (9 cols x 1 row of 24x24 = 216x24 PNG)
 // ============================================================================
-// 3A. Cozy Frosted-Glass Smoking Area Facade for Hall Top-Left
-const boothFacade = new PixelSurface(180, 112);
-{
-  boothFacade.box(4, 6, 172, 102, "#7e5e68ee", OUTLINE);
-  boothFacade.rect(6, 8, 168, 12, "#b86f4c"); // warm caramel timber beam
-  boothFacade.rect(10, 20, 160, 3, "#ffe7a8"); // soft warm butter cove light
-  const panes = [[10, 26, 48, 76], [62, 26, 54, 76], [120, 26, 50, 76]];
-  for (const [px, py, pw, ph] of panes) {
-    boothFacade.box(px, py, pw, ph, "#dfd0d3cc", "#6e4e56");
-    for (let i = 0; i < 20; i++) {
-      boothFacade.pset(px + 6 + i, py + 8 + i, "#fff5eb77");
-      boothFacade.pset(px + 18 + i, py + 32 + i, "#fff5eb55");
-    }
-    boothFacade.rect(px + 2, py + ph - 24, pw - 4, 22, "#9e7b82dd");
-  }
-  boothFacade.rect(112, 56, 3, 16, "#fbe3d3");
-  for (const fx of [32, 138]) {
-    boothFacade.circle(fx, 14, 5, "#6e4e56");
-    boothFacade.pset(fx - 2, 14, "#fbe3d3");
-    boothFacade.pset(fx + 2, 14, "#fbe3d3");
-    boothFacade.pset(fx, 12, "#fbe3d3");
-    boothFacade.pset(fx, 16, "#fbe3d3");
-  }
-  // Cozy wooden plaque header
-  boothFacade.box(62, 9, 56, 10, "#5c3f43", "#ecc28e");
-  for (let x = 68; x < 112; x += 4) boothFacade.rect(x, 13, 2, 3, "#ffe7a8");
-}
-boothFacade.save("hall-smoking-booth.png");
-
-// 3B. Cozy 2F Veranda Terrace Door for Hall Top-Right
-const terracePortal = new PixelSurface(132, 88);
-{
-  terracePortal.box(4, 4, 124, 80, "#b86f4c", OUTLINE);
-  terracePortal.box(10, 10, 112, 68, "#89c4e1", "#7a4c36");
-  for (const [lx, ly] of [[22, 20], [42, 24], [64, 25], [86, 24], [106, 20]]) {
-    terracePortal.circle(lx, ly, 2, "#f6cf73");
-    terracePortal.pset(lx, ly, "#fffbe6");
-  }
-  terracePortal.rect(12, 50, 108, 2, "#6e4e56");
-  for (let rx = 16; rx < 118; rx += 8) terracePortal.rect(rx, 50, 2, 24, "#6e4e56");
-  terracePortal.rect(64, 10, 4, 68, "#7a4c36");
-  terracePortal.rect(59, 42, 2, 10, "#ffe7a8");
-  terracePortal.rect(71, 42, 2, 10, "#ffe7a8");
-  terracePortal.box(38, 2, 56, 9, "#5c3f43", "#ecc28e");
-  for (let x = 44; x < 88; x += 4) terracePortal.rect(x, 5, 2, 3, "#ffe7a8");
-}
-terracePortal.save("hall-terrace-door.png");
-
-// 3C. Cozy Mauve & Caramel Open-Kitchen Counter Base
-const openKitchen = new PixelSurface(116, 116);
-{
-  openKitchen.rect(14, 16, 98, 76, "#7e5e68");
-  openKitchen.rect(16, 24, 94, 2, "#dc9666");
-  openKitchen.rect(16, 38, 94, 2, "#b86f4c");
-  openKitchen.box(22, 28, 7, 10, "#e8748c", OUTLINE);
-  openKitchen.box(30, 29, 7, 9, "#f6cf73", OUTLINE);
-  openKitchen.box(42, 27, 18, 11, "#9e7b82", OUTLINE);
-  openKitchen.rect(45, 30, 9, 5, "#ffe7a8");
-  openKitchen.box(66, 29, 14, 9, "#dc9666", OUTLINE);
-  openKitchen.rect(20, 84, 72, 2, OUTLINE);
-  openKitchen.rect(20, 86, 72, 3, "#ecc28e");
-  openKitchen.rect(20, 89, 72, 6, "#9e7b82");
-}
-openKitchen.save("counter-open-kitchen.png");
-
-// 4. 9 COZY PIXEL LAUNCHER ICONS (9 cols x 1 row of 24x24 = 216x24 PNG)
 const gameIcons = new PixelSurface(24 * 9, 24);
 {
   const icons = [
+    // 0. 모퉁이 대국장 (Wooden Baduk/Omok board with shaded stones & corner sparkles)
     (g) => {
-      g.box(3, 3, 18, 18, "#ecc28e", OUTLINE);
-      g.rect(11, 5, 1, 14, "#b86f4c"); g.rect(5, 11, 14, 1, "#b86f4c");
-      g.circle(8, 8, 3, OUTLINE); g.pset(7, 7, "#9e7b82");
-      g.circle(15, 15, 3, "#fff9f2"); g.pset(14, 14, "#ffffff");
-      g.pset(15, 7, "#569e7c"); g.pset(8, 15, "#e8748c");
+      g.box(2, 2, 20, 20, "#dc9666", OUTLINE);
+      g.rect(3, 3, 18, 2, "#ecc28e");
+      g.rect(3, 19, 18, 2, "#b86f4c");
+      for (const k of [7, 12, 16]) { g.rect(k, 5, 1, 14, "#8c5136"); g.rect(5, k, 14, 1, "#8c5136"); }
+      g.circle(8, 8, 3, OUTLINE); g.pset(7, 7, "#9e7b82"); g.pset(7, 6, "#dfd0d3");
+      g.circle(15, 15, 3, "#fbe3d3"); g.pset(14, 14, "#ffffff");
+      g.circle(15, 8, 2, "#e8748c"); g.pset(15, 7, "#fff5eb");
     },
+    // 1. 모퉁이 블록 드롭 (Cozy shaded Tetriminos on cocoa tray)
     (g) => {
-      g.box(3, 3, 18, 18, "#7e5e68", OUTLINE);
-      const blk = (x, y, c) => { g.box(x, y, 5, 5, c, OUTLINE); g.pset(x + 1, y + 1, "#ffffffaa"); };
-      blk(7, 6, "#e8748c"); blk(12, 6, "#e8748c"); blk(7, 11, "#e8748c");
-      blk(12, 11, "#569e7c"); blk(12, 15, "#569e7c"); blk(7, 15, "#f6cf73");
+      g.box(2, 2, 20, 20, "#6e4c49", OUTLINE);
+      g.rect(3, 3, 18, 1, "#9e7b82");
+      const blk = (x, y, c, hi, sh) => {
+        g.box(x, y, 5, 5, c, OUTLINE);
+        g.rect(x + 1, y + 1, 2, 1, hi);
+        g.rect(x + 1, y + 3, 3, 1, sh);
+      };
+      blk(6, 5, "#e8748c", "#ffd6df", "#ba5268");
+      blk(10, 5, "#e8748c", "#ffd6df", "#ba5268");
+      blk(6, 9, "#e8748c", "#ffd6df", "#ba5268");
+      blk(13, 10, "#569e7c", "#b8e6cf", "#3b7559");
+      blk(13, 14, "#569e7c", "#b8e6cf", "#3b7559");
+      blk(8, 14, "#f6cf73", "#fff5c0", "#c99636");
     },
+    // 2. 길모퉁이 붕어빵 포차 (Golden shaded bungeoppang pastry + steam)
     (g) => {
-      g.box(3, 4, 18, 16, "#7e5e68", OUTLINE);
-      g.ellipse(11, 12, 6, 4, "#dc9666");
-      g.rect(16, 9, 4, 6, "#b86f4c");
-      g.pset(8, 11, OUTLINE);
-      g.pset(11, 11, "#ffe7a8");
+      g.box(2, 2, 20, 20, "#5e4347", OUTLINE);
+      g.pset(9, 6, "#fff5eb"); g.pset(13, 5, "#ffe7a8");
+      g.ellipse(11, 13, 6, 4, "#dc9666");
+      g.ellipse(11, 12, 4, 2, "#f6cf73");
+      g.rect(16, 10, 4, 6, "#b86f4c");
+      g.rect(9, 12, 1, 2, "#ffe7a8"); g.rect(12, 12, 1, 2, "#ffe7a8");
+      g.pset(7, 12, OUTLINE);
     },
+    // 3. 알바냥의 매점 러시 (Cute calico cat chef with green apron headband)
     (g) => {
-      g.box(3, 3, 18, 18, "#569e7c", OUTLINE);
-      g.rect(6, 7, 4, 3, "#dc9666"); g.rect(14, 7, 4, 3, "#dc9666");
-      g.ellipse(12, 13, 6, 5, "#fbe3d3");
-      g.rect(7, 8, 10, 3, "#fff9f2"); g.rect(8, 10, 8, 1, "#e8748c");
-      g.pset(9, 13, OUTLINE); g.pset(15, 13, OUTLINE);
-      g.rect(11, 14, 2, 1, "#e8748c");
+      g.box(2, 2, 20, 20, "#569e7c", OUTLINE);
+      g.rect(3, 3, 18, 2, "#7ab899");
+      g.rect(5, 6, 4, 4, "#dc9666"); g.rect(15, 6, 4, 4, "#6e4c49");
+      g.ellipse(12, 14, 6, 5, "#fff5eb");
+      g.rect(7, 8, 10, 3, "#ffffff"); g.rect(8, 10, 8, 1, "#e8748c");
+      g.pset(9, 14, OUTLINE); g.pset(15, 14, OUTLINE);
+      g.pset(8, 15, "#f28da8"); g.pset(16, 15, "#f28da8");
+      g.rect(11, 15, 2, 1, "#e8748c");
     },
+    // 4. 코지 빗방울 산성비 (Fluffy cloud + pastel raindrops + wooden keyboard)
     (g) => {
-      g.box(3, 3, 18, 18, "#89c4e1", OUTLINE);
-      g.rect(6, 5, 1, 4, "#fff9f2"); g.rect(12, 4, 1, 5, "#e8748c"); g.rect(17, 6, 1, 4, "#fff9f2");
-      g.box(6, 11, 12, 8, "#fbe3d3", OUTLINE);
-      g.rect(8, 13, 8, 3, "#569e7c");
+      g.box(2, 2, 20, 20, "#89c4e1", OUTLINE);
+      g.rect(5, 4, 7, 3, "#fff9f2"); g.rect(7, 3, 4, 1, "#ffffff");
+      g.rect(6, 8, 1, 3, "#fff5eb"); g.rect(12, 5, 1, 4, "#e8748c"); g.rect(17, 6, 1, 4, "#fff5eb");
+      g.box(5, 12, 14, 7, "#fbe3d3", OUTLINE);
+      g.rect(7, 14, 3, 2, "#569e7c"); g.rect(11, 14, 2, 2, "#dc9666"); g.rect(14, 14, 3, 2, "#e8748c");
     },
+    // 5. 지뢰찾기 (Retro cozy bomb + berry warning flag)
     (g) => {
-      g.box(3, 3, 18, 18, "#c7aeb3", OUTLINE);
-      g.circle(11, 13, 5, OUTLINE);
-      g.pset(9, 11, "#fbe3d3");
-      g.rect(10, 6, 2, 3, "#9e7b82");
-      g.rect(12, 5, 4, 3, "#e8748c");
-      g.pset(14, 4, "#f6cf73");
+      g.box(2, 2, 20, 20, "#dfd0d3", OUTLINE);
+      g.circle(10, 14, 5, OUTLINE);
+      g.rect(8, 11, 2, 2, "#9e7b82");
+      g.rect(10, 7, 2, 3, "#7e5e68");
+      g.rect(13, 5, 5, 3, "#e8748c");
+      g.rect(12, 5, 1, 7, OUTLINE);
+      g.pset(18, 4, "#f6cf73");
     },
+    // 6. 벽돌깨기 DX (Pastel brick rows + ball + caramel-cream paddle)
     (g) => {
-      g.box(3, 3, 18, 18, "#6e525a", OUTLINE);
-      g.rect(5, 5, 6, 3, "#e8748c"); g.rect(13, 5, 6, 3, "#89c4e1");
-      g.rect(5, 9, 6, 3, "#f6cf73"); g.rect(13, 9, 6, 3, "#8ea147");
-      g.circle(13, 14, 2, "#fff9f2");
-      g.rect(7, 17, 10, 2, "#fbe3d3");
+      g.box(2, 2, 20, 20, "#5e4347", OUTLINE);
+      g.rect(4, 5, 7, 3, "#e8748c"); g.rect(13, 5, 7, 3, "#89c4e1");
+      g.rect(4, 9, 7, 3, "#f6cf73"); g.rect(13, 9, 7, 3, "#8ea147");
+      g.circle(14, 14, 2, "#fff5eb");
+      g.box(6, 17, 12, 3, "#fbe3d3", OUTLINE);
     },
+    // 7. 2048 (Warm golden tile badge with crisp numeral)
     (g) => {
-      g.box(3, 3, 18, 18, "#dc9666", OUTLINE);
-      g.box(5, 5, 14, 14, "#f6cf73", "#b86f4c");
-      g.rect(7, 9, 3, 1, OUTLINE); g.rect(9, 10, 1, 2, OUTLINE); g.rect(7, 12, 3, 3, OUTLINE);
-      g.rect(12, 9, 4, 6, OUTLINE); g.rect(13, 10, 2, 4, "#f6cf73");
+      g.box(2, 2, 20, 20, "#dc9666", OUTLINE);
+      g.box(4, 4, 16, 16, "#f6cf73", "#b86f4c");
+      g.rect(5, 5, 14, 2, "#fff1be");
+      g.rect(6, 9, 4, 1, OUTLINE); g.rect(9, 10, 1, 2, OUTLINE); g.rect(6, 12, 4, 3, OUTLINE);
+      g.rect(12, 9, 5, 6, OUTLINE); g.rect(13, 10, 3, 4, "#f6cf73");
     },
+    // 8. 스도쿠 (Cream notepad + sage & berry markers)
     (g) => {
-      g.box(3, 3, 18, 18, "#fbe3d3", OUTLINE);
-      g.rect(9, 4, 1, 16, "#9e7b82"); g.rect(14, 4, 1, 16, "#9e7b82");
-      g.rect(4, 9, 16, 1, "#9e7b82"); g.rect(4, 14, 16, 1, "#9e7b82");
-      g.rect(6, 6, 2, 2, "#569e7c"); g.rect(11, 11, 2, 2, "#e8748c"); g.rect(16, 16, 2, 2, "#569e7c");
+      g.box(2, 2, 20, 20, "#fbe3d3", OUTLINE);
+      g.rect(8, 3, 1, 18, "#9e7b82"); g.rect(15, 3, 1, 18, "#9e7b82");
+      g.rect(3, 8, 18, 1, "#9e7b82"); g.rect(3, 15, 18, 1, "#9e7b82");
+      g.rect(5, 5, 2, 2, "#569e7c"); g.rect(11, 11, 2, 2, "#e8748c");
+      g.rect(17, 17, 2, 2, "#569e7c"); g.rect(17, 5, 2, 2, "#dc9666");
     },
   ];
   icons.forEach((fn, idx) => {
@@ -654,5 +619,7 @@ const gameIcons = new PixelSurface(24 * 9, 24);
   });
 }
 gameIcons.save("launcher-icons.png");
+
+console.log("Compiled Cozy Pixel Reference sprites successfully!");
 
 console.log("Compiled Cozy Pixel Reference sprites successfully!");

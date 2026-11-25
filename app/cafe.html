@@ -58,7 +58,6 @@
       </a>
       <div class="top-actions">
         <span class="open-status mono"><i></i> 24H OPEN</span>
-        <button class="walk-button" id="sfx-toggle" type="button" aria-pressed="true">🔊 효과음 켜짐</button>
         <div class="ux u013">
           <div class="u013-txt">
             <b class="u013-lab" id="rain-label">빗소리</b>
@@ -92,10 +91,22 @@
     <div class="layout">
       <section class="room panel" aria-labelledby="room-title">
         <div class="room-head">
-          <div class="window-title"><span class="stage-brand">길모퉁이PC방</span><h2 id="room-title">PC방 입구</h2></div>
+          <div class="room-head-left">
+            <button class="hud-player-card" id="hud-profile-btn" type="button" aria-label="내 캐릭터 및 닉네임 꾸미기">
+              <canvas id="hud-avatar-portrait" width="32" height="32" aria-hidden="true"></canvas>
+              <span class="hud-player-meta">
+                <strong id="hud-player-name">손님</strong>
+                <small class="mono" data-gpoints>150 G</small>
+              </span>
+            </button>
+            <div class="window-title"><span class="stage-brand">길모퉁이PC방</span><h2 id="room-title">PC방 입구</h2></div>
+          </div>
           <div class="room-hud">
             <a class="window-weather mono" id="window-weather" href="https://open-meteo.com/" target="_blank" rel="noopener" aria-label="날씨 출처: Open-Meteo">내 위치 · 날씨 연결 중</a>
+            <time class="hud-clock mono" id="hud-clock">--:--</time>
             <span class="room-live" id="cafe-connection" role="status">매장 연결 중</span>
+            <button class="walk-button hud-audio-btn" id="sfx-toggle" type="button" aria-pressed="true">🔊 효과음 켜짐</button>
+            <button class="walk-button hud-audio-btn" id="hud-rain-toggle" type="button" aria-pressed="false">🌧️ 빗소리</button>
             <button class="walk-button view-button" id="cafe-overview" type="button" aria-pressed="false">전체 지도</button>
             <button class="walk-button view-button" id="cafe-fullscreen" type="button" aria-pressed="false">
               <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4m4 0h4v4m0 4v4h-4m-4 0H2v-4"/></svg>
@@ -105,13 +116,10 @@
         </div>
         <div class="scene-viewport">
           <div class="scene" data-space="lobby" tabindex="0" aria-label="매장 이동 화면. 방향키 또는 W A S D로 움직이세요.">
-            <img id="lobby-art" src="./corner-hall-timber.webp" fetchpriority="high" width="1536" height="1024" draggable="false" alt="우드 바닥의 포근한 픽셀 아트 PC방에 1인·2인·5인·6인 게임룸, 오픈키친 매점, 실내 흡연구역, 야외 흡연구역이 보이는 모습">
+            <img id="lobby-art" src="./pcbang-cozy-hall.png" fetchpriority="high" width="1536" height="1024" draggable="false" alt="우드 바닥의 포근한 픽셀 아트 PC방에 1인·2인·5인·6인 게임룸, 오픈키친 매점, 실내 흡연구역, 야외 흡연구역이 보이는 모습">
             <img id="rooms-art" data-src="./pcbang-rooms-pixel.png" width="1536" height="1024" draggable="false" alt="" hidden>
             <img id="booth-art" data-src="./pcbang-smoking-booth.png" width="1536" height="1024" draggable="false" alt="따뜻한 우드와 반투명 유리, 환풍기가 도는 실내 흡연구역" hidden>
             <img id="terrace-art" data-src="./pcbang-night-terrace.png" width="1536" height="1024" draggable="false" alt="우리 동네 하늘과 밀크커피 자판기가 있는 2층 야외 흡연구역" hidden>
-            <img class="hall-prop" id="hall-booth-prop" src="./sprites/hall-smoking-booth.png" width="180" height="112" alt="" aria-hidden="true">
-            <img class="hall-prop" id="hall-terrace-prop" src="./sprites/hall-terrace-door.png" width="132" height="88" alt="" aria-hidden="true">
-            <img class="cafe-empty-counter" id="cafe-empty-counter" src="./sprites/counter-open-kitchen.png" width="116" height="116" fetchpriority="low" alt="" hidden>
             <div id="window-view" class="window-view" aria-hidden="true"></div>
             <div id="cafe-ambience" aria-hidden="true"></div>
             <div id="monitor-layer" aria-hidden="true"></div>
@@ -125,6 +133,7 @@
             <button class="stage-room-door snack-counter" type="button" data-open="snacks">매점 · 오픈키친</button>
             <div id="room-doors" aria-label="구역 입구"></div>
           </div>
+          <button class="proximity-prompt" id="proximity-prompt" type="button" hidden></button>
           <div class="relax-hud" id="relax-hud" hidden></div>
           <div class="seat-journey ux u042" id="seat-journey" aria-hidden="true" hidden>
             <ol class="u042-steps">
@@ -139,22 +148,18 @@
           <div class="cafe-joystick" id="cafe-joystick" aria-hidden="true"><span></span></div>
         </div>
         <div class="walk-controls">
-          <p class="walk-guide"><strong>매장 둘러보기</strong><span class="walk-key-hint"><kbd>WASD</kbd> <kbd>↑ ↓ ← →</kbd> · 바닥 클릭 · <kbd>E</kbd> 상호작용</span><span class="walk-touch-hint">조이스틱 밀기 · 바닥 탭</span></p>
-          <button class="walk-button" id="open-wardrobe" type="button">👕 옷장</button>
-          <button class="walk-button" id="cafe-wave" type="button">👋 인사</button>
+          <p class="walk-guide"><strong>매장 둘러보기</strong><span class="walk-key-hint"><kbd>WASD</kbd> <kbd>↑↓←→</kbd> · 바닥 클릭 · <kbd>E</kbd> 상호작용</span><span class="walk-touch-hint">조이스틱 밀기 · 바닥 탭</span></p>
           <div class="game-view-actions">
-            <button class="walk-button stage-key" id="game-view-floor" type="button">좌석 선택</button>
-            <button class="walk-button" id="game-view-pc" type="button" hidden>내 PC</button>
-            <button class="walk-button stage-key" id="quick-return-seat" type="button" hidden>💻 내 자리 복귀</button>
+            <button class="walk-button stage-key" id="game-view-floor" type="button">🪑 좌석 선택</button>
+            <button class="walk-button" id="game-view-pc" type="button" hidden>💻 내 PC</button>
+            <button class="walk-button stage-key" id="quick-return-seat" type="button" hidden>💻 자리 복귀</button>
+            <button class="walk-button" id="quick-snacks" type="button" data-open="snacks">🍜 매점</button>
             <button class="walk-button" id="quick-booth" type="button">🚬 실내 흡연구역</button>
             <button class="walk-button" id="quick-terrace" type="button">🌿 야외 흡연구역</button>
-            <button class="walk-button" id="cafe-menu-open" type="button">메뉴</button>
+            <button class="walk-button" id="open-wardrobe" type="button">👕 캐릭터</button>
+            <button class="walk-button" id="cafe-wave" type="button">👋 인사</button>
+            <button class="walk-button" id="cafe-menu-open" type="button">📋 메뉴</button>
           </div>
-          <form class="walk-name" id="cafe-name-form">
-            <label for="cafe-name">닉네임</label>
-            <input id="cafe-name" type="text" maxlength="12" pattern="[\p{L}\p{N} _·\-]{1,12}" autocomplete="off">
-            <button class="walk-button" type="submit">저장</button>
-          </form>
           <div class="cafe-chat-controls">
             <form class="cafe-chat-form" id="cafe-chat-form">
               <label class="pc-sr-only" for="cafe-chat-input">채팅</label>
@@ -173,7 +178,7 @@
         </div>
         <p class="walk-guests" id="cafe-guests" hidden></p>
         <div class="room-foot">
-          <p><svg aria-hidden="true"><use href="./icons.svg#cursor"/></svg><span id="room-hint">입구 왼쪽의 민트색 키오스크를 눌러보세요.</span></p>
+          <p><svg aria-hidden="true"><use href="./icons.svg#cursor"/></svg><span id="room-hint">입구 왼쪽의 우드 키오스크를 눌러보세요.</span></p>
           <span class="mono" id="room-count">102석</span>
         </div>
       </section>
@@ -238,6 +243,11 @@
           </div>
         </div>
       </div>
+      <form class="walk-name wardrobe-name-row" id="cafe-name-form">
+        <label for="cafe-name">닉네임</label>
+        <input id="cafe-name" type="text" maxlength="12" pattern="[\p{L}\p{N} _·\-]{1,12}" autocomplete="off" placeholder="매장 닉네임 (최대 12자)">
+        <button class="walk-button stage-key" type="submit">닉네임 저장</button>
+      </form>
       <div class="wardrobe-controls" id="wardrobe-controls"></div>
       <button class="primary enter" id="wardrobe-save" type="button">이 스타일로 갈아입기</button>
     </div>

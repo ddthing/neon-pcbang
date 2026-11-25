@@ -8,7 +8,7 @@ const userSessionExpiry = 253402300799000;
 const adminLife = 12 * 3600_000;
 const enc = new TextEncoder();
 const entryStylesheet = "/invite-entry.css";
-const entryBackdrop = "/corner-hall-timber.webp";
+const entryBackdrop = "/pcbang-cozy-hall.png";
 
 async function digest(value: string) {
   const bytes = await crypto.subtle.digest("SHA-256", enc.encode(value));

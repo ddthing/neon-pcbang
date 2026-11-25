@@ -1,6 +1,6 @@
 import { canWalkInSpace, entrance, kiosk, pathTo, routeToSeat, roomPortals, relaxPortals, relaxZones } from "./world.js";
 import { createCafeCamera } from "./camera.js";
-import { AVATAR_WARDROBE, encodeAvatarCode, getAvatarSheetUrl, normalizeAvatarCode, renderAvatarPreview } from "./avatar-sprites.js";
+import { AVATAR_WARDROBE, encodeAvatarCode, getAvatarSheetUrl, normalizeAvatarCode, renderAvatarPortrait, renderAvatarPreview } from "./avatar-sprites.js";
 
 const scene = document.querySelector(".scene");
 const joystick = document.getElementById("cafe-joystick");
@@ -8,6 +8,11 @@ const avatars = document.getElementById("cafe-avatars");
 const status = document.getElementById("cafe-connection");
 const guests = document.getElementById("cafe-guests");
 const nameInput = document.getElementById("cafe-name");
+const hudPortrait = document.getElementById("hud-avatar-portrait");
+const hudPlayerName = document.getElementById("hud-player-name");
+const hudProfileBtn = document.getElementById("hud-profile-btn");
+const proximityPrompt = document.getElementById("proximity-prompt");
+const snackCounterCoords = { x: 15.5, y: 72 };
 const seating = window.cafeSeating;
 const camera = createCafeCamera(scene);
 const walkSpeed = 14.5;
@@ -162,17 +167,22 @@ function paint(key, data, point, walking, awayAtDesk = false) {
   const seatedHere = Boolean(data.seat) && !awayAtDesk && data.zone !== "booth" && data.zone !== "terrace";
   node.classList.toggle("seated", seatedHere);
 
-  // Determine sprite row & column
+  // Determine directional seated / break sprite row & column cleanly
   const act = awayAtDesk ? "away" : (data.activity || "");
   let row = { down: 0, up: 1, right: 2, left: 3 }[sprite.dir] ?? 0;
   let breakCol = -1;
+  let seatDir = "";
   if (seatedHere) {
-    row = 4; // Seated typing row!
+    const [sSpace, sIdx] = String(data.seat).split(":");
+    seatDir = sSpace === "hall" ? (Number(sIdx) % 2 === 0 ? "right" : "left") : "up";
+    row = seatDir === "left" ? 5 : 4;
   } else if (!walking && (act === "smoke" || act === "coffee" || act === "candy")) {
-    row = 5;
-    breakCol = act === "smoke" ? 0 : act === "coffee" ? 2 : 3;
+    row = act === "smoke" ? 5 : 6;
+    breakCol = act === "smoke" ? 2 : act === "coffee" ? 0 : 2;
   }
   node.style.setProperty("--sprite-row", String(row));
+  if (seatDir) node.dataset.seatDir = seatDir;
+  else delete node.dataset.seatDir;
   if (breakCol >= 0) {
     node.dataset.pose = act;
     node.style.setProperty("--sprite-col", String(breakCol));
@@ -213,6 +223,50 @@ function paint(key, data, point, walking, awayAtDesk = false) {
   return sprite;
 }
 
+function syncHudProfile() {
+  if (hudPortrait) renderAvatarPortrait(hudPortrait, avatarCode);
+  if (hudPlayerName) {
+    const regular = Boolean(window.cafeIsRegular?.());
+    hudPlayerName.textContent = (name || "손님") + (regular ? " ★" : "");
+  }
+}
+
+function getProximityTarget() {
+  if (!canMove()) return null;
+  if (isOnBreak()) {
+    const door = relaxZones[activeZone]?.door;
+    if (door && Math.hypot(location.x - door.x, location.y - door.y) < 8) {
+      return { id: "exit", label: "[E] 홀로 돌아가기", run: () => exitRelaxZone() };
+    }
+    return null;
+  }
+  if (Math.hypot(location.x - kiosk.x, location.y - kiosk.y) < 7) {
+    return { id: "kiosk", label: "[E] 자리 선택기 열기", run: () => document.getElementById("kiosk-pin").click() };
+  }
+  if (Math.hypot(location.x - snackCounterCoords.x, location.y - snackCounterCoords.y) < 7.5) {
+    return { id: "snacks", label: "[E] 매점 · 오픈키친 열기", run: () => document.querySelector(".snack-counter")?.click() };
+  }
+  if (Math.hypot(location.x - relaxPortals.booth.x, location.y - relaxPortals.booth.y) < 7) {
+    return { id: "booth", label: "[E] 실내 흡연구역 입장", run: () => enterRelaxZone("booth") };
+  }
+  if (Math.hypot(location.x - relaxPortals.terrace.x, location.y - relaxPortals.terrace.y) < 7) {
+    return { id: "terrace", label: "[E] 야외 흡연구역 입장", run: () => enterRelaxZone("terrace") };
+  }
+  return null;
+}
+
+let activeProximity = null;
+function updateProximityPrompt() {
+  const next = getProximityTarget();
+  activeProximity = next;
+  if (!proximityPrompt) return;
+  proximityPrompt.hidden = !next;
+  if (next && proximityPrompt.textContent !== next.label) {
+    proximityPrompt.textContent = next.label;
+  }
+}
+proximityPrompt?.addEventListener("click", () => activeProximity?.run());
+
 function drawSelf(walking = false) {
   const mine = seating.current();
   const phase = seating.phase();
@@ -226,6 +280,7 @@ function drawSelf(walking = false) {
     }, location, walking, false);
     sprite.node.classList.remove("sitting");
     camera.follow(location, mine);
+    updateProximityPrompt();
     return;
   }
 
@@ -239,6 +294,7 @@ function drawSelf(walking = false) {
     sprite.node.classList.toggle("sitting", phase === "sitting");
   }
   camera.follow(point, phase ? null : mine);
+  updateProximityPrompt();
 }
 
 function draw() {
@@ -634,8 +690,10 @@ document.getElementById("cafe-name-form").addEventListener("submit", (event) => 
   event.preventDefault();
   name = nameInput.value.trim().slice(0, 12);
   save("localStorage", nameKey, name);
+  syncHudProfile();
   draw();
   send("sync").catch(disconnected);
+  window.cafeAudioPlay?.("pop");
 });
 
 // Wardrobe Customization UI Setup
@@ -651,12 +709,12 @@ function initWardrobe() {
   let previewTimer = 0;
 
   const categories = [
-    ["skin", "피부톤", AVATAR_WARDROBE.skins],
-    ["hair", "헤어스타일", AVATAR_WARDROBE.hairs],
-    ["hairColor", "머리색", AVATAR_WARDROBE.hairColors],
+    ["skin", "캐릭터", AVATAR_WARDROBE.skins],
+    ["hair", "포인트 스타일", AVATAR_WARDROBE.hairs],
+    ["hairColor", "포인트 색", AVATAR_WARDROBE.hairColors],
     ["outfit", "의상 코디", AVATAR_WARDROBE.outfits],
-    ["headset", "헤드셋·모자", AVATAR_WARDROBE.headsets],
-    ["accessory", "안경·마스크", AVATAR_WARDROBE.accessories],
+    ["headset", "모자·헤드셋", AVATAR_WARDROBE.headsets],
+    ["accessory", "안경·목도리", AVATAR_WARDROBE.accessories],
   ];
 
   function repaintPreview() {
@@ -722,25 +780,33 @@ function initWardrobe() {
   });
 
   document.getElementById("wardrobe-save")?.addEventListener("click", () => {
+    const nextName = nameInput.value.trim().slice(0, 12);
+    if (nextName !== name) {
+      name = nextName;
+      save("localStorage", nameKey, name);
+    }
     avatarConfig = { ...draft };
     avatarCode = encodeAvatarCode(avatarConfig);
     save("localStorage", avatarKey, avatarCode);
+    syncHudProfile();
     window.closeCafeWindow?.(modal) ?? modal.close();
     draw();
     send("sync").catch(disconnected);
   });
 
-  openBtn.addEventListener("click", () => {
+  const openModal = (trigger) => {
     draft = { ...avatarConfig };
     repaintPreview();
-    window.openCafeWindow ? window.openCafeWindow(modal, openBtn) : modal.showModal();
+    window.openCafeWindow ? window.openCafeWindow(modal, trigger) : modal.showModal();
     clearInterval(previewTimer);
     previewTimer = setInterval(() => {
       if (!modal.open) { clearInterval(previewTimer); return; }
       previewTick++;
       renderAvatarPreview(preview, encodeAvatarCode(draft), previewAction, previewTick % 4);
     }, 260);
-  });
+  };
+  openBtn.addEventListener("click", () => openModal(openBtn));
+  hudProfileBtn?.addEventListener("click", () => openModal(hudProfileBtn));
 }
 
 function canMove() {
@@ -770,20 +836,9 @@ document.addEventListener("keydown", (event) => {
   if (event.altKey || event.metaKey || event.ctrlKey || !canMove() ||
       event.target.closest("input, textarea, select, button, a, summary, [contenteditable]")) return;
   if (event.code === "KeyE") {
-    if (!isOnBreak() && Math.hypot(location.x - kiosk.x, location.y - kiosk.y) < 6) {
-      document.getElementById("kiosk-pin").click();
-      return;
-    }
-    if (!isOnBreak() && Math.hypot(location.x - relaxPortals.booth.x, location.y - relaxPortals.booth.y) < 6) {
-      enterRelaxZone("booth");
-      return;
-    }
-    if (!isOnBreak() && Math.hypot(location.x - relaxPortals.terrace.x, location.y - relaxPortals.terrace.y) < 6) {
-      enterRelaxZone("terrace");
-      return;
-    }
-    if (isOnBreak()) {
-      exitRelaxZone();
+    const prox = getProximityTarget();
+    if (prox) {
+      prox.run();
       return;
     }
   }
@@ -926,7 +981,10 @@ document.addEventListener("cafe-seat-phase", () => {
   draw();
   requestFrame();
 });
-document.addEventListener("cafe-regular", () => drawSelf(wasWalking));
+document.addEventListener("cafe-regular", () => {
+  syncHudProfile();
+  drawSelf(wasWalking);
+});
 reducedMotion.addEventListener("change", () => {
   if (!reducedMotion.matches || !remoteJourneys.size) return;
   remoteJourneys.clear();
@@ -934,6 +992,7 @@ reducedMotion.addEventListener("change", () => {
 });
 seating.placeRoomDoors(roomPortals, relaxPortals);
 initWardrobe();
+syncHudProfile();
 draw();
 document.dispatchEvent(new Event("cafe-ready"));
 pulse();

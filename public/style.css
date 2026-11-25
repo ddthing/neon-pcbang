@@ -151,12 +151,19 @@ h1 em { font-style: normal; color: #e6d3bb; text-shadow: 0 3px #554943; }
 .footer .mono { letter-spacing: .06em; }
 .footer-dot { color: var(--peach); padding-inline: 3px; }
 
-dialog { width: min(520px, calc(100% - 30px)); max-height: calc(100dvh - 30px); padding: 0; border: 1px solid #625a60; border-radius: 14px; background: #2e2c2b; color: var(--text); box-shadow: 0 18px 90px #000a; }
-dialog::backdrop { background: #1a1918d1; backdrop-filter: blur(4px); }
+dialog {
+  width: min(520px, calc(100% - 30px)); max-height: calc(100dvh - 30px); padding: 0;
+  border: 3px solid #4c383d; border-radius: 10px; background: #3b2d31; color: #fbe3d3;
+  box-shadow: inset 0 0 0 2px #dc9666, 0 8px 0 #261b1e, 0 22px 60px #140d0fbb;
+}
+dialog::backdrop { background: #261b1ec8; }
 .dialog-inner { padding: 22px; }
 .dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.close { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 7px; background: #3b3736; color: var(--sub); font: 24px/1 var(--mono); }
-.close:hover, .secondary:hover { color: var(--text); border-color: var(--violet); }
+.close {
+  width: 34px; height: 34px; border: 2px solid #4c383d; border-radius: 6px;
+  background: #6e525a; color: #fbe3d3; font: 22px/1 var(--mono); box-shadow: 0 2px 0 #261b1e;
+}
+.close:hover, .secondary:hover { color: #fff9f2; border-color: #f6cf73; background: #84636c; }
 dialog h2 { font-size: 26px; margin: 0 0 6px; }
 .dialog-action { width: 100%; }
 .dialog-note, .timer-note, .game-status { margin: 12px 0 0; color: var(--sub); text-align: center; font-size: 12px; line-height: 1.5; word-break: keep-all; }
@@ -166,7 +173,7 @@ dialog h2 { font-size: 26px; margin: 0 0 6px; }
 .game-status { margin: 8px 0; }
 .timer { text-align: center; color: var(--mint); font-size: clamp(55px, 12vw, 80px); line-height: 1.1; margin-top: 24px; text-shadow: 0 0 24px #c2d2c033; }
 .timer-buttons { display: flex; gap: 9px; margin-top: 19px; }
-.secondary { background: #3c3937; border: 1px solid var(--line); border-radius: 7px; color: var(--sub); font-size: 14px; }
+.secondary { background: #6e525a; border: 2px solid #4c383d; border-radius: 6px; color: #fbe3d3; font-size: 14px; font-weight: 750; box-shadow: 0 2px 0 #261b1e; }
 .snack-list { margin-top: 17px; }
 
 

@@ -3,8 +3,8 @@
 import sharp from "sharp";
 import { writeFile } from "node:fs/promises";
 
-const hallFile = "public/corner-hall-timber.webp";
-const roomFile = "public/pcbang-rooms-pastel.webp";
+const hallFile = "public/pcbang-cozy-hall.png";
+const roomFile = "public/pcbang-rooms-pixel.png";
 const width = 1536, height = 1024;
 const pixels = (file) => sharp(file).removeAlpha().raw().toBuffer();
 const [hall, rooms] = await Promise.all([pixels(hallFile), pixels(roomFile)]);

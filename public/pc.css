@@ -119,27 +119,28 @@
 
 .pc-taskbar {
   position: relative; z-index: 1; display: flex; align-items: center; gap: 5px; min-height: 38px;
-  padding: 3px 7px; border-top: 1px solid #a3b0a67f; background: #26302d; color: #f1f4ec;
+  padding: 3px 7px; border-top: 2px solid #dc9666; background: #4c383d; color: #fbe3d3;
 }
 .pc-start { position: relative; }
 .pc-start summary, .pc-task {
-  display: flex; align-items: center; gap: 5px; min-height: 29px; padding: 4px 8px; border: 1px solid #a4baab59;
-  border-radius: 3px; background: #3f594e; font-size: 11px; font-weight: 750; cursor: pointer;
+  display: flex; align-items: center; gap: 5px; min-height: 29px; padding: 4px 8px; border: 2px solid #2d1e22;
+  border-radius: 4px; background: #569e7c; font-size: 11px; font-weight: 750; cursor: pointer;
+  box-shadow: inset 0 -2px #3c7559;
 }
-.pc-start summary { list-style: none; color: #f3f5ed; }
+.pc-start summary { list-style: none; color: #fff9f2; }
 .pc-start summary::-webkit-details-marker { display: none; }
-.pc-start summary:hover, .pc-task:hover { background: #527063; }
+.pc-start summary:hover, .pc-task:hover { background: #6ab591; }
 .pc-start summary i { width: 5px; height: 5px; margin: -5px 5px 0 0; background: currentColor; box-shadow: 6px 0 currentColor, 0 6px currentColor, 6px 6px currentColor; }
-.pc-task { background: #35443e; }
+.pc-task { background: #6e525a; color: #fbe3d3; box-shadow: inset 0 -2px #4c383d; }
 .pc-task svg { width: 14px; height: 14px; }
 .pc-start-menu {
   position: absolute; bottom: calc(100% + 7px); left: 0; width: 175px; display: grid; gap: 2px;
-  padding: 4px; border: 1px solid #7f9486; border-radius: 4px; background: #26302d; box-shadow: 0 6px 20px #0e1411aa;
+  padding: 5px; border: 2px solid #4c383d; border-radius: 6px; background: #3b2d31; box-shadow: inset 0 0 0 1px #dc9666, 0 6px 20px #1a1012aa;
 }
-.pc-start-menu button { border: 0; border-radius: 2px; background: none; padding: 7px; font-size: 11px; text-align: left; }
-.pc-start-menu button:hover { background: #3f594e; }
-#pc-clock { margin-left: auto; font-size: 11px; color: #e4ebe1; }
-.pc-bezel { justify-content: center; padding: 5px 9px; color: #d2dfd8; font-size: 9px; letter-spacing: .12em; }
+.pc-start-menu button { border: 0; border-radius: 3px; background: none; padding: 7px; color: #fbe3d3; font-size: 11px; text-align: left; }
+.pc-start-menu button:hover { background: #569e7c; color: #fff9f2; }
+#pc-clock { margin-left: auto; font-size: 11px; color: #ffe7a8; font-weight: 750; }
+.pc-bezel { justify-content: center; padding: 5px 9px; color: #ecc28e; font-size: 9px; letter-spacing: .12em; }
 
 .wall-preview { width: 100%; display: block; aspect-ratio: 16 / 9; margin: 9px 0; border: 1px solid var(--line); border-radius: 4px; background: #586256; }
 .wall-file-label { display: block; margin: 10px 0 4px; font-size: 13px; font-weight: 750; }

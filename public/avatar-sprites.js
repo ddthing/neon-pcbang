@@ -1,50 +1,53 @@
-// High-Definition 4-Directional Customizable Cozy Pixel-Art Avatar Engine
-// Unified Reference Palette (#4c383d warm plum-espresso outlines, #fbe3d3 cream, #569e7c sage, #dc9666 caramel, #9e7b82 mauve, #e8748c berry)
+// Adorable 2-Head-Tall Cozy Chibi Pixel-Art Avatar Engine (32x40 grid, 4x6 sprite sheet)
+// Matches the cozy pastel café reference palette (#4c383d warm plum-espresso outlines, #fbe3d3 cream, #f28da8 berry cheeks)
 
 export const AVATAR_WARDROBE = {
   skins: [
-    { id: 0, name: "복숭아크림", base: "#fbe3d3", shade: "#e6bfa8" },
-    { id: 1, name: "바닐라밀크", base: "#fff1e6", shade: "#ebcfc0" },
-    { id: 2, name: "허니토스트", base: "#ecc28e", shade: "#cf9d66" },
+    { id: 0, name: "코지 곰돌이", species: "bear", base: "#f3c78b", shade: "#dc9666", muzzle: "#fff5eb" },
+    { id: 1, name: "삼색 고양이", species: "cat", base: "#fff5eb", shade: "#dfd0d3", muzzle: "#ffffff" },
+    { id: 2, name: "말랑 토끼", species: "bunny", base: "#fff7f2", shade: "#e8cfd2", muzzle: "#ffffff" },
+    { id: 3, name: "아기 펭귄", species: "penguin", base: "#4f86b8", shade: "#36618c", muzzle: "#fff9f4" },
+    { id: 4, name: "카페 여우", species: "fox", base: "#e48349", shade: "#b85c2d", muzzle: "#fff5eb" },
+    { id: 5, name: "치비 손님", species: "human", base: "#fbe3d3", shade: "#e6bfa8", muzzle: "#fbe3d3" },
   ],
   hairs: [
-    { id: 0, name: "댄디 투블럭" },
-    { id: 1, name: "태슬 단발" },
-    { id: 2, name: "하이 포니테일" },
+    { id: 0, name: "내추럴 앞머리" },
+    { id: 1, name: "포근 뱅스타일" },
+    { id: 2, name: "리본 포인트" },
     { id: 3, name: "코지 비니" },
-    { id: 4, name: "롱 웨이브" },
-    { id: 5, name: "복슬 히피펌" },
+    { id: 4, name: "동글 베레모" },
+    { id: 5, name: "별빛 핀" },
   ],
   hairColors: [
-    { id: 0, name: "코코아 브라운", base: "#6e4c49", hi: "#916964" },
-    { id: 1, name: "플럼 에스프레소", base: "#4c383d", hi: "#73575e" },
-    { id: 2, name: "시나몬 캐러멜", base: "#b86f4c", hi: "#dc9666" },
-    { id: 3, name: "버터 블론드", base: "#ecc28e", hi: "#ffe7a8" },
-    { id: 4, name: "베리 로즈", base: "#a85266", hi: "#e8748c" },
-    { id: 5, name: "말차 세이지", base: "#569e7c", hi: "#82c4a4" },
+    { id: 0, name: "캐러멜 브라운", base: "#dc9666", hi: "#f6cf73" },
+    { id: 1, name: "플럼 에스프레소", base: "#5e4347", hi: "#87656b" },
+    { id: 2, name: "코코아 시나몬", base: "#b86f4c", hi: "#e09f74" },
+    { id: 3, name: "버터 크림", base: "#f6cf73", hi: "#fff1be" },
+    { id: 4, name: "베리 로즈", base: "#e8748c", hi: "#f7a8b8" },
+    { id: 5, name: "말차 세이지", base: "#569e7c", hi: "#84c7a7" },
   ],
   outfits: [
-    { id: 0, name: "세이지 후드티", body: "#569e7c", sub: "#3f7a5e", accent: "#fbe3d3" },
-    { id: 1, name: "코코아 가디건", body: "#9e7b82", sub: "#7e5e68", accent: "#ffe7a8" },
-    { id: 2, name: "버터 니트베스트", body: "#f6cf73", sub: "#dc9666", accent: "#fff5eb" },
-    { id: 3, name: "캐러멜 패딩조끼", body: "#b86f4c", sub: "#8c5136", accent: "#fbe3d3" },
-    { id: 4, name: "모브 맨투맨", body: "#c7aeb3", sub: "#9e7b82", accent: "#fff5eb" },
-    { id: 5, name: "베리 체크남방", body: "#e8748c", sub: "#ba5268", accent: "#fbe3d3" },
-    { id: 6, name: "올리브 과잠", body: "#8ea147", sub: "#677830", accent: "#fff5eb" },
-    { id: 7, name: "스카이블루 셔츠", body: "#89c4e1", sub: "#5e98b8", accent: "#fff5eb" },
+    { id: 0, name: "세이지 앞치마", body: "#569e7c", sub: "#3e785c", accent: "#fff5eb", tie: "#fbe3d3" },
+    { id: 1, name: "베리 스웨터", body: "#e8748c", sub: "#ba5268", accent: "#fff5eb", tie: "#f6cf73" },
+    { id: 2, name: "버터 멜빵", body: "#f6cf73", sub: "#d49c45", accent: "#fff9f2", tie: "#b86f4c" },
+    { id: 3, name: "캐러멜 가디건", body: "#dc9666", sub: "#b86f4c", accent: "#fbe3d3", tie: "#fff5eb" },
+    { id: 4, name: "모브 후드티", body: "#9e7b82", sub: "#7a5b62", accent: "#fbe3d3", tie: "#ffe7a8" },
+    { id: 5, name: "크림 세일러", body: "#fff5eb", sub: "#dfd0d3", accent: "#569e7c", tie: "#e8748c" },
+    { id: 6, name: "올리브 니트", body: "#8ea147", sub: "#65752d", accent: "#fff5eb", tie: "#f6cf73" },
+    { id: 7, name: "스카이블루 자켓", body: "#74a8c9", sub: "#4d7d9e", accent: "#fff5eb", tie: "#ffe7a8" },
   ],
   headsets: [
     { id: 0, name: "착용 안 함", color: null },
-    { id: 1, name: "세이지 헤드폰", color: "#569e7c", band: "#4c383d" },
-    { id: 2, name: "베리 고양이귀", color: "#e8748c", band: "#6e4c49", ears: true },
-    { id: 3, name: "크림 레트로 헤드폰", color: "#fbe3d3", band: "#b86f4c" },
-    { id: 4, name: "코지 베레모", color: "#b86f4c", band: "#7e5e68", cap: true },
+    { id: 1, name: "세이지 헤드셋", color: "#569e7c", band: "#4c383d" },
+    { id: 2, name: "베리 고양이귀", color: "#e8748c", band: "#5e4347", ears: true },
+    { id: 3, name: "밀크티 헤드폰", color: "#fbe3d3", band: "#b86f4c" },
+    { id: 4, name: "미니 알바모자", color: "#569e7c", band: "#fff5eb", cap: true },
   ],
   accessories: [
     { id: 0, name: "없음" },
     { id: 1, name: "동글이 안경" },
-    { id: 2, name: "버터 틴트선글라스" },
-    { id: 3, name: "크림 마스크" },
+    { id: 2, name: "버터 틴트안경" },
+    { id: 3, name: "딸기 목도리" },
   ],
 };
 
@@ -59,32 +62,33 @@ export function normalizeAvatarCode(code, fallbackColor = 0) {
       accessory: parseInt(code[5], 16) % AVATAR_WARDROBE.accessories.length,
     };
   }
-  const seed = Number.isInteger(fallbackColor) ? fallbackColor : 0;
+  const seed = Number.isInteger(fallbackColor) ? Math.abs(fallbackColor) : 0;
   return {
-    skin: seed % 3,
-    hair: seed % 6,
-    hairColor: seed % 6,
-    outfit: seed % 8,
-    headset: seed === 1 ? 1 : 0,
+    skin: seed % AVATAR_WARDROBE.skins.length,
+    hair: seed % AVATAR_WARDROBE.hairs.length,
+    hairColor: seed % AVATAR_WARDROBE.hairColors.length,
+    outfit: seed % AVATAR_WARDROBE.outfits.length,
+    headset: seed % 5 === 1 ? 4 : 0,
     accessory: 0,
   };
 }
 
 export function encodeAvatarCode(cfg) {
   return [
-    (cfg.skin ?? 0) % 3,
-    (cfg.hair ?? 0) % 6,
-    (cfg.hairColor ?? 0) % 6,
-    (cfg.outfit ?? 0) % 8,
-    (cfg.headset ?? 0) % 5,
-    (cfg.accessory ?? 0) % 4,
+    (cfg.skin ?? 0) % AVATAR_WARDROBE.skins.length,
+    (cfg.hair ?? 0) % AVATAR_WARDROBE.hairs.length,
+    (cfg.hairColor ?? 0) % AVATAR_WARDROBE.hairColors.length,
+    (cfg.outfit ?? 0) % AVATAR_WARDROBE.outfits.length,
+    (cfg.headset ?? 0) % AVATAR_WARDROBE.headsets.length,
+    (cfg.accessory ?? 0) % AVATAR_WARDROBE.accessories.length,
   ].map((n) => n.toString(16)).join("");
 }
 
 const spriteCache = new Map();
 const OUTLINE = "#4c383d";
+const CHEEK = "#f28da8";
 
-function drawPixelFrame(ctx, ox, oy, cfg, dir, action, frame) {
+function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
   const skin = AVATAR_WARDROBE.skins[cfg.skin];
   const hairCol = AVATAR_WARDROBE.hairColors[cfg.hairColor];
   const outfit = AVATAR_WARDROBE.outfits[cfg.outfit];
@@ -92,182 +96,291 @@ function drawPixelFrame(ctx, ox, oy, cfg, dir, action, frame) {
 
   const W = 32, H = 40;
   const grid = new Array(W * H).fill(null);
+  // Keep 2px transparent safety margin (x: 2..29, y: 2..37) so fractional scaling never bleeds into neighbor frames!
   const p = (x, y, col) => {
-    x = Math.round(x); y = Math.round(y);
-    if (x >= 0 && x < W && y >= 0 && y < H && col) grid[y * W + x] = col;
+    x = Math.round(x);
+    y = Math.round(y);
+    if (x >= 2 && x <= W - 3 && y >= 2 && y <= H - 3 && col) grid[y * W + x] = col;
+  };
+  const side = dir === "left" || dir === "right";
+  const flip = dir === "left";
+  const px = (x) => (flip ? W - 1 - x : x);
+  const prect = (x, y, w, h, col) => {
+    for (let dy = 0; dy < h; dy++) {
+      for (let dx = 0; dx < w; dx++) p(px(x + dx), y + dy, col);
+    }
+  };
+  const pellipse = (cx, cy, rx, ry, col) => {
+    for (let dy = -ry; dy <= ry; dy++) {
+      for (let dx = -rx; dx <= rx; dx++) {
+        if ((dx * dx) / (rx * rx + 0.35) + (dy * dy) / (ry * ry + 0.35) <= 1) {
+          p(px(cx + dx), cy + dy, col);
+        }
+      }
+    }
   };
 
   const isWalking = action === "walk";
   const isSeated = action === "sit";
-  const bob = isWalking ? [0, -1, 0, -1][frame % 4] : 0;
-  const stride = isWalking ? [-2, 0, 2, 0][frame % 4] : 0;
-  const side = dir === "left" || dir === "right";
-  const flip = dir === "left";
-  const px = (x) => flip ? (W - 1 - x) : x;
-  const prect = (x, y, w, h, col) => {
-    for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) p(px(x + dx), y + dy, col);
-  };
+  const bob = isWalking ? [0, -1, 0, -1][frame % 4] : isSeated ? (frame % 2 === 1 ? 1 : 0) : 0;
+  const stepL = isWalking ? [0, -1, 0, 1][frame % 4] : 0;
+  const stepR = isWalking ? [0, 1, 0, -1][frame % 4] : 0;
+  const armBob = isWalking ? [-1, 0, 1, 0][frame % 4] : 0;
 
-  const headY = (isSeated ? 9 : 6) + bob;
-  const torsoY = headY + 13;
+  // Big adorable 2-head-tall chibi proportions! Seated tucks lower so the character sits IN the chair.
+  const headCenterY = (isSeated ? 19 : 16) + bob;
+  const torsoY = headCenterY + 7;
 
-  if (cfg.hair === 4 || cfg.hair === 5) {
-    prect(9, headY + 6, 14, 11, hairCol.base);
-  }
-  if (cfg.hair === 2 && dir !== "down") {
-    prect(side ? 7 : 13, headY + 2, 5, 9, hairCol.base);
-    prect(side ? 8 : 14, headY + 3, 2, 4, hairCol.hi);
-  }
-
+  // 1. Feet / Stubby legs (tucked neatly forward when seated!)
   if (isSeated) {
-    prect(11, torsoY + 9, 4, 4, "#6e4c49");
-    prect(17, torsoY + 9, 4, 4, "#6e4c49");
-    prect(10, torsoY + 12, 5, 2, "#fbe3d3");
-    prect(17, torsoY + 12, 5, 2, "#fbe3d3");
-  } else if (side) {
-    prect(13 + stride, torsoY + 10, 4, 6, "#6e4c49");
-    prect(14 - stride, torsoY + 10, 4, 6, "#593b39");
-    prect(13 + stride, torsoY + 15, 6, 2, "#fbe3d3");
-    prect(14 - stride, torsoY + 15, 6, 2, "#dfd0d3");
-  } else {
-    const lOff = isWalking ? (frame % 4 === 0 ? -1 : frame % 4 === 2 ? 1 : 0) : 0;
-    prect(11, torsoY + 10 + (lOff < 0 ? -1 : 0), 4, 6, "#6e4c49");
-    prect(17, torsoY + 10 + (lOff > 0 ? -1 : 0), 4, 6, "#6e4c49");
-    prect(10, torsoY + 15 + (lOff < 0 ? -1 : 0), 5, 2, "#fbe3d3");
-    prect(17, torsoY + 15 + (lOff > 0 ? -1 : 0), 5, 2, "#fbe3d3");
-  }
-
-  prect(10, torsoY, 12, 10, outfit.body);
-  prect(10, torsoY + 8, 12, 2, outfit.sub);
-  if (dir === "down") {
-    prect(14, torsoY, 4, 2, skin.shade);
-    prect(13, torsoY + 2, 6, 2, outfit.accent);
-    if (cfg.outfit === 1 || cfg.outfit === 6 || cfg.outfit === 7) {
-      prect(15, torsoY + 2, 2, 8, outfit.accent);
+    if (side) {
+      prect(13, torsoY + 6, 8, 3, outfit.sub);
+      prect(18, torsoY + 8, 5, 2, "#6e4c49");
+    } else {
+      prect(10, torsoY + 6, 4, 3, outfit.sub);
+      prect(18, torsoY + 6, 4, 3, outfit.sub);
     }
-  } else if (dir === "up") {
-    prect(11, torsoY + 1, 10, 3, outfit.sub);
-    prect(13, torsoY + 2, 6, 1, outfit.accent);
-  } else {
-    prect(14, torsoY + 1, 4, 8, outfit.sub);
-    prect(16, torsoY + 2, 2, 6, outfit.accent);
-  }
-
-  const armSwing = isWalking ? [-2, 0, 2, 0][frame % 4] : 0;
-  if (isSeated) {
-    const typeLift = frame % 2;
-    prect(8, torsoY + 2, 3, 5, outfit.sub);
-    prect(21, torsoY + 2, 3, 5, outfit.sub);
-    prect(9, torsoY + 5 - typeLift, 3, 2, skin.base);
-    prect(20, torsoY + 4 + typeLift, 3, 2, skin.base);
-  } else if (action === "smoke" || action === "coffee" || action === "candy") {
-    prect(8, torsoY + 2, 3, 7, outfit.sub);
-    prect(8, torsoY + 8, 3, 2, skin.base);
-    prect(21, torsoY + 1, 4, 5, outfit.body);
-    prect(23, torsoY - 1, 3, 3, skin.base);
   } else if (side) {
-    prect(14 - armSwing, torsoY + 2, 4, 6, outfit.sub);
-    prect(14 - armSwing, torsoY + 8, 3, 2, skin.base);
+    prect(12 + stepL, torsoY + 7, 4, 5, skin.shade);
+    prect(15 + stepR, torsoY + 7, 4, 5, OUTLINE);
+    prect(12 + stepL, torsoY + 11, 5, 2, skin.base);
   } else {
-    prect(8, torsoY + 2 + armSwing, 3, 6, outfit.sub);
-    prect(8, torsoY + 8 + armSwing, 3, 2, skin.base);
-    prect(21, torsoY + 2 - armSwing, 3, 6, outfit.sub);
-    prect(21, torsoY + 8 - armSwing, 3, 2, skin.base);
+    prect(10, torsoY + 7 + (stepL < 0 ? -1 : 0), 4, 5, skin.shade);
+    prect(18, torsoY + 7 + (stepR < 0 ? -1 : 0), 4, 5, skin.shade);
+    prect(10, torsoY + 11 + (stepL < 0 ? -1 : 0), 4, 2, "#6e4c49");
+    prect(18, torsoY + 11 + (stepR < 0 ? -1 : 0), 4, 2, "#6e4c49");
   }
 
-  prect(10, headY + 2, 12, 11, skin.base);
-  prect(11, headY + 12, 10, 1, skin.shade);
+  // Tail for cat/fox/bunny when up or side
+  if ((skin.species === "cat" || skin.species === "fox") && dir !== "down") {
+    const tailX = side ? 8 : 19;
+    prect(tailX, torsoY + 5, 3, 4, skin.base);
+    p(px(tailX + 1), torsoY + 4, skin.species === "fox" ? "#fff5eb" : hairCol.base);
+  } else if (skin.species === "bunny" && dir === "up") {
+    prect(14, torsoY + 6, 4, 3, "#ffffff");
+  }
 
+  // 2. Chunky Cozy Torso (apron / sweater / jacket)
+  if (side) {
+    prect(11, torsoY, 10, 9, outfit.body);
+    prect(11, torsoY + 7, 10, 2, outfit.sub);
+    prect(16, torsoY + 2, 4, 5, outfit.accent);
+  } else {
+    prect(9, torsoY, 14, 9, outfit.body);
+    prect(9, torsoY + 7, 14, 2, outfit.sub);
+    if (dir === "down") {
+      // Cozy bib/apron or collar detail like the reference picture
+      prect(11, torsoY + 2, 10, 5, outfit.accent);
+      prect(12, torsoY + 3, 8, 3, outfit.body);
+      prect(14, torsoY + 1, 4, 2, outfit.tie);
+      prect(13, torsoY + 6, 6, 2, outfit.sub);
+    } else {
+      prect(11, torsoY + 1, 10, 2, outfit.sub);
+      prect(13, torsoY + 3, 6, 4, outfit.accent);
+    }
+  }
+
+  // Cozy scarf accessory around neck
+  if (cfg.accessory === 3) {
+    prect(9, torsoY, 14, 2, "#e8748c");
+    if (dir === "down") prect(17, torsoY + 1, 3, 4, "#f7a8b8");
+  }
+
+  // 3. Cute Stubby Arms / Interactive Props
+  if (isSeated) {
+    const tap = frame % 2;
+    if (side) {
+      // Arms reaching forward toward the keyboard!
+      prect(16, torsoY + 2, 5, 3, outfit.sub);
+      prect(21, torsoY + 3 - tap, 3, 2, skin.base);
+    } else {
+      prect(7, torsoY + 1, 3, 4, outfit.sub);
+      prect(22, torsoY + 1, 3, 4, outfit.sub);
+      prect(8, torsoY + 3 - tap, 2, 2, skin.base);
+      prect(22, torsoY + 2 + tap, 2, 2, skin.base);
+    }
+  } else if (action === "smoke" || action === "coffee" || action === "candy") {
+    prect(7, torsoY + 1, 3, 5, outfit.sub);
+    prect(7, torsoY + 5, 3, 2, skin.base);
+    prect(22, torsoY, 4, 4, outfit.body);
+    prect(24, torsoY - 2, 2, 3, skin.base);
+  } else if (side) {
+    prect(14 + armBob, torsoY + 2, 4, 5, outfit.sub);
+    prect(14 + armBob, torsoY + 6, 3, 2, skin.base);
+  } else {
+    prect(6, torsoY + 1 + armBob, 3, 5, outfit.sub);
+    prect(6, torsoY + 5 + armBob, 3, 2, skin.base);
+    prect(23, torsoY + 1 - armBob, 3, 5, outfit.sub);
+    prect(23, torsoY + 5 - armBob, 3, 2, skin.base);
+  }
+
+  // 4. Ears behind/on top of rounded Chibi Head
+  const headTop = headCenterY - 6;
+  if (skin.species === "bear") {
+    pellipse(9, headTop, 2, 2, skin.base);
+    pellipse(23, headTop, 2, 2, skin.base);
+    p(px(9), headTop, skin.shade);
+    p(px(23), headTop, skin.shade);
+  } else if (skin.species === "cat" || skin.species === "fox") {
+    // Pointed triangular ears like the reference Fox/Cat!
+    prect(8, headTop - 3, 4, 5, skin.base);
+    prect(9, headTop - 4, 2, 2, skin.base);
+    prect(20, headTop - 3, 4, 5, skin.species === "cat" ? "#b86f4c" : skin.base);
+    prect(21, headTop - 4, 2, 2, skin.species === "cat" ? "#b86f4c" : skin.base);
+    if (dir === "down") {
+      prect(9, headTop - 2, 2, 3, "#f7a8b8");
+      prect(21, headTop - 2, 2, 3, "#f7a8b8");
+    }
+  } else if (skin.species === "bunny") {
+    prect(10, headTop - 6, 3, 7, skin.base);
+    prect(19, headTop - 6, 3, 7, skin.base);
+    if (dir === "down") {
+      prect(11, headTop - 5, 1, 5, "#f7a8b8");
+      prect(20, headTop - 5, 1, 5, "#f7a8b8");
+    }
+  }
+
+  // 5. Rounded Plump Chibi Head (16x13 rounded oval)
+  pellipse(16, headCenterY, side ? 7 : 8, 6, skin.base);
+  // Subtle chin warmth/shadow
+  prect(11, headCenterY + 5, 10, 1, skin.shade);
+
+  // Species markings (Calico spots, Penguin cream belly-face, Fox cheeks)
+  if (skin.species === "cat") {
+    if (dir !== "left") prect(9, headCenterY - 5, 5, 4, "#dc9666");
+    if (dir !== "right") prect(18, headCenterY - 5, 5, 4, "#5e4347");
+  } else if (skin.species === "penguin" && dir === "down") {
+    pellipse(16, headCenterY + 1, 6, 4, skin.muzzle);
+    prect(13, headCenterY - 3, 2, 2, skin.muzzle);
+    prect(17, headCenterY - 3, 2, 2, skin.muzzle);
+  } else if (skin.species === "fox" && dir === "down") {
+    prect(9, headCenterY + 1, 5, 4, skin.muzzle);
+    prect(18, headCenterY + 1, 5, 4, skin.muzzle);
+    prect(13, headCenterY + 2, 6, 4, skin.muzzle);
+  } else if (skin.species === "bear" && dir === "down") {
+    pellipse(16, headCenterY + 2, 3, 2, skin.muzzle);
+  }
+
+  // 6. Human hair or animal hair tuff/beanie
+  if (skin.species === "human") {
+    prect(9, headCenterY - 6, 14, 4, hairCol.base);
+    prect(11, headCenterY - 5, 6, 2, hairCol.hi);
+    if (dir === "up") {
+      pellipse(16, headCenterY, 7, 5, hairCol.base);
+    } else if (side) {
+      prect(8, headCenterY - 4, 6, 8, hairCol.base);
+    } else {
+      prect(8, headCenterY - 3, 2, 7, hairCol.base);
+      prect(22, headCenterY - 3, 2, 7, hairCol.base);
+      prect(11, headCenterY - 3, 10, 2, hairCol.base);
+      p(px(15), headCenterY - 2, skin.base);
+    }
+  } else if (cfg.hair === 1) {
+    // Cozy bangs/tuft on animal forehead
+    prect(12, headCenterY - 6, 8, 2, hairCol.base);
+    p(px(14), headCenterY - 5, hairCol.hi);
+  } else if (cfg.hair === 2 && dir === "down") {
+    // Cute pastel ribbon on ear
+    prect(8, headCenterY - 6, 3, 2, hairCol.base);
+    p(px(9), headCenterY - 6, hairCol.hi);
+  } else if (cfg.hair === 3) {
+    // Warm beanie hat
+    prect(9, headCenterY - 7, 14, 4, hairCol.base);
+    prect(10, headCenterY - 5, 12, 2, hairCol.hi);
+  } else if (cfg.hair === 4) {
+    // Artist beret
+    prect(10, headCenterY - 7, 12, 3, hairCol.base);
+    p(px(16), headCenterY - 8, hairCol.base);
+  } else if (cfg.hair === 5 && dir === "down") {
+    // Butter star hairclip
+    prect(20, headCenterY - 4, 2, 2, "#f6cf73");
+  }
+
+  // 7. Expressive Reference-Style Face (Sparkle Eyes, Rosy Cheeks, Little Snout/Beak)
+  const eyeY = headCenterY;
   if (dir === "down") {
     const blink = action === "idle" && frame % 4 === 3;
     if (blink) {
-      prect(12, headY + 8, 2, 1, OUTLINE);
-      prect(18, headY + 8, 2, 1, OUTLINE);
+      prect(11, eyeY + 1, 2, 1, OUTLINE);
+      prect(19, eyeY + 1, 2, 1, OUTLINE);
     } else {
-      prect(12, headY + 7, 2, 2, OUTLINE);
-      prect(18, headY + 7, 2, 2, OUTLINE);
-      p(px(12), headY + 7, "#ffffff");
-      p(px(18), headY + 7, "#ffffff");
+      prect(11, eyeY, 2, 2, OUTLINE);
+      prect(19, eyeY, 2, 2, OUTLINE);
+      p(px(11), eyeY, "#ffffff");
+      p(px(19), eyeY, "#ffffff");
     }
-    p(px(11), headY + 9, "#f49cb0");
-    p(px(20), headY + 9, "#f49cb0");
-    if (cfg.accessory === 1) {
-      prect(11, headY + 6, 4, 3, OUTLINE);
-      prect(17, headY + 6, 4, 3, OUTLINE);
-      prect(15, headY + 7, 2, 1, OUTLINE);
-      prect(12, headY + 7, 2, 1, "#89c4e1");
-      prect(18, headY + 7, 2, 1, "#89c4e1");
-    } else if (cfg.accessory === 2) {
-      prect(11, headY + 7, 10, 2, "#f6cf73");
-      prect(11, headY + 6, 10, 1, "#7e5e68");
-    } else if (cfg.accessory === 3) {
-      prect(11, headY + 9, 10, 4, "#fbe3d3");
+    // Rosy pastel cheeks
+    prect(9, eyeY + 2, 2, 1, CHEEK);
+    prect(21, eyeY + 2, 2, 1, CHEEK);
+
+    // Cute nose / beak
+    if (skin.species === "penguin") {
+      prect(15, eyeY + 1, 2, 2, "#f6cf73");
+    } else if (skin.species === "human") {
+      p(px(15), eyeY + 3, "#d9828c");
+      p(px(16), eyeY + 3, "#d9828c");
+    } else {
+      prect(15, eyeY + 1, 2, 1, OUTLINE);
+      p(px(15), eyeY + 2, "#e8748c");
+    }
+
+    // Round glasses / tint glasses
+    if (cfg.accessory === 1 || cfg.accessory === 2) {
+      const lens = cfg.accessory === 2 ? "#f6cf73" : "#d6eff7";
+      prect(10, eyeY - 1, 4, 4, OUTLINE);
+      prect(18, eyeY - 1, 4, 4, OUTLINE);
+      prect(14, eyeY, 4, 1, OUTLINE);
+      prect(11, eyeY, 2, 2, lens);
+      prect(19, eyeY, 2, 2, lens);
     }
   } else if (side) {
-    prect(19, headY + 7, 2, 2, OUTLINE);
-    p(px(19), headY + 7, "#ffffff");
-    p(px(20), headY + 9, "#f49cb0");
-    if (cfg.accessory === 1) prect(18, headY + 6, 4, 2, OUTLINE);
-    if (cfg.accessory === 2) prect(18, headY + 7, 4, 2, "#f6cf73");
-    if (cfg.accessory === 3) prect(17, headY + 9, 5, 4, "#fbe3d3");
-  }
-
-  if (cfg.hair === 3) {
-    prect(9, headY, 14, 6, hairCol.base);
-    prect(10, headY + 4, 12, 2, hairCol.hi);
-  } else {
-    prect(9, headY + 1, 14, 4, hairCol.base);
-    prect(11, headY + 2, 6, 2, hairCol.hi);
-    if (dir === "up") {
-      prect(9, headY + 4, 14, 8, hairCol.base);
-      prect(12, headY + 5, 5, 3, hairCol.hi);
-    } else if (side) {
-      prect(9, headY + 4, 8, 7, hairCol.base);
-      prect(17, headY + 4, 4, 2, hairCol.base);
-      if (cfg.hair === 1) prect(10, headY + 9, 6, 4, hairCol.base);
-    } else {
-      prect(9, headY + 4, 3, cfg.hair === 1 || cfg.hair === 4 ? 8 : 4, hairCol.base);
-      prect(20, headY + 4, 3, cfg.hair === 1 || cfg.hair === 4 ? 8 : 4, hairCol.base);
-      prect(12, headY + 4, 8, 2, hairCol.base);
-      p(px(15), headY + 5, skin.base);
+    prect(19, eyeY, 2, 2, OUTLINE);
+    p(px(19), eyeY, "#ffffff");
+    prect(18, eyeY + 2, 2, 1, CHEEK);
+    if (skin.species === "penguin") prect(22, eyeY + 1, 2, 2, "#f6cf73");
+    if (cfg.accessory === 1 || cfg.accessory === 2) {
+      prect(18, eyeY - 1, 4, 4, OUTLINE);
+      prect(19, eyeY, 2, 2, cfg.accessory === 2 ? "#f6cf73" : "#d6eff7");
     }
   }
 
+  // 8. Headsets & Cute Cafe Visor Caps
   if (headset.id > 0) {
     if (headset.cap) {
-      prect(9, headY, 14, 5, headset.color);
-      if (dir === "down") prect(10, headY + 4, 12, 2, headset.band);
-      else if (side) prect(16, headY + 4, 8, 2, headset.band);
+      prect(11, headTop - 1, 10, 3, headset.color);
+      if (dir === "down") prect(12, headTop + 1, 8, 1, headset.band);
     } else {
-      prect(9, headY, 14, 2, headset.band);
+      prect(10, headTop, 12, 2, headset.band);
       if (headset.ears) {
-        prect(10, headY - 2, 3, 2, headset.color);
-        prect(19, headY - 2, 3, 2, headset.color);
+        prect(9, headTop - 2, 3, 2, headset.color);
+        prect(20, headTop - 2, 3, 2, headset.color);
       }
-      if (dir !== "up") {
-        prect(8, headY + 5, 3, 5, headset.color);
-        if (!side) prect(21, headY + 5, 3, 5, headset.color);
+      if (!side) {
+        prect(7, eyeY - 1, 2, 4, headset.color);
+        prect(23, eyeY - 1, 2, 4, headset.color);
       } else {
-        prect(8, headY + 5, 3, 5, headset.color);
-        prect(21, headY + 5, 3, 5, headset.color);
+        prect(13, eyeY - 1, 3, 4, headset.color);
       }
     }
   }
 
+  // 9. Break Zone Hand Props (Smoking / Warm Milk Coffee / Candy)
   if (action === "smoke") {
-    prect(25, torsoY - 2, 4, 1, "#fff5eb");
-    p(px(29), torsoY - 2, frame % 2 === 0 ? "#e87468" : "#f6cf73");
+    prect(24, torsoY - 3, 4, 1, "#fff5eb");
+    p(px(28), torsoY - 3, frame % 2 === 0 ? "#e8748c" : "#f6cf73");
   } else if (action === "coffee") {
-    prect(24, torsoY - 4, 4, 5, "#fff5eb");
-    prect(24, torsoY - 2, 4, 2, "#b86f4c");
+    prect(23, torsoY - 4, 4, 5, "#fff5eb");
+    prect(23, torsoY - 2, 4, 2, "#b86f4c");
+    p(px(25), torsoY - 5, "#ffe7a8");
   } else if (action === "candy") {
-    prect(25, torsoY - 3, 1, 3, "#fff5eb");
-    prect(24, torsoY - 6, 3, 3, "#e8748c");
+    prect(24, torsoY - 3, 1, 3, "#fff5eb");
+    prect(23, torsoY - 6, 3, 3, "#e8748c");
   }
 
+  // Crisp #4c383d 1px automatic pixel outline pass (keeps 1px outermost margin inside 32x40 cell)
   ctx.fillStyle = OUTLINE;
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
+  for (let y = 1; y < H - 1; y++) {
+    for (let x = 1; x < W - 1; x++) {
       if (grid[y * W + x]) continue;
       if (
         (x > 0 && grid[y * W + x - 1]) ||
@@ -296,23 +409,31 @@ export function getAvatarSheetUrl(avatarCode, fallbackColor = 0) {
 
   const canvas = document.createElement("canvas");
   canvas.width = 32 * 4;
-  canvas.height = 40 * 6;
+  canvas.height = 40 * 7;
   const ctx = canvas.getContext("2d");
 
   ["down", "up", "right", "left"].forEach((dir, row) => {
     for (let f = 0; f < 4; f++) {
-      drawPixelFrame(ctx, f * 32, row * 40, cfg, dir, f === 0 ? "idle" : "walk", f);
+      drawChibiFrame(ctx, f * 32, row * 40, cfg, dir, f === 0 ? "idle" : "walk", f);
     }
   });
-  drawPixelFrame(ctx, 0, 4 * 40, cfg, "up", "sit", 0);
-  drawPixelFrame(ctx, 32, 4 * 40, cfg, "up", "sit", 1);
-  drawPixelFrame(ctx, 64, 4 * 40, cfg, "right", "sit", 0);
-  drawPixelFrame(ctx, 96, 4 * 40, cfg, "left", "sit", 1);
+  // Row 4: Seated typing (up cols 0-1, right cols 2-3)
+  drawChibiFrame(ctx, 0, 4 * 40, cfg, "up", "sit", 0);
+  drawChibiFrame(ctx, 32, 4 * 40, cfg, "up", "sit", 1);
+  drawChibiFrame(ctx, 64, 4 * 40, cfg, "right", "sit", 0);
+  drawChibiFrame(ctx, 96, 4 * 40, cfg, "right", "sit", 1);
 
-  drawPixelFrame(ctx, 0, 5 * 40, cfg, "down", "smoke", 0);
-  drawPixelFrame(ctx, 32, 5 * 40, cfg, "down", "smoke", 1);
-  drawPixelFrame(ctx, 64, 5 * 40, cfg, "down", "coffee", 0);
-  drawPixelFrame(ctx, 96, 5 * 40, cfg, "down", "candy", 0);
+  // Row 5: Seated typing left (cols 0-1) + smoking break (cols 2-3)
+  drawChibiFrame(ctx, 0, 5 * 40, cfg, "left", "sit", 0);
+  drawChibiFrame(ctx, 32, 5 * 40, cfg, "left", "sit", 1);
+  drawChibiFrame(ctx, 64, 5 * 40, cfg, "down", "smoke", 0);
+  drawChibiFrame(ctx, 96, 5 * 40, cfg, "down", "smoke", 1);
+
+  // Row 6: Coffee break (cols 0-1) + candy break (cols 2-3)
+  drawChibiFrame(ctx, 0, 6 * 40, cfg, "down", "coffee", 0);
+  drawChibiFrame(ctx, 32, 6 * 40, cfg, "down", "coffee", 1);
+  drawChibiFrame(ctx, 64, 6 * 40, cfg, "down", "candy", 0);
+  drawChibiFrame(ctx, 96, 6 * 40, cfg, "down", "candy", 1);
 
   const url = canvas.toDataURL("image/png");
   spriteCache.set(key, url);
@@ -320,9 +441,23 @@ export function getAvatarSheetUrl(avatarCode, fallbackColor = 0) {
 }
 
 export function renderAvatarPreview(canvas, avatarCode, action = "idle", frame = 0) {
+  if (!canvas) return;
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.imageSmoothingEnabled = false;
   const cfg = normalizeAvatarCode(avatarCode, 0);
-  drawPixelFrame(ctx, 0, 0, cfg, "down", action, frame);
+  drawChibiFrame(ctx, 0, 0, cfg, "down", action, frame);
+}
+
+export function renderAvatarPortrait(canvas, avatarCode) {
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.imageSmoothingEnabled = false;
+  const off = document.createElement("canvas");
+  off.width = 32;
+  off.height = 40;
+  const cfg = normalizeAvatarCode(avatarCode, 0);
+  drawChibiFrame(off.getContext("2d"), 0, 0, cfg, "down", "idle", 0);
+  ctx.drawImage(off, 4, 3, 24, 24, 0, 0, canvas.width, canvas.height);
 }
