@@ -4,22 +4,30 @@
   pointer-events: none;
 }
 .cafe-lighting { width: 100%; height: 100%; }
-.hall-ambience, .room-ambience { display: none; }
+.hall-ambience, .room-ambience, .booth-ambience, .terrace-ambience { display: none; }
 .scene:is([data-space="lobby"], [data-space="hall"]) .hall-ambience,
+.scene[data-space="booth"] .booth-ambience,
+.scene[data-space="terrace"] .terrace-ambience,
 .scene[data-space="solo"] [data-room="solo"],
 .scene[data-space="duo"] [data-room="duo"],
 .scene[data-space="team"] [data-room="team"],
 .scene[data-space="squad"] [data-room="squad"] { display: block; }
-.cafe-night-veil { fill: #242438; opacity: 0; }
-body[data-cafe-light="dawn"] .cafe-night-veil { opacity: .06; }
-body[data-cafe-light="dusk"] .cafe-night-veil { opacity: .13; }
-body[data-cafe-light="night"] .cafe-night-veil { opacity: .22; }
+
+.cafe-night-veil { fill: #4c383d; opacity: 0; }
+.scene:is([data-space="booth"], [data-space="terrace"]) .cafe-night-veil { opacity: 0; }
+body[data-cafe-light="dawn"] .cafe-night-veil { fill: #7a5c64; opacity: .07; }
+body[data-cafe-light="dusk"] .cafe-night-veil { fill: #8c5a52; opacity: .14; }
+body[data-cafe-light="night"] .cafe-night-veil { fill: #352b38; opacity: .24; }
+.terrace-rain-layer { opacity: 0; transition: opacity .8s ease; }
+body:is([data-cafe-weather="rain"], [data-cafe-weather="storm"]) .terrace-rain-layer { opacity: 1; }
+.terrace-bulb { opacity: .25; }
+body:is([data-cafe-light="dusk"], [data-cafe-light="night"]) .terrace-bulb { opacity: .88; }
 .ambient-lamp { fill: url(#cafe-amber); opacity: .28; }
-.counter-neon { opacity: .37; }
-body[data-cafe-light="night"] :is(.ambient-lamp, .counter-neon) { opacity: .72; }
+.counter-neon, .booth-hall-glow, .terrace-hall-glow { opacity: .45; }
+body[data-cafe-light="night"] :is(.ambient-lamp, .counter-neon, .booth-hall-glow, .terrace-hall-glow) { opacity: .76; }
 .entry-reflections { opacity: .19; }
 .counter-steam use, .ambient-floor-light, .ambient-mote, .ambient-leaf-tip,
-.counter-cat-eyes, .counter-tail-shine, .ambient-loose-leaf, .counter-steam-dots path { opacity: 0; }
+.ambient-loose-leaf, .counter-steam-dots path, .booth-smoke-wisp, .terrace-rain-drop { opacity: 0; }
 .ambient-mote { fill: #f5e4bd; }
 .ambient-leaf-tip { fill: #f4e9ab; }
 .ambient-loose-leaf { fill: #b7bd84; }
@@ -29,38 +37,32 @@ body[data-cafe-light="night"] .ambient-mote { fill: #f0cf9e; }
 .ambient-floor-light { mix-blend-mode: screen; }
 
 .wallpaper-life {
-  display: none;
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  pointer-events: none;
+  display: none; position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;
 }
 .wall-shadow, .wall-birds, .wall-motes { opacity: 0; }
 .pc-screen { overflow: hidden; }
 .pc-screen.is-on::after {
-  position: absolute;
-  content: "";
-  inset: 0;
+  position: absolute; content: ""; inset: 0;
   background: linear-gradient(180deg, transparent 15%, #e2f1d4 44%, transparent 50%);
   opacity: 0;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .cafe-night-veil { transition: opacity 4s ease; }
-  .ambient-lamp { animation: lamp-breathe 8s var(--offset) ease-in-out infinite alternate; }
-  .counter-neon { animation: counter-pulse 8.8s steps(1,end) infinite; }
+  .ambient-lamp, .terrace-bulb { animation: lamp-breathe 6s var(--offset, 0s) ease-in-out infinite alternate; }
+  .counter-neon, .booth-neon-halo { animation: counter-pulse 8.8s steps(1,end) infinite; }
   .kiosk-glass-scan { animation: kiosk-glass-scan 8s ease-in-out infinite; }
   .counter-steam use { animation: cafe-steam 6s var(--offset) steps(14, end) infinite; }
-  .entry-reflections { animation: entry-glimmer 7.7s ease-in-out infinite alternate; }
+  .entry-glimmer, .entry-reflections { animation: entry-glimmer 7.7s ease-in-out infinite alternate; }
   .ambient-mote { animation: room-air var(--duration) var(--offset) steps(30,end) infinite; }
   .ambient-loose-leaf { animation: loose-leaf 19s var(--offset) steps(45,end) infinite; }
   .counter-steam-dots path { animation: steam-pixel 7s var(--offset) steps(18,end) infinite; }
   .ambient-leaf-tip { animation: leaf-light 5.2s var(--offset) steps(13,end) infinite alternate; }
-  .counter-cat-eyes { animation: counter-peek 17.3s -4s steps(1,end) infinite; }
-  .counter-tail-shine { animation: tail-gleam 7.8s steps(12,end) infinite; }
   .room-strip-light { animation: strip-breathe 9.3s -2s ease-in-out infinite alternate; }
+  .fan-blades { transform-origin: 0 0; animation: fan-spin 1.1s linear infinite; }
+  .booth-smoke-wisp { animation: booth-suction 3.8s var(--offset) steps(18, end) infinite; }
+  .terrace-rain-drop { animation: terrace-rain .95s var(--offset) linear infinite; }
+
   body:is([data-cafe-light="dawn"],[data-cafe-light="day"],[data-cafe-light="dusk"]) .ambient-floor-light {
     animation: room-floor-light 24s ease-in-out infinite alternate;
   }
@@ -78,7 +80,18 @@ body[data-cafe-light="night"] .ambient-mote { fill: #f0cf9e; }
   .wall-motes path + path { animation-delay: -7s; }
 }
 
-@keyframes lamp-breathe { to { opacity: .87; } }
+@keyframes fan-spin { to { transform: rotate(360deg); } }
+@keyframes booth-suction {
+  0% { opacity: 0; transform: translate(0, 0) scale(.8); }
+  25% { opacity: .34; }
+  100% { opacity: 0; transform: translate(var(--suction-x, 40px), -270px) scale(1.6); }
+}
+@keyframes terrace-rain {
+  0% { opacity: 0; transform: translate(8px, -40px); }
+  20% { opacity: .65; }
+  100% { opacity: 0; transform: translate(-18px, 190px); }
+}
+@keyframes lamp-breathe { to { opacity: .82; } }
 @keyframes counter-pulse {
   0%,100% { opacity: .59; }
   68% { opacity: .37; }
@@ -109,12 +122,6 @@ body[data-cafe-light="night"] .ambient-mote { fill: #f0cf9e; }
   15% { opacity: .09; }
   75% { opacity: .4; translate: 1px -1px; }
 }
-@keyframes counter-peek {
-  0%,100% { opacity: 0; }
-  29%,39% { opacity: .95; }
-  38%,48% { opacity: 0; }
-}
-@keyframes tail-gleam { 15%,65% { opacity: .48; } 80%,100% { opacity: 0; } }
 @keyframes strip-breathe { to { opacity: .48; } }
 @keyframes room-floor-light {
   from { transform: translateX(-4px); opacity: .08; }

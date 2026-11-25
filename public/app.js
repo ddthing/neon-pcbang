@@ -30,9 +30,7 @@ function saveState(key, value) {
   try {
     const storage = key === roomKey ? sessionStorage : localStorage;
     storage.setItem(key, JSON.stringify(value));
-  } catch {
-    // Controls still work for this visit when storage is disabled.
-  }
+  } catch {}
 }
 
 const hallBanks = [
@@ -72,7 +70,6 @@ const spaces = {
 
 const room = readState(roomKey, { space: null, seat: null, since: null, snack: "", order: null });
 if (room.seat !== null && !room.space) {
-  // Preserve sessions saved before room types were added.
   const legacySpace = room.seat === 0 ? "solo" : room.seat < 3 ? "duo" : "team";
   const firstSeat = { solo: 0, duo: 1, team: 3 };
   room.space = legacySpace;
@@ -120,6 +117,7 @@ if (expiredWhilePageClosed) {
   });
   saveState(focusKey, focus);
 }
+
 const floor = $("#floor-kiosk");
 const hub = $("#cafe-menu");
 const floorSelect = $("#floor-select");
@@ -128,14 +126,20 @@ const floorOptions = [];
 const desktop = $("#pc-desktop");
 const monitorLayer = $("#monitor-layer");
 const roomsArtwork = $("#rooms-art");
+const boothArtwork = $("#booth-art");
+const terraceArtwork = $("#terrace-art");
+const relaxHud = $("#relax-hud");
 const journeyProgress = $("#seat-journey");
 const journeyLabel = $("#seat-journey-label");
 const journeyStatus = $("#seat-journey-status");
 const journeySteps = [...journeyProgress.querySelectorAll("[data-phase]")];
+
 let selectedSeat = null;
 let poweredMonitor = null;
 let desktopReturnFocus;
 let occupiedSeats = new Set();
+let awaySeats = new Set();
+let activeBreakZone = null; // null | "booth" | "terrace"
 let bookingSeat = false;
 let seatJourney = null;
 const reduceSeatMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -147,8 +151,17 @@ function isSeated() {
 function prepareRoomArt() {
   if (!roomsArtwork.hasAttribute("src")) roomsArtwork.src = roomsArtwork.dataset.src;
 }
+function prepareZoneArt(zoneId) {
+  const el = zoneId === "booth" ? boothArtwork : terraceArtwork;
+  if (el && !el.hasAttribute("src")) el.src = el.dataset.src;
+}
 
 function renderMonitorPower(spaceId) {
+  if (spaceId === "booth" || spaceId === "terrace") {
+    monitorLayer.hidden = true;
+    return;
+  }
+  monitorLayer.hidden = false;
   if (monitorLayer.dataset.space !== spaceId) {
     monitorLayer.dataset.space = spaceId;
     const groups = spaceId === "hall"
@@ -174,13 +187,22 @@ function renderMonitorPower(spaceId) {
     }));
   }
   poweredMonitor = isSeated() && room.space === spaceId ? monitorLayer.children[room.seat] : null;
+  const myAway = Boolean(activeBreakZone) && isSeated();
   for (const screen of monitorLayer.children) {
-    screen.classList.toggle("is-on", screen === poweredMonitor || occupiedSeats.has(screen.dataset.seat));
+    const key = screen.dataset.seat;
+    const isOn = screen === poweredMonitor || occupiedSeats.has(key);
+    const isAway = (screen === poweredMonitor && myAway) || awaySeats.has(key);
+    screen.classList.toggle("is-on", isOn);
+    screen.classList.toggle("is-away", isAway);
   }
 }
 
 function openDesktop(fromSeat = false) {
-  if (seatJourney || !poweredMonitor || desktop.open) return;
+  if (seatJourney || desktop.open) return;
+  if (activeBreakZone) {
+    window.cafeWorld?.exitRelaxZone?.();
+  }
+  if (!poweredMonitor) return;
   if (fromSeat) poweredMonitor.scrollIntoView({ block: "nearest" });
   desktopReturnFocus = fromSeat ? $("#seat-marker") : document.activeElement;
   window.prepareCafeWallpaper?.();
@@ -216,23 +238,89 @@ function renderSeatJourney() {
   journeyStatus.textContent = label;
 }
 
+function renderRelaxHud() {
+  if (!activeBreakZone) {
+    relaxHud.hidden = true;
+    return;
+  }
+  relaxHud.hidden = false;
+  const seated = isSeated();
+  const options = activeBreakZone === "booth"
+    ? [
+      { act: "smoke", label: "🚬 담배 한 모금" },
+      { act: "candy", label: "🍭 멘솔 사탕 (비흡연)" },
+      { switchZone: "terrace", label: "🌿 야외 흡연구역으로 이동" },
+    ]
+    : [
+      { act: "coffee", label: "☕ 자판기 밀크커피 (무료)" },
+      { act: "smoke", label: "🚬 바람 쐬며 한 모금" },
+      { act: "candy", label: "🍭 막대사탕" },
+      { switchZone: "booth", label: "🚬 실내 흡연구역으로" },
+    ];
+
+  relaxHud.replaceChildren(...options.map((opt) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "relax-chip";
+    btn.textContent = opt.label;
+    btn.addEventListener("click", () => {
+      window.cafeAudioPlay?.("tick");
+      if (opt.switchZone) {
+        window.cafeWorld?.enterRelaxZone?.(opt.switchZone);
+      } else {
+        window.cafeWorld?.setActivity?.(opt.act);
+        for (const sibling of relaxHud.querySelectorAll("[data-act]")) {
+          sibling.setAttribute("aria-pressed", String(sibling === btn));
+        }
+      }
+    });
+    if (opt.act) btn.dataset.act = opt.act;
+    return btn;
+  }));
+
+  const exitBtn = document.createElement("button");
+  exitBtn.type = "button";
+  exitBtn.className = "relax-chip relax-exit";
+  exitBtn.textContent = seated ? "💻 내 PC 자리로 복귀" : "🚪 매장 홀로 나가기";
+  exitBtn.addEventListener("click", () => window.cafeWorld?.exitRelaxZone?.());
+  relaxHud.append(exitBtn);
+}
+
 function renderRoom() {
-  const view = seatJourney?.space ?? room.space ?? "lobby";
+  const view = activeBreakZone ?? seatJourney?.space ?? room.space ?? "lobby";
   const space = spaces[view];
   const seated = isSeated();
-  const inRoom = Boolean(space) && view !== "hall";
+  const inSubRoom = Boolean(space) && view !== "hall";
+  const inBooth = view === "booth";
+  const inTerrace = view === "terrace";
+  const inSpecial = inSubRoom || inBooth || inTerrace;
+
   $(".scene").dataset.space = view;
-  $("#lobby-art").hidden = inRoom;
-  if (inRoom) prepareRoomArt();
-  roomsArtwork.hidden = !inRoom;
-  roomsArtwork.alt = inRoom ? space.alt : "";
-  $("#cafe-joystick").hidden = Boolean(room.space || seatJourney);
-  $("#kiosk-pin").hidden = inRoom;
-  $("#room-doors").hidden = inRoom || Boolean(seatJourney);
-  $("#room-title").textContent = space?.label ?? "PC방 입구";
-  $("#room-count").textContent = inRoom ? "정원 " + space.positions.length + "명" : "102석";
+  $("#lobby-art").hidden = inSpecial;
+  if (inSubRoom) prepareRoomArt();
+  if (inBooth) prepareZoneArt("booth");
+  if (inTerrace) prepareZoneArt("terrace");
+  roomsArtwork.hidden = !inSubRoom;
+  roomsArtwork.alt = inSubRoom ? space.alt : "";
+  boothArtwork.hidden = !inBooth;
+  terraceArtwork.hidden = !inTerrace;
+
+  $("#cafe-joystick").hidden = Boolean((room.space && !activeBreakZone) || seatJourney);
+  $("#kiosk-pin").hidden = inSpecial;
+  $("#room-doors").hidden = inSpecial || Boolean(seatJourney);
+  $("#quick-return-seat").hidden = !(activeBreakZone && seated);
+  $("#game-view-pc").hidden = !seated || Boolean(activeBreakZone);
+
+  $("#room-title").textContent = inBooth ? "실내 흡연구역"
+    : inTerrace ? "야외 흡연구역 (2F 테라스)"
+    : (space?.label ?? "PC방 입구");
+  $("#room-count").textContent = inBooth ? "환기 가동 중"
+    : inTerrace ? "우리 동네 · 밀크커피 자판기"
+    : inSubRoom ? "정원 " + space.positions.length + "명" : "102석";
   $("#kiosk-title").textContent = seated ? "자리를 잡았어요!" : "어디에 앉을까요?";
-  $("#kiosk-copy").textContent = seated ? "빗소리 들으며 편히 쉬어가세요." : "전체 좌석도에서 앉고 싶은 자리를 골라요.";
+  $("#kiosk-copy").textContent = seated
+    ? (activeBreakZone ? "자리는 안전하게 맡아뒀어요. 편히 쉬다 오세요!" : "빗소리 들으며 편히 쉬어가세요.")
+    : "전체 좌석도에서 앉고 싶은 자리를 골라요.";
   $("#kiosk-counts").hidden = seated;
   $("#stage-seated").hidden = !seated;
   $("#leave").hidden = !seated;
@@ -241,10 +329,11 @@ function renderRoom() {
     button.disabled = Boolean(seatJourney);
   }
   renderSeatJourney();
-  renderMonitorPower(inRoom ? view : "hall");
+  renderRelaxHud();
+  renderMonitorPower(inBooth || inTerrace ? view : inSubRoom ? view : "hall");
 
   const marker = $("#seat-marker");
-  marker.hidden = !seated || Boolean(seatJourney);
+  marker.hidden = !seated || Boolean(seatJourney) || Boolean(activeBreakZone);
   if (seated) {
     const seat = floorSeats.get(room.space + ":" + room.seat);
     const [x, y] = space.positions[room.seat];
@@ -255,14 +344,23 @@ function renderRoom() {
     const label = space.label + " · " + seat.code;
     $("#ticket-seat").textContent = label;
     $("#pc-seat").textContent = label;
-    $("#room-hint").textContent = seat.code + " 자리에 앉았어요.";
+    $("#room-hint").textContent = activeBreakZone
+      ? `${seat.code} 자리를 비워두고 ${inBooth ? "실내 흡연구역" : "야외 흡연구역"}에서 쉬는 중이에요.`
+      : `${seat.code} 자리에 앉았어요.`;
   } else {
-    $("#room-hint").textContent = "입구 왼쪽의 민트색 키오스크를 눌러보세요.";
+    $("#room-hint").textContent = inBooth ? "환풍기가 돌아가는 실내 흡연구역이에요. 바닥을 눌러 이동해 보세요."
+      : inTerrace ? "지금 내 위치의 하늘과 바람이 흐르는 야외 흡연구역이에요."
+      : "입구 키오스크에서 자리를 고르거나 실내·야외 흡연구역을 둘러보세요.";
   }
   updateSessionTime();
   scheduleClock();
   document.dispatchEvent(new Event("cafe-seat-phase"));
 }
+
+window.cafeShowZone = (zoneId) => {
+  activeBreakZone = zoneId || null;
+  renderRoom();
+};
 
 function isMySeat(seat) {
   return seat.space === room.space && seat.index === room.seat;
@@ -403,6 +501,16 @@ for (const button of document.querySelectorAll("#kiosk-pin, #open-floor, #game-v
 $("#cafe-menu-open").addEventListener("click", (event) => { if (!hub.open) openCafeWindow(hub, event.currentTarget); });
 $("#open-monitor").addEventListener("click", () => openDesktop());
 $("#seat-marker").addEventListener("click", () => openDesktop());
+$("#quick-booth")?.addEventListener("click", () => window.cafeWorld?.enterRelaxZone?.("booth"));
+$("#quick-terrace")?.addEventListener("click", () => window.cafeWorld?.enterRelaxZone?.("terrace"));
+$("#quick-return-seat")?.addEventListener("click", () => {
+  window.cafeWorld?.exitRelaxZone?.();
+  setTimeout(() => openDesktop(true), 120);
+});
+document.querySelectorAll("[data-pc-break]").forEach((btn) => {
+  btn.addEventListener("click", () => window.cafeWorld?.enterRelaxZone?.(btn.dataset.pcBreak));
+});
+
 desktop.addEventListener("close", () => desktopReturnFocus?.focus({ preventScroll: true }));
 const startMenu = $("#pc-start");
 desktop.addEventListener("close", () => { startMenu.open = false; });
@@ -436,6 +544,7 @@ $("#enter").addEventListener("click", async () => {
   const previous = window.cafeSeating.current();
   let journey;
   bookingSeat = true;
+  activeBreakZone = null;
   $("#floor-feedback").textContent = "좌석을 확인하고 있어요.";
   renderFloorSelection();
   try {
@@ -471,6 +580,7 @@ $("#enter").addEventListener("click", async () => {
       await new Promise((resolve) => setTimeout(resolve, 310));
       if (seatJourney !== journey) return;
       journey.phase = "booting";
+      window.cafeAudioPlay?.("pop");
       renderRoom();
       await new Promise((resolve) => setTimeout(resolve, 290));
       if (seatJourney !== journey) return;
@@ -495,8 +605,10 @@ $("#enter").addEventListener("click", async () => {
     renderFloorSelection();
   }
 });
+
 function clearSeat() {
   seatJourney = null;
+  activeBreakZone = null;
   window.cafeWorld?.cancelWalk();
   desktopReturnFocus = null;
   if (desktop.open) desktop.close();
@@ -513,8 +625,13 @@ function leaveSeat() {
 $("#leave").addEventListener("click", leaveSeat);
 $("#pc-end").addEventListener("click", leaveSeat);
 
-
+// All 9 Mini-Games Lazy Loaders!
 const gameLoaders = {
+  pvp: () => import("./pvp.js").then(({ initPvp }) => initPvp()),
+  tetris: () => import("./tetris.js").then(({ initTetris }) => initTetris()),
+  bungeoppang: () => import("./tycoons.js").then(({ initBungeoppang }) => initBungeoppang()),
+  "snack-tycoon": () => import("./tycoons.js").then(({ initSnackTycoon }) => initSnackTycoon()),
+  acidrain: () => import("./acidrain.js").then(({ initAcidRain }) => initAcidRain()),
   arcade: () => import("./game.js").then(({ initArcade }) => initArcade()),
   mines: () => import("./game.js").then(({ initMines }) => initMines()),
   sudoku: () => import("./sudoku.js").then(({ initSudoku }) => initSudoku()),
@@ -522,30 +639,42 @@ const gameLoaders = {
 };
 const requestedGames = new Set();
 
+window.openCafeWindow = openCafeWindow;
+window.closeCafeWindow = closeCafeWindow;
+
 document.querySelectorAll("[data-open]").forEach((button) => {
   button.addEventListener("click", () => {
     const source = cafeWindowOrigin(button);
     if (hub.contains(button) && hub.open) hub.close();
     const next = document.getElementById(button.dataset.open);
+    if (!next) return;
     const origin = button.closest("dialog");
-    if (origin?.matches("#snacks, #snack-board, #snack-coupon")) origin.close();
+    if (origin?.matches("#snacks, #snack-board, #snack-coupon, #snack-gift")) origin.close();
     if (!next.open) {
       openCafeWindow(next, button, source);
-      if (next.id === "focus") renderTimer();
+      if (next.id === "focus") {
+        window.cafeWorld?.setActivity?.("focus");
+        renderTimer();
+      }
     }
     const load = gameLoaders[next.id];
     if (!load || requestedGames.has(next.id)) return;
     requestedGames.add(next.id);
     load().catch(() => {
       requestedGames.delete(next.id);
-      next.querySelector(".game-status").textContent = "게임을 불러오지 못했어요. 페이지를 새로고침해 주세요.";
+      const st = next.querySelector(".game-status");
+      if (st) st.textContent = "게임을 불러오지 못했어요. 페이지를 새로고침해 주세요.";
     });
   });
 });
 document.querySelectorAll("[data-close]").forEach((button) => {
   button.addEventListener("click", () => closeCafeWindow(button.closest("dialog")));
 });
+
 const focusDialog = $("#focus");
+focusDialog.addEventListener("close", () => {
+  if (!focus.end) window.cafeWorld?.setActivity?.("");
+});
 const focusMinutesInput = $("#focus-minutes");
 const focusDurationError = $("#focus-duration-error");
 const focusSoundToggle = $("#focus-sound");
@@ -563,7 +692,8 @@ function presentPendingFocusCompletion() {
   focus.completionPending = false;
   focus.completionAnnounced = true;
   saveState(focusKey, focus);
-  notify("집중 시간이 끝났어요. 잠깐 쉬어가요.");
+  notify("집중 시간이 끝났어요! +40 G 적립!");
+  window.cafeEarnPoints?.(40, "집중 모드 완주");
   showFocusCompletion({ animate: !skipFocusCompletionEffects, sound: !skipFocusCompletionEffects });
 }
 
@@ -595,7 +725,6 @@ function unlockFocusAudio() {
 function playFocusCompletionSound() {
   const context = focusAudioContext;
   if (!context || context.state !== "running") return false;
-
   const now = context.currentTime;
   const notes = [523.25, 659.25, 783.99];
   notes.forEach((frequency, index) => {
@@ -667,6 +796,7 @@ function completeFocus() {
     completionAnnounced: !completionPending,
   });
   saveState(focusKey, focus);
+  window.cafeWorld?.setActivity?.("");
   if (completionPending) {
     if (focus.soundEnabled && !focus.completionSoundPlayed && playFocusCompletionSound()) {
       focus.completionSoundPlayed = true;
@@ -674,7 +804,8 @@ function completeFocus() {
     }
     return;
   }
-  notify("집중 시간이 끝났어요. 잠깐 쉬어가요.");
+  notify("집중 시간이 끝났어요! +40 G 적립!");
+  window.cafeEarnPoints?.(40, "집중 모드 완주");
   showFocusCompletion({ animate: !skipFocusCompletionEffects, sound: !skipFocusCompletionEffects });
 }
 
@@ -781,6 +912,7 @@ $("#timer-toggle").addEventListener("click", () => {
     skipFocusCompletionEffects = false;
     hideFocusCompletion();
     focus.end = Date.now() + focus.remaining;
+    window.cafeWorld?.setActivity?.("focus");
     if (focus.soundEnabled) unlockFocusAudio();
   }
   saveState(focusKey, focus);
@@ -806,8 +938,7 @@ $("#timer-reset").addEventListener("click", () => {
 });
 window.addEventListener("pagehide", closeFocusAudio);
 
-const seoulTime = new Intl.DateTimeFormat("ko-KR", {
-  timeZone: "Asia/Seoul",
+const localTime = new Intl.DateTimeFormat("ko-KR", {
   hour: "2-digit",
   minute: "2-digit",
   hourCycle: "h23"
@@ -825,7 +956,7 @@ function scheduleClock() {
 }
 
 function tick() {
-  const time = seoulTime.format(new Date());
+  const time = localTime.format(new Date());
   if (time !== lastClock) {
     $("#clock").textContent = time;
     $("#pc-clock").textContent = time;
@@ -880,7 +1011,9 @@ connectCafeSwitch(document.querySelector(".top-actions .u013"), async (enabled) 
 });
 
 window.cafeSeating = {
-  placeRoomDoors(portals) {
+  placeRoomDoors(portals, relaxPortals = {}) {
+    const container = $("#room-doors");
+    container.replaceChildren();
     for (const [id, point] of Object.entries(portals)) {
       const door = document.createElement("button");
       door.type = "button";
@@ -891,8 +1024,28 @@ window.cafeSeating = {
       door.style.setProperty("--x", point.x + "%");
       door.style.setProperty("--y", point.y + "%");
       door.addEventListener("click", () => openFloor(id, door));
-      $("#room-doors").append(door);
+      container.append(door);
     }
+    for (const [zoneId, point] of Object.entries(relaxPortals)) {
+      const door = document.createElement("button");
+      door.type = "button";
+      door.className = "stage-room-door";
+      door.dataset.relax = zoneId;
+      door.textContent = (zoneId === "booth" ? "🚬 " : "🌙 ") + point.label;
+      door.setAttribute("aria-label", point.label + " 입장");
+      door.style.setProperty("--x", point.x + "%");
+      door.style.setProperty("--y", point.y + "%");
+      door.addEventListener("click", () => window.cafeWorld?.enterRelaxZone?.(zoneId));
+      container.append(door);
+    }
+    document.addEventListener("cafe-zone-counts", ({ detail }) => {
+      for (const [zoneId, point] of Object.entries(relaxPortals)) {
+        const btn = container.querySelector(`[data-relax="${zoneId}"]`);
+        if (!btn) continue;
+        const n = detail.counts?.[zoneId] || 0;
+        btn.textContent = (zoneId === "booth" ? "🚬 " : "🌙 ") + point.label + (n ? ` (${n})` : "");
+      }
+    });
   },
   current: () => room.space ? room.space + ":" + room.seat : null,
   phase: () => seatJourney?.phase ?? null,
@@ -905,9 +1058,9 @@ window.cafeSeating = {
       ? { x: x + (seat.index % 2 ? 2 : -2), y: y + 2.6 }
       : { x, y: { solo: 74, duo: 70, team: 68, squad: seat.index < 3 ? 33 : 76 }[seat.space] };
   },
-  refresh(keys) {
-    if (keys.length === occupiedSeats.size && keys.every((key) => occupiedSeats.has(key))) return;
+  refresh(keys, peerList = []) {
     occupiedSeats = new Set(keys);
+    awaySeats = new Set(peerList.filter((p) => p.seat && (p.zone === "booth" || p.zone === "terrace")).map((p) => p.seat));
     const space = $(".scene").dataset.space;
     renderMonitorPower(space === "lobby" ? "hall" : space);
     if (floor.open) renderFloorSelection();

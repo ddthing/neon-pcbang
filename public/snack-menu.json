@@ -1,20 +1,46 @@
 {
   "categories": [
-    {"id":"meals","name":"식사","items":[
-      {"id":"ramyeon","name":"컵라면","icon":"🍜","copy":"김이 모락모락 나는 야식"},
-      {"id":"rice","name":"김치볶음밥","icon":"🍚","copy":"반숙 달걀을 올린 든든한 한 접시"},
-      {"id":"dumplings","name":"군만두","icon":"🥟","copy":"겉은 바삭하고 속은 촉촉하게"}
-    ]},
-    {"id":"bites","name":"간식","items":[
-      {"id":"skewer","name":"소떡소떡","icon":"🍢","copy":"달콤매콤한 한 꼬치"},
-      {"id":"fries","name":"감자튀김","icon":"🍟","copy":"바삭하게 튀긴 감자"},
-      {"id":"toast","name":"버터 토스트","icon":"🍞","copy":"노릇하게 구운 두 조각"}
-    ]},
-    {"id":"drinks","name":"음료","items":[
-      {"id":"cola","name":"캔콜라","icon":"🥤","copy":"톡 쏘는 한 모금"},
-      {"id":"tea","name":"아이스티","icon":"🧋","copy":"시원하게 마시는 복숭아 홍차"},
-      {"id":"coffee","name":"아메리카노","icon":"☕","copy":"구수한 원두 한 잔"}
-    ]}
+    {
+      "id": "meals",
+      "name": "든든한 식사·라면",
+      "items": [
+        { "id": "jjagyechi", "sprite": 0, "icon": "🍳", "name": "짜계치", "copy": "짜장라면에 치즈 한 장, 반숙 계란 프라이", "toppings": ["치즈 더블", "고춧가루", "파채 추가"] },
+        { "id": "rabokki", "sprite": 1, "icon": "🌶️", "name": "치즈라볶이", "copy": "매콤달콤 국물떡볶이와 꼬들한 라면사리", "toppings": ["모짜렐라 듬뿍", "삶은계란", "맵게"] },
+        { "id": "spammayo", "sprite": 2, "icon": "🍙", "name": "스팸마요덮밥", "copy": "노릇하게 구운 스팸과 고소한 마요네즈·김가루", "toppings": ["마요 듬뿍", "계란지단 추가", "데리야끼"] },
+        { "id": "chickenmayo", "sprite": 3, "icon": "🍗", "name": "치킨마요덮밥", "copy": "바삭한 순살치킨을 듬뿍 올린 PC방 스테디셀러", "toppings": ["치킨 추가", "청양마요", "반숙란"] },
+        { "id": "ramyeon", "sprite": 4, "icon": "🍜", "name": "대파라면", "copy": "양은냄비에 대파 송송 썰어 끓인 얼큰 라면", "toppings": ["치즈 추가", "날계란", "떡사리", "청양고추"] },
+        { "id": "rice", "sprite": 5, "icon": "🍚", "name": "김치볶음밥", "copy": "불향 입힌 숙성 김치와 반숙 달걀 한 접시", "toppings": ["모짜렐라 치즈", "스팸 토핑", "곱빼기"] },
+        { "id": "dumplings", "sprite": 6, "icon": "🥟", "name": "반반군만두", "copy": "겉바속촉 고기만두와 매콤 김치만두 반반", "toppings": ["초간장+단무지", "칠리소스"] },
+        { "id": "curry", "sprite": 7, "icon": "🍛", "name": "소시지카레덮밥", "copy": "진한 숙성 카레 위에 칼집 비엔나 소시지", "toppings": ["계란후라이", "치즈 토핑"] }
+      ]
+    },
+    {
+      "id": "bites",
+      "name": "바삭 간식·분식",
+      "items": [
+        { "id": "skewer", "sprite": 8, "icon": "🍢", "name": "소떡소떡", "copy": "탱글한 소시지와 쫄깃한 떡에 매콤달콤 양념", "toppings": ["양념 듬뿍", "머스타드 추가"] },
+        { "id": "hotdog", "sprite": 9, "icon": "🌭", "name": "옛날 설탕핫도그", "copy": "설탕 솔솔 뿌리고 케첩·머스타드 듬뿍", "toppings": ["설탕 O", "설탕 X", "체다치즈소스"] },
+        { "id": "tornado", "sprite": 10, "icon": "🥔", "name": "회오리감자", "copy": "바삭하게 튀겨 치즈 시즈닝을 입힌 한 꼬치", "toppings": ["치즈시즈닝", "어니언시즈닝"] },
+        { "id": "cheeseball", "sprite": 11, "icon": "🧀", "name": "찹쌀치즈볼", "copy": "한 입 베어물면 모짜렐라가 쭉 늘어나는 4알", "toppings": ["슈가파우더", "갈릭딥핑"] },
+        { "id": "menbosha", "sprite": 12, "icon": "🍤", "name": "통새우 멘보샤", "copy": "식빵 사이 탱글한 새우살을 바삭하게 튀겨낸 별미", "toppings": ["스위트칠리", "타르타르"] },
+        { "id": "fries", "sprite": 13, "icon": "🍟", "name": "버터갈릭 감자튀김", "copy": "달콤 고소한 갈릭 소스를 듬뿍 올린 감자튀김", "toppings": ["갈릭소스 두배", "케첩 추가"] },
+        { "id": "toast", "sprite": 14, "icon": "🥪", "name": "햄치즈 길거리토스트", "copy": "버터에 구운 식빵 속 햄·치즈·양배추 계란", "toppings": ["설탕+케첩", "치즈 추가"] },
+        { "id": "bungeoppang", "sprite": 15, "icon": "🐟", "name": "방금 구운 붕어빵", "copy": "꼬리까지 바삭한 겨울 PC방 별미 3마리", "toppings": ["통팥 3마리", "슈크림 3마리", "팥·슈 반반"] }
+      ]
+    },
+    {
+      "id": "drinks",
+      "name": "시그니처 음료·디저트",
+      "items": [
+        { "id": "eolbaksa", "sprite": 16, "icon": "⚡", "name": "얼박사", "copy": "얼음컵 + 박카스 + 사이다 황금비율 밤샘 포션", "toppings": ["얼음 가득", "사이다 많이"] },
+        { "id": "ashatchu", "sprite": 17, "icon": "🍹", "name": "아샷추", "copy": "달콤한 복숭아 아이스티에 에스프레소 샷 추가", "toppings": ["샷 진하게", "덜 달게"] },
+        { "id": "tea", "sprite": 18, "icon": "🍑", "name": "복숭아 아이스티", "copy": "시원하고 달콤하게 마시는 대형 복숭아 홍차", "toppings": ["얼음 많이", "레몬 슬라이스"] },
+        { "id": "cola", "sprite": 19, "icon": "🥤", "name": "제로콜라 / 캔콜라", "copy": "살얼음 동동 띄운 톡 쏘는 탄산 한 잔", "toppings": ["제로콜라", "오리지널 콜라", "얼음컵 함께"] },
+        { "id": "misutgaru", "sprite": 20, "icon": "🥛", "name": "살얼음 미숫가루", "copy": "고소하고 달달하게 타서 흔든 대용량 미숫가루", "toppings": ["꿀 추가", "우유 베이스"] },
+        { "id": "beads", "sprite": 21, "icon": "🍨", "name": "구슬아이스크림", "copy": "알록달록 입안에서 사르르 녹는 레인보우 구슬", "toppings": ["레인보우", "초코바닐라"] },
+        { "id": "coffee", "sprite": 22, "icon": "☕", "name": "아이스 아메리카노", "copy": "고소한 다크로스팅 원두 투샷 대용량 커피", "toppings": ["연하게", "샷 추가", "따뜻하게"] }
+      ]
+    }
   ],
-  "reward": {"id":"corner-ade","name":"단골 복숭아 에이드","icon":"🍑"}
+  "reward": { "id": "corner-ade", "sprite": 23, "icon": "🍑", "name": "단골 복숭아 에이드" }
 }

@@ -1,10 +1,8 @@
-// Lucian UX/UI Prompt #051 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#051
-// Lucian UX/UI Prompt #087 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#087
-// Adapted from Lucian UX/UI Prompt #227, #242, and #353 · MIT License (c) 2026 Seokwoooo.
 const $ = (selector, root = document) => root.querySelector(selector);
 const shop = $("#snacks");
 const boardDialog = $("#snack-board");
 const couponDialog = $("#snack-coupon");
+const giftDialog = $("#snack-gift");
 const seating = window.cafeSeating;
 const reduced = matchMedia("(prefers-reduced-motion: reduce)");
 const stateKey = "corner-cafe-order";
@@ -16,20 +14,22 @@ const storage = {
 const member = storage.get("localStorage", "corner-cafe-member") || crypto.randomUUID();
 storage.set("localStorage", "corner-cafe-member", member);
 const currentSeat = () => !seating.phase() && seating.current();
-const setText = (node, value) => { const text = String(value); if (node.textContent !== text) node.textContent = text; };
-const lineText = (items) => items.map(({ name, count }) => name + " × " + count).join(" · ");
+const setText = (node, value) => { if (node) { const text = String(value); if (node.textContent !== text) node.textContent = text; } };
+const lineText = (items) => items.map(({ name, count, options }) =>
+  name + (Array.isArray(options) && options.length ? `(${options.join(",")})` : "") + " × " + count).join(" · ");
 const element = (tag, className, content = "") => {
   const node = document.createElement(tag);
-  node.className = className;
-  node.textContent = content;
+  if (className) node.className = className;
+  if (content !== "") node.textContent = content;
   return node;
 };
+
 let data, catalog, sending = false, inFlight, retryId, order, pollTimer;
 let clockOffset = 0, deliveryMotionTimer;
 try { order = JSON.parse(storage.get("sessionStorage", stateKey)); } catch {}
 const deliveredNotices = readDeliveryNotices();
 const serverNow = () => Date.now() + clockOffset;
-const cart = new Map();
+const cart = new Map(); // id -> { count, options: Set }
 const controls = new Map();
 const reward = $("#order-reward");
 const rewardToggle = $("input", reward);
@@ -37,6 +37,7 @@ const submit = $("#place-order");
 const receipt = $("#order-receipt");
 const shopFeedback = $("#shop-feedback");
 const couponFeedback = $("#coupon-feedback");
+
 const cartBadge = element("span", "u051-cart");
 cartBadge.setAttribute("aria-hidden", "true");
 const cartBadgeIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -50,21 +51,36 @@ const restoreSubmitFocus = document.activeElement === submit;
 submit.before(shopActions);
 shopActions.append(submit, cartBadge);
 if (restoreSubmitFocus) submit.focus({ preventScroll: true });
+
 const deliveryProgress = createDeliveryProgress();
 receipt.append(deliveryProgress.root);
 const flyingItems = new Set();
 let progressOrderId = "";
 let progressStage = "";
 let buttonFeedbackTimer;
+
 const statusLabels = {
   queued: "대기 중",
-  preparing: "준비 중",
-  delivering: "배달 중",
+  preparing: "오픈키친 조리 중",
+  delivering: "고양이 배달 중",
   delivered: "배달 완료",
+  eaten: "식사 완료",
   canceled: "취소됨",
 };
+
+function makePixelIcon(spriteIndex = 4) {
+  const icon = element("i", "pixel-snack-icon");
+  const col = spriteIndex % 6;
+  const row = Math.floor(spriteIndex / 6);
+  icon.style.setProperty("--snack-x", (col * 20) + "%");
+  icon.style.setProperty("--snack-y", (row * 33.3333) + "%");
+  icon.setAttribute("aria-hidden", "true");
+  return icon;
+}
+
 function orderStatus(value) {
   if (value.status === "cancelled") return "canceled";
+  if (value.eatenAt || value.status === "eaten") return "eaten";
   if (statusLabels[value.status]) return value.status;
   if (value.delivered || value.readyAt <= serverNow()) return "delivered";
   return "preparing";
@@ -81,7 +97,6 @@ function orderStatusLabel(value) {
 function createDeliveryProgress() {
   const root = element("section", "ux u087 shop-delivery-progress");
   root.setAttribute("aria-hidden", "true");
-
   const heading = element("div", "u087-h");
   const reference = element("small", "");
   const message = element("b", "");
@@ -100,7 +115,7 @@ function createDeliveryProgress() {
 
   const clerk = element("span", "u087-clerk");
   clerk.setAttribute("aria-hidden", "true");
-  clerk.innerHTML = '<svg viewBox="0 0 28 28" shape-rendering="crispEdges"><path fill="#39332e" d="M3 8h3V3h5V1h6v2h5v5h3v8h-4v4H7v-4H3z"/><path fill="#dda66c" d="M6 8h16v7h-2v4H8v-4H6z"/><path fill="#f0d5b2" d="M8 8h2v4H8zm10 0h2v4h-2z"/><path fill="#403832" d="M9 10h2v2H9zm8 0h2v2h-2z"/><path fill="#a95751" d="M12 13h4v2h-4z"/><path fill="#f2e5cf" d="M4 3h6V1h8v2h6v4h-3V5H7v2H4z"/><path fill="#a87852" d="M2 12h4v2H2zm20 0h4v2h-4z"/><path fill="#93ab93" d="M6 19h16v2h3v6H3v-6h3z"/><path fill="#e8d8ba" d="M10 20h8v6h-8z"/></svg>';
+  clerk.innerHTML = '<span class="cafe-clerk-sprite" style="width:26px;height:28px;display:block;background-position:0% 66.6667%"></span>';
   const flag = element("span", "u087-flag");
   flag.innerHTML = '<svg viewBox="0 0 14 14"><path d="M3 7.4l2.6 2.6L11 4.6"/></svg>';
   clerk.append(flag);
@@ -109,7 +124,7 @@ function createDeliveryProgress() {
   track.append(line, dots, lane);
 
   const labels = element("div", "u087-labs");
-  for (const label of ["대기", "준비", "배달", "도착"]) labels.append(element("span", "", label));
+  for (const label of ["대기", "조리", "배달", "도착"]) labels.append(element("span", "", label));
 
   const log = element("ol", "u087-log");
   const ordered = element("li", "");
@@ -120,7 +135,6 @@ function createDeliveryProgress() {
     entry.append(detail);
   }
   root.append(heading, track, labels, log);
-
   return { root, reference, message, track, lane, fill, endpoints, clerk, labels, log, ordered, accepted };
 }
 
@@ -170,12 +184,12 @@ function flyItem(item, source) {
   const parent = shop.getBoundingClientRect();
   const scaleX = parent.width / shop.offsetWidth || 1;
   const scaleY = parent.height / shop.offsetHeight || 1;
-  const x = (start.left + start.width / 2 - parent.left) / scaleX - 17;
-  const y = (start.top + start.height / 2 - parent.top) / scaleY - 17;
-  const endX = (target.left + target.width / 2 - parent.left) / scaleX - 17;
-  const endY = (target.top + target.height / 2 - parent.top) / scaleY - 17;
-  const flyer = element("span", "u051-fly", item.icon);
-  flyer.setAttribute("aria-hidden", "true");
+  const x = (start.left + start.width / 2 - parent.left) / scaleX - 12;
+  const y = (start.top + start.height / 2 - parent.top) / scaleY - 12;
+  const endX = (target.left + target.width / 2 - parent.left) / scaleX - 12;
+  const endY = (target.top + target.height / 2 - parent.top) / scaleY - 12;
+  const flyer = element("span", "u051-fly");
+  flyer.append(makePixelIcon(item.sprite ?? 4));
   flyer.style.left = x + "px";
   flyer.style.top = y + "px";
   shop.append(flyer);
@@ -185,21 +199,14 @@ function flyItem(item, source) {
     const flyX = (endX - x) * progress;
     const flyY = (endY - y) * progress - Math.sin(progress * Math.PI) * 36;
     return {
-      transform: `translate(${flyX.toFixed(1)}px,${flyY.toFixed(1)}px) rotate(${(progress * 40).toFixed(1)}deg) scale(${(1.2 - progress * .85).toFixed(2)})`,
+      transform: `translate(${flyX.toFixed(1)}px,${flyY.toFixed(1)}px) rotate(${(progress * 40).toFixed(1)}deg) scale(${(1.2 - progress * .75).toFixed(2)})`,
       opacity: progress > .92 ? 0 : 1,
     };
   });
-  const flight = flyer.animate(frames, { duration: 720, easing: "cubic-bezier(.5,0,.3,1)" });
+  const flight = flyer.animate(frames, { duration: 680, easing: "cubic-bezier(.5,0,.3,1)" });
   flyingItems.add(flight);
-  flight.onfinish = () => {
-    flyingItems.delete(flight);
-    flyer.remove();
-    landCart();
-  };
-  flight.oncancel = () => {
-    flyingItems.delete(flight);
-    flyer.remove();
-  };
+  flight.onfinish = () => { flyingItems.delete(flight); flyer.remove(); landCart(); };
+  flight.oncancel = () => { flyingItems.delete(flight); flyer.remove(); };
 }
 
 function minuteLabel(timestamp) {
@@ -214,23 +221,24 @@ function updateDeliveryProgress() {
   const status = orderStatus(order);
   const newOrder = order.id !== progressOrderId;
   const changed = newOrder || status !== progressStage;
-  const stage = { queued: 0, preparing: 1, delivering: 2, delivered: 3, canceled: 0 }[status];
+  const stage = { queued: 0, preparing: 1, delivering: 2, delivered: 3, eaten: 3, canceled: 0 }[status];
   const animateArrival = !newOrder && status === "delivered" && progressStage !== "delivered";
   deliveryProgress.reference.textContent = "주문 " + order.id.slice(0, 8).toUpperCase();
   setText(deliveryProgress.message, {
     queued: "앞 주문 배달을 기다리고 있어요.",
-    preparing: "순서가 되어 음식을 준비하고 있어요.",
+    preparing: "고양이 알바생이 오픈키친에서 조리 중이에요!",
     delivering: "고양이 알바생이 쟁반을 들고 가고 있어요.",
-    delivered: "배달이 도착했어요.",
+    delivered: "책상에 도착했어요! 자리 쟁반을 눌러 드세요 😋",
+    eaten: "맛있게 다 먹었어요! (+15 G 적립)",
     canceled: "주문이 취소됐어요.",
   }[status]);
-  deliveryProgress.root.classList.toggle("is-done", status === "delivered");
+  deliveryProgress.root.classList.toggle("is-done", status === "delivered" || status === "eaten");
   deliveryProgress.root.classList.toggle("is-canceled", status === "canceled");
   deliveryProgress.root.classList.toggle("is-moving", status === "delivering");
   const departure = Number(order.startAt);
   const arrival = Number(order.readyAt);
   const remainingTrip = arrival - departure;
-  const tripProgress = status === "delivered" ? 1
+  const tripProgress = (status === "delivered" || status === "eaten") ? 1
     : status === "delivering" && Number.isFinite(remainingTrip) && remainingTrip > 0
       ? Math.max(0, Math.min(1, (serverNow() - departure) / remainingTrip)) : 0;
   const clerkDistance = Math.max(0, deliveryProgress.lane.clientWidth - deliveryProgress.clerk.offsetWidth);
@@ -239,37 +247,26 @@ function updateDeliveryProgress() {
     clearTimeout(deliveryMotionTimer);
     deliveryMotionTimer = setTimeout(() => deliveryProgress.root.classList.remove("is-moving"), 1000);
   }
-
   deliveryProgress.fill.style.setProperty("--p", String(stage / 3));
-  deliveryProgress.track.setAttribute("role", "progressbar");
-  deliveryProgress.track.setAttribute("aria-label", "주문 배달 진행 단계");
-  deliveryProgress.track.setAttribute("aria-valuemin", "1");
-  deliveryProgress.track.setAttribute("aria-valuemax", "4");
-  deliveryProgress.track.setAttribute("aria-valuenow", String(stage + 1));
-  deliveryProgress.track.setAttribute("aria-valuetext", orderStatusLabel(order));
   deliveryProgress.endpoints.forEach((point, index) => point.classList.toggle("on", index <= stage));
   deliveryProgress.labels.querySelectorAll("span").forEach((label, index) => label.classList.toggle("on", index === stage));
-
   if (!changed) return;
   deliveryProgress.log.replaceChildren(deliveryProgress.accepted);
   deliveryProgress.accepted.querySelector("small").textContent = minuteLabel(order.createdAt);
-  setText(deliveryProgress.accepted.querySelector("b"), "주문을 접수했어요.");
+  setText(deliveryProgress.accepted.querySelector("b"), order.giftFrom ? `🎁 ${order.giftFrom}님의 선물 접수` : "주문을 접수했어요.");
   const stateMessages = {
     queued: "앞 주문 배달을 기다리고 있어요.",
-    preparing: "알바생이 음식을 준비하고 있어요.",
+    preparing: "오픈키친 냄비에서 맛있게 조리 중이에요.",
     delivering: "고양이 알바생이 배달 중이에요.",
-    delivered: "쟁반이 도착했어요.",
+    delivered: "쟁반이 내 책상에 도착했어요.",
+    eaten: "식사 완료! 빈 그릇을 수거했어요.",
     canceled: "주문이 취소됐어요.",
   };
-  const eventTime = status === "delivered" ? order.readyAt
+  const eventTime = (status === "delivered" || status === "eaten") ? order.readyAt
     : status === "delivering" ? order.startAt : order.createdAt;
   setText(deliveryProgress.ordered.querySelector("b"), stateMessages[status]);
   deliveryProgress.ordered.querySelector("small").textContent = minuteLabel(eventTime);
   deliveryProgress.log.append(deliveryProgress.ordered);
-  if (!newOrder && status === "delivered") {
-    deliveryProgress.ordered.classList.add("new");
-    setTimeout(() => deliveryProgress.ordered.classList.remove("new"), 550);
-  }
   progressOrderId = order.id;
   progressStage = status;
 }
@@ -284,28 +281,44 @@ function clearShopAnimations() {
   deliveryProgress.root.classList.remove("is-moving");
 }
 
+function updatePointsDisplay() {
+  const pts = data?.loyalty?.points ?? 150;
+  document.querySelectorAll("[data-gpoints]").forEach((el) => setText(el, `${pts} G`));
+}
+
 function updateShop() {
   const seat = currentSeat();
   const orderState = order ? orderStatus(order) : "";
-  const clerkReturning = Boolean(order && orderState === "delivered" && order.returnAt > serverNow());
+  const clerkReturning = Boolean(order && (orderState === "delivered" || orderState === "eaten") && order.returnAt > serverNow());
   const waiting = ["queued", "preparing", "delivering"].includes(orderState) || clerkReturning;
   const eligible = data && data.loyalty.balance >= data.loyalty.couponStamps;
-  setText($("#order-location"), seat ? "내 자리 " + seating.label(seat) + "로 가져다드려요." : "자리에 앉으면 주문할 수 있어요.");
+  setText($("#order-location"), seat ? "내 자리 " + seating.label(seat) + "로 고양이 알바생이 직접 배달해요." : "자리에 앉으면 내 책상으로 주문할 수 있어요.");
   reward.hidden = !catalog || !eligible;
   if (!eligible) rewardToggle.checked = false;
-  const quantity = [...cart.values()].reduce((sum, count) => sum + count, 0) + Number(rewardToggle.checked);
+  const quantity = [...cart.values()].reduce((sum, entry) => sum + entry.count, 0) + Number(rewardToggle.checked);
   updateCartBadge(quantity);
+  updatePointsDisplay();
+
   for (const [id, row] of controls) {
-    const count = cart.get(id) || 0;
+    const entry = cart.get(id);
+    const count = entry?.count || 0;
     setText(row.count, count);
     row.minus.disabled = sending || count === 0;
     row.plus.disabled = sending || count >= 9 || quantity >= 30 || (!count && cart.size >= 15);
+    if (row.toppingsBox) {
+      row.toppingsBox.hidden = count === 0;
+      if (count > 0) {
+        for (const chip of row.toppingsBox.querySelectorAll("button")) {
+          chip.setAttribute("aria-pressed", String(Boolean(entry?.options.has(chip.dataset.opt))));
+        }
+      }
+    }
   }
   rewardToggle.disabled = sending || (!rewardToggle.checked && quantity >= 30);
   submit.disabled = !seat || sending || !quantity || waiting;
   setText(submit, waiting
     ? clerkReturning ? "알바생이 카운터로 돌아오고 있어요."
-      : { queued: "대기 순서 " + orderStatusLabel(order), preparing: "조리 중", delivering: "배달 중" }[orderState]
+      : { queued: "대기 순서 " + orderStatusLabel(order), preparing: "오픈키친 조리 중", delivering: "배달 중" }[orderState]
     : quantity ? "내 자리로 주문하기 · " + quantity + "개" : "내 자리로 주문하기");
   $("#order-receipt").hidden = !order;
   if (order) {
@@ -313,19 +326,23 @@ function updateShop() {
     setText($("#order-items"), lineText(Array.isArray(order.items) ? order.items : []));
     updateDeliveryProgress();
   }
+  setText($("#pc-order-summary"), order && orderState !== "eaten" && orderState !== "canceled"
+    ? `${orderStatusLabel(order)} · ${lineText(order.items)}`
+    : "24종 시그니처 메뉴 & 토핑 커스텀");
 }
 
-// #242: keep the chip rail visible and track the section at the scroll edge.
 const scroller = $(".u242-sc");
 const chips = $(".u242-cr");
 const menuBody = $(".u242-bd");
 const search = $("#snack-search");
 let sections = [], pinnedUntil = 0, catalogFrame = 0;
+
 function markSection(id) {
   const active = sections.find((section) => section.id === id);
   if (!active) return;
   for (const entry of sections) entry.chip.setAttribute("aria-current", String(entry === active));
   const highlight = $(".u242-ul", chips);
+  if (!highlight) return;
   highlight.style.width = active.chip.offsetWidth + "px";
   highlight.style.transform = "translateX(" + active.chip.offsetLeft + "px)";
   const left = active.chip.offsetLeft;
@@ -334,6 +351,7 @@ function markSection(id) {
     chips.scrollTo({ left: left - 14, behavior: reduced.matches ? "instant" : "smooth" });
   }
 }
+
 function renderCatalog() {
   if (!catalog) return;
   const query = search.value.trim().toLocaleLowerCase("ko");
@@ -361,36 +379,63 @@ function renderCatalog() {
     menuBody.append(section);
     sections.push({ id: category.id, chip, section });
     for (const item of matches) {
+      const wrap = element("div", "snack-item-wrap");
       const row = element("article", "u242-it");
-      const icon = element("i", "", item.icon);
-      icon.setAttribute("aria-hidden", "true");
+      const iconBox = element("i", "snack-pixel-slot");
+      iconBox.append(makePixelIcon(item.sprite ?? 4));
       const title = element("div", "");
       title.append(element("b", "", item.name), element("span", "", item.copy));
       const actions = element("div", "order-controls");
       const minus = element("button", "", "−");
       const count = element("span", "item-count", "0");
       const plus = element("button", "", "+");
+
+      let toppingsBox = null;
+      if (Array.isArray(item.toppings) && item.toppings.length) {
+        toppingsBox = element("div", "snack-toppings");
+        toppingsBox.hidden = true;
+        toppingsBox.append(element("small", "", "내 맘대로 토핑:"));
+        for (const opt of item.toppings) {
+          const optBtn = element("button", "topping-chip", "+ " + opt);
+          optBtn.type = "button";
+          optBtn.dataset.opt = opt;
+          optBtn.addEventListener("click", () => {
+            const entry = cart.get(item.id);
+            if (!entry) return;
+            if (entry.options.has(opt)) entry.options.delete(opt);
+            else if (entry.options.size < 3) entry.options.add(opt);
+            window.cafeAudioPlay?.("tick");
+            updateShop();
+          });
+          toppingsBox.append(optBtn);
+        }
+      }
+
       for (const [button, delta] of [[minus, -1], [plus, 1]]) {
         button.type = "button";
         button.setAttribute("aria-label", item.name + (delta > 0 ? " 추가" : " 빼기"));
         button.addEventListener("click", () => {
-          const value = (cart.get(item.id) || 0) + delta;
-          if (value) cart.set(item.id, value);
+          const prev = cart.get(item.id) || { count: 0, options: new Set() };
+          const nextCount = prev.count + delta;
+          if (nextCount > 0) cart.set(item.id, { count: nextCount, options: prev.options });
           else cart.delete(item.id);
           retryId = null;
+          window.cafeAudioPlay?.("tick");
           updateShop();
           if (delta > 0) {
             submit.classList.add("done");
             clearTimeout(buttonFeedbackTimer);
             buttonFeedbackTimer = setTimeout(() => submit.classList.remove("done"), 420);
-            flyItem(item, icon);
+            flyItem(item, iconBox);
           }
         });
       }
-      controls.set(item.id, { count, minus, plus });
+      controls.set(item.id, { count, minus, plus, toppingsBox });
       actions.append(minus, count, plus);
-      row.append(icon, title, actions);
-      section.append(row);
+      row.append(iconBox, title, actions);
+      wrap.append(row);
+      if (toppingsBox) wrap.append(toppingsBox);
+      section.append(wrap);
     }
   }
   if (sections.length) menuBody.append(element("div", "u242-end"));
@@ -400,6 +445,7 @@ function renderCatalog() {
   markSection(sections[0]?.id);
   updateShop();
 }
+
 search.addEventListener("input", renderCatalog);
 rewardToggle.addEventListener("change", () => { retryId = null; updateShop(); });
 scroller.addEventListener("scroll", () => {
@@ -413,13 +459,14 @@ scroller.addEventListener("scroll", () => {
   });
 }, { passive: true });
 
-// #227: reuse rows by order number, move them on sort, queue arrivals while paused.
+// Live Order Board (#227)
 const board = $("#snack-live");
 const boardBody = $(".u227-bd", board);
 const boardEmpty = $(".shop-board-empty", board);
 const pause = $(".u227-pz", board);
 const rendered = new Map();
 let sortKey = "createdAt", direction = -1, paused = false, firstBoard = true;
+
 function renderBoard() {
   if (!data) return;
   if (paused) {
@@ -438,9 +485,11 @@ function renderBoard() {
       const node = element("div", "u227-r");
       node.setAttribute("role", "row");
       const summary = element("span", "nm");
-      const name = element("b", "", lineText(entry.items));
+      const prefix = entry.giftFrom ? "🎁 " : "";
+      const name = element("b", "", prefix + lineText(entry.items));
       name.title = name.textContent;
-      summary.append(name, element("small", "", "#" + entry.number.toUpperCase()));
+      const seatTag = entry.seat ? ` · ${seating.label(entry.seat) || entry.seat}` : "";
+      summary.append(name, element("small", "", "#" + entry.number.toUpperCase() + seatTag));
       const quantity = element("span", "am", entry.quantity + "개");
       const status = element("span", "st");
       for (const cell of [summary, quantity, status]) cell.setAttribute("role", "cell");
@@ -459,7 +508,7 @@ function renderBoard() {
     const status = statusLabels[statusState];
     row.status.style.setProperty("--c",
       statusState === "canceled" ? "#c39b89"
-        : statusState === "delivered" ? "#c4d6ac" : "#efcaa4");
+        : (statusState === "delivered" || statusState === "eaten") ? "#c4d6ac" : "#efcaa4");
     setText(row.status, status);
   });
   boardBody.style.height = orders.length * 42 + "px";
@@ -467,6 +516,7 @@ function renderBoard() {
   setText(boardEmpty, "아직 접수된 주문이 없어요.");
   firstBoard = false;
 }
+
 for (const button of board.querySelectorAll("[data-sort]")) {
   button.addEventListener("click", () => {
     direction = sortKey === button.dataset.sort ? -direction : -1;
@@ -487,7 +537,7 @@ pause.addEventListener("click", () => {
   renderBoard();
 });
 
-// #353: stamp lands on its slot and the card flips when the reward is ready.
+// Loyalty Coupon Card (#353)
 const card = $("#coupon-card");
 const claim = $("#claim-stamp");
 const slots = Array.from({ length: 10 }, (_, index) => {
@@ -498,6 +548,7 @@ const slots = Array.from({ length: 10 }, (_, index) => {
   return slot;
 });
 let stamping = false;
+
 function duration(ms) {
   const minutes = Math.floor(ms / 60000);
   return minutes >= 60 ? Math.floor(minutes / 60) + "시간 " + minutes % 60 + "분" : minutes + "분";
@@ -508,7 +559,8 @@ function updateCoupon() {
   const progress = Math.min(balance, couponStamps);
   setText($("#coupon-time"), "오늘 " + duration(today) + " / " + duration(threshold) + " · 누적 " + duration(total));
   claim.disabled = sending || stamping || claimed || today < threshold;
-  setText(claim, claimed ? "오늘 도장 받았어요" : "오늘 도장 받기");
+  setText(claim, claimed ? "오늘 도장 받았어요" : "오늘 도장 받기 (+50G)");
+  updatePointsDisplay();
   if (stamping) return;
   slots.forEach((slot, index) => $(".u353-ink", slot).classList.toggle("is-on", index < progress));
   $(".u353-bar i", card).style.width = progress / couponStamps * 100 + "%";
@@ -534,12 +586,14 @@ function stamp(index) {
 
 function showDelivery(delivered) {
   if (!delivered || wasDeliveryNotified(delivered.id)) return;
+  window.cafeAudioPlay?.("chime");
   const opened = [...document.querySelectorAll("dialog[open]")].at(-1);
   if (opened) {
     const banner = element("div", "delivery-banner");
-    const icon = element("span", "", "🐱");
-    icon.setAttribute("aria-hidden", "true");
-    banner.append(icon, element("strong", "", "알바생이 쟁반을 배달했어요!"));
+    const icon = element("span", "cafe-clerk-sprite");
+    icon.style.width = "26px";
+    icon.style.height = "28px";
+    banner.append(icon, element("strong", "", "고양이 알바생이 책상에 쟁반을 배달했어요!"));
     banner.setAttribute("role", "status");
     opened.append(banner);
     setTimeout(() => banner.remove(), 3800);
@@ -576,21 +630,112 @@ function applyData(result, animateStamp = false, rejectedOrder = false) {
   if (Object.hasOwn(result, "order") && !(rejectedOrder && !result.order)) updateOwnOrder(result.order, result.now);
   if (boardDialog.open) renderBoard();
   updateCoupon();
+  updatePointsDisplay();
   if (!Object.hasOwn(result, "order")) updateShop();
 }
-async function request(action, params = {}) {
+
+async function request(actionName, params = {}) {
   const visitor = storage.get("sessionStorage", "neon-cafe-visitor");
   const response = await fetch("./api/snacks", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action, member, visitor, ...params }),
+    body: JSON.stringify({ action: actionName, member, visitor, ...params }),
     signal: AbortSignal.timeout(6000),
   });
-  if (!response.ok) throw Error("snack service");
-  return response.json();
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw Object.assign(Error("snack service"), { payload });
+  return payload;
 }
+
+// Expose Eat & G-Point Reward APIs to world trays and mini-games!
+window.cafeEatOrder = async (orderId) => {
+  try {
+    const result = await request("eat", { orderId });
+    applyData(result);
+    document.querySelector(".u070")?.dispatchEvent(new CustomEvent("pcbang-notice", {
+      detail: { message: "잘 먹었습니다! 빈 그릇 정리 보너스 +15 G 적립!", kind: "ok" },
+    }));
+  } catch {}
+};
+
+window.cafeEarnPoints = async (amount = 25, reason = "미니게임 보너스") => {
+  try {
+    const result = await request("earn", { amount });
+    applyData(result);
+    document.querySelector(".u070")?.dispatchEvent(new CustomEvent("pcbang-notice", {
+      detail: { message: `🪙 ${reason} +${amount} G 적립!`, kind: "ok" },
+    }));
+  } catch {}
+};
+
+// Seat Gift ("옆 자리 간식 쏘기") Modal Wiring
+function initGiftModal() {
+  if (!giftDialog) return;
+  const seatSelect = $("#gift-seat-select");
+  const itemSelect = $("#gift-item-select");
+  const noteInput = $("#gift-note-input");
+  const sendBtn = $("#gift-send-btn");
+  const feedback = $("#gift-feedback");
+
+  function populateGiftOptions() {
+    const peers = (window.cafeWorld?.getPeers?.() || []).filter((p) => p.seat);
+    seatSelect.replaceChildren();
+    if (!peers.length) {
+      const opt = element("option", "", "현재 착석 중인 다른 손님이 없어요");
+      opt.value = "";
+      seatSelect.append(opt);
+      sendBtn.disabled = true;
+    } else {
+      for (const peer of peers) {
+        const opt = element("option", "", `${seating.label(peer.seat) || peer.seat} · ${peer.name}님`);
+        opt.value = peer.seat;
+        seatSelect.append(opt);
+      }
+      sendBtn.disabled = (data?.loyalty?.points ?? 150) < 30;
+    }
+    if (catalog && !itemSelect.children.length) {
+      for (const group of catalog.categories) {
+        for (const item of group.items) {
+          const opt = element("option", "", `${item.name} (${group.name})`);
+          opt.value = item.id;
+          if (item.id === "eolbaksa") opt.selected = true;
+          itemSelect.append(opt);
+        }
+      }
+    }
+    setText(feedback, "");
+  }
+
+  sendBtn?.addEventListener("click", () => action(async () => {
+    if (!seatSelect.value || !itemSelect.value) return;
+    setText(feedback, "고양이 알바생에게 선물 주문을 전달하고 있어요...");
+    try {
+      const profile = window.cafeWorld?.getProfile?.() || { name: "단골 손님" };
+      const result = await request("gift", {
+        id: crypto.randomUUID(),
+        targetSeat: seatSelect.value,
+        itemId: itemSelect.value,
+        senderName: profile.name,
+        note: noteInput.value.trim(),
+      });
+      applyData(result);
+      noteInput.value = "";
+      setText(feedback, "🎁 선물 주문 접수 완료! 고양이 알바생이 배달을 시작해요 (-30 G)");
+      window.cafeAudioPlay?.("chime");
+    } catch (err) {
+      setText(feedback, err?.payload?.error === "gift_note_blocked"
+        ? "응원 메시지에 사용할 수 없는 표현이 있어요."
+        : "선물을 보내지 못했어요. G-포인트(30G)나 상대 좌석을 확인해 주세요.");
+    }
+  }));
+
+  new MutationObserver(() => {
+    if (giftDialog.open) populateGiftOptions();
+  }).observe(giftDialog, { attributes: true, attributeFilter: ["open"] });
+}
+
 async function refresh() {
   clearTimeout(pollTimer);
-  if (document.hidden || !(currentSeat() || shop.open || boardDialog.open || couponDialog.open)) return;
+  if (document.hidden || !(currentSeat() || shop.open || boardDialog.open || couponDialog.open || giftDialog?.open)) return;
   if (!sending && !inFlight) {
     inFlight = request("sync", { active: Boolean(currentSeat()) });
     try {
@@ -610,6 +755,7 @@ async function refresh() {
   clearTimeout(pollTimer);
   pollTimer = setTimeout(refresh, boardDialog.open ? 2800 : 8500);
 }
+
 async function action(task) {
   if (sending) return;
   sending = true;
@@ -618,12 +764,13 @@ async function action(task) {
   try { if (inFlight) await inFlight.catch(() => {}); await task(); }
   finally { sending = false; updateShop(); updateCoupon(); }
 }
+
 submit.addEventListener("click", () => action(async () => {
   setText(shopFeedback, "주문을 보내고 있어요.");
   try {
     const result = await request("order", {
       id: retryId ||= crypto.randomUUID(),
-      items: [...cart].map(([id, count]) => ({ id, count })),
+      items: [...cart].map(([id, entry]) => ({ id, count: entry.count, options: [...entry.options] })),
       coupon: rewardToggle.checked,
     });
     if (result.order) {
@@ -631,23 +778,28 @@ submit.addEventListener("click", () => action(async () => {
       retryId = null;
       rewardToggle.checked = false;
       setText(shopFeedback, "");
+      window.cafeAudioPlay?.("chime");
     } else setText(shopFeedback, "좌석이나 쿠폰 상태가 바뀌었거나 이미 조리 중인 주문이 있어요.");
     applyData(result, false, Boolean(result.rejected));
   } catch { setText(shopFeedback, "주문을 확인하지 못했어요. 다시 눌러주세요."); }
 }));
+
 claim.addEventListener("click", () => action(async () => {
   try {
     const result = await request("stamp");
-    setText(couponFeedback, result.loyalty.claimed ? "오늘 도장이 기록됐어요." : "오늘 이용 시간이 아직 부족해요.");
+    setText(couponFeedback, result.loyalty.claimed ? "오늘 도장과 +50 G 포인트가 기록됐어요!" : "오늘 이용 시간이 아직 부족해요.");
     applyData(result, true);
   } catch { setText(couponFeedback, "도장을 받지 못했어요. 잠시 후 다시 눌러주세요."); }
 }));
+
 const onDialog = new MutationObserver(() => {
   if (shop.open) requestAnimationFrame(() => markSection(sections[0]?.id));
   if (boardDialog.open) renderBoard();
   refresh();
 });
-for (const dialog of [shop, boardDialog, couponDialog]) onDialog.observe(dialog, { attributes: true, attributeFilter: ["open"] });
+for (const dialog of [shop, boardDialog, couponDialog, giftDialog].filter(Boolean)) {
+  onDialog.observe(dialog, { attributes: true, attributeFilter: ["open"] });
+}
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) clearShopAnimations();
   else refresh();
@@ -660,13 +812,16 @@ document.addEventListener("cafe-seat-phase", () => {
   updateShop();
   refresh();
 });
+
 fetch("./snack-menu.json").then((response) => {
   if (!response.ok) throw Error("catalog");
   return response.json();
 }).then((menu) => {
   catalog = menu;
-  setText($("span", reward), menu.reward.icon + " " + menu.reward.name + " 쿠폰 적용");
+  const rewardLabel = $("span", reward);
+  rewardLabel.replaceChildren(makePixelIcon(menu.reward.sprite ?? 23), document.createTextNode(" " + menu.reward.name + " 쿠폰 적용"));
   renderCatalog();
+  initGiftModal();
 }).catch(() => menuBody.append(element("p", "shop-menu-empty", "매점 메뉴를 불러올 수 없어요. 새로고침해 주세요.")));
 updateShop();
 refresh();

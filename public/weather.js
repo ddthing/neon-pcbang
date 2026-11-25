@@ -32,12 +32,12 @@ layer.innerHTML = `<svg viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/sv
       <path class="sky-top" d="M0 0h1040v90H0z"/>
       <path class="sky-band" d="M0 28h1040v62H0z"/>
       <path class="sky-horizon" d="M0 44h1040v46H0z"/>
-      <g class="sky-stars" fill="#f1e6d2">
+      <g class="sky-stars" fill="#fff3dc">
         <path d="M37 12h2v2h-2z M106 29h2v2h-2z M145 8h2v2h-2z M229 19h2v2h-2z M314 11h2v2h-2z M371 24h2v2h-2z
           M413 12h2v2h-2z M476 23h2v2h-2z M552 13h2v2h-2z M628 27h2v2h-2z M699 17h2v2h-2z M785 8h2v2h-2z M878 28h2v2h-2z M948 14h2v2h-2z"/>
       </g>
       <path class="sky-sun" d="M195 20h12v3h4v4h3v12h-3v4h-4v3h-12v-3h-4v-4h-3V27h3v-4h4z"/>
-      <path class="sky-moon" fill="#e9e0cc" d="M178 12h8v3h-3v4h-2v7h2v3h4v3h-9v-2h-4v-4h-2V18h2v-4h4z"/>
+      <path class="sky-moon" fill="#f5ead4" d="M178 12h8v3h-3v4h-2v7h2v3h4v3h-9v-2h-4v-4h-2V18h2v-4h4z"/>
       <path class="sky-cloud" d="M-65 29h13v-4h13v-3h16v3h11v4H8v3h-73z
         M57 23h13v-4h16v-3h21v3h15v4h19v3H57z M305 35h16v-4h17v-3h24v3h12v4h24v3h-93z
         M514 22h24v-4h25v-3h23v3h11v4h21v3H514z M757 28h15v-4h18v-3h25v3h13v4h20v3h-91z
@@ -50,8 +50,8 @@ layer.innerHTML = `<svg viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/sv
         <use href="#city-bird" x="45" y="24"/><use href="#city-bird" x="66" y="17"/><use href="#city-bird" x="77" y="29"/>
       </g>
       <g class="city-traffic">
-        <path class="city-car car-east" fill="#edd6ac" d="M27 87h8v1h-8z M96 88h6v1h-6z M191 87h6v1h-6z M322 88h9v1h-9z M524 87h7v1h-7z"/>
-        <path class="city-car car-west" fill="#dc9c8b" d="M192 88h6v1h-6z M455 89h7v1h-7z M601 89h8v1h-8z M808 88h6v1h-6z M993 88h10v1h-10z"/>
+        <path class="city-car car-east" fill="#ffe7a8" d="M27 87h8v1h-8z M96 88h6v1h-6z M191 87h6v1h-6z M322 88h9v1h-9z M524 87h7v1h-7z"/>
+        <path class="city-car car-west" fill="#f5a6b8" d="M192 88h6v1h-6z M455 89h7v1h-7z M601 89h8v1h-8z M808 88h6v1h-6z M993 88h10v1h-10z"/>
       </g>
       <g class="sky-fog"><path d="M-65 53h115v3h80v-2h183v4h238v-3h140v3h192v-4h192v12H-65z"/>
         <path d="M-65 73H70v-4h125v3h186v-5h143v3h211v5h197v-5h143v16H-65z"/></g>
@@ -68,15 +68,39 @@ layer.innerHTML = `<svg viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/sv
   <svg class="room-transom" x="420" y="0" width="1010" height="55" viewBox="10 0 1010 36" preserveAspectRatio="none"><use href="#cafe-sky"/></svg>
 </svg>`;
 
-const seoulHour = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
-});
+const geoKey = "cafe-user-geo-v1";
+const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Seoul";
 const names = { clear: "맑음", cloud: "흐림", rain: "비", snow: "눈", storm: "뇌우", fog: "안개" };
 const phaseNames = { dawn: "아침", day: "낮", dusk: "노을", night: "밤" };
 let weather = null;
 let updated = 0;
 let pending = false;
 let retryAt = 0;
+let geoAttempted = false;
+
+function readCachedGeo() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(geoKey));
+    if (raw && Number.isFinite(raw.lat) && Number.isFinite(raw.lon) && Date.now() - raw.at < 6 * 3600_000) {
+      return raw;
+    }
+  } catch {}
+  return null;
+}
+
+function saveGeo(lat, lon) {
+  try { localStorage.setItem(geoKey, JSON.stringify({ lat, lon, at: Date.now() })); } catch {}
+}
+
+function localClockFormatter(tz) {
+  try {
+    return new Intl.DateTimeFormat("en-GB", {
+      timeZone: tz || userTz, hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+    });
+  } catch {
+    return new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  }
+}
 
 function kind(code) {
   if (code === 0) return "clear";
@@ -93,37 +117,60 @@ function minutes(time) {
   return h * 60 + m;
 }
 
+function isoTimeMinutes(iso) {
+  if (typeof iso !== "string") return null;
+  const match = /T(\d{2}:\d{2})/.exec(iso);
+  return match ? minutes(match[1]) : null;
+}
+
 function paintSky() {
   const now = new Date();
-  const localMinutes = minutes(seoulHour.format(now));
-  const daylight = (event, fallback) => {
-    const at = Date.parse((weather?.[event] || "") + "+09:00");
-    return Number.isFinite(at) && Math.abs(at - now) < 18 * 3600000
-      ? minutes(seoulHour.format(at))
-      : fallback;
-  };
-  const sunrise = daylight("sunrise", 420);
-  const sunset = daylight("sunset", 1080);
+  const fmt = localClockFormatter(weather?.timezone || userTz);
+  const localMinutes = minutes(fmt.format(now));
+  const sunrise = isoTimeMinutes(weather?.sunrise) ?? 400; // ~06:40 fallback
+  const sunset = isoTimeMinutes(weather?.sunset) ?? 1070; // ~17:50 fallback
   const phase = localMinutes < sunrise - 35 || localMinutes >= sunset + 35 ? "night"
     : localMinutes < sunrise + 40 ? "dawn"
     : localMinutes >= sunset - 45 ? "dusk" : "day";
   const current = Date.now() - updated < 30 * 60000 ? weather : null;
   const condition = current ? kind(current.code) : "unknown";
+  const area = current?.location || "내 위치";
   const label = condition === "unknown"
-    ? `서울 · ${phaseNames[phase]} · 날씨 미연결`
-    : `서울 · ${names[condition]} ${Math.round(current.temperature)}°`;
+    ? `${area} · ${phaseNames[phase]}`
+    : `${area} · ${names[condition]} ${Math.round(current.temperature)}°`;
   layer.dataset.phase = phase;
   layer.dataset.weather = condition;
   document.body.dataset.cafeLight = phase;
+  document.body.dataset.cafeWeather = condition;
   badge.textContent = label;
   badge.setAttribute("aria-label", `${label} (날씨 출처: Open-Meteo)`);
+}
+
+function requestBrowserLocation() {
+  if (geoAttempted || readCachedGeo() || !navigator.geolocation) return;
+  geoAttempted = true;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      saveGeo(pos.coords.latitude, pos.coords.longitude);
+      retryAt = 0;
+      refresh();
+    },
+    () => {},
+    { maximumAge: 6 * 3600_000, timeout: 4500 },
+  );
 }
 
 async function refresh() {
   if (document.hidden || pending || Date.now() < retryAt) return;
   pending = true;
   try {
-    const response = await fetch("./api/weather", { signal: AbortSignal.timeout(6500) });
+    const params = new URLSearchParams({ tz: userTz });
+    const geo = readCachedGeo();
+    if (geo) {
+      params.set("lat", String(geo.lat));
+      params.set("lon", String(geo.lon));
+    }
+    const response = await fetch("./api/weather?" + params.toString(), { signal: AbortSignal.timeout(6500) });
     if (!response.ok) throw new Error("Weather unavailable");
     const data = await response.json();
     if (!Number.isInteger(data.code) || !Number.isFinite(data.temperature)) throw new Error("Invalid weather");
@@ -139,6 +186,7 @@ async function refresh() {
 }
 
 paintSky();
+requestBrowserLocation();
 refresh();
 setInterval(() => {
   if (document.hidden) return;

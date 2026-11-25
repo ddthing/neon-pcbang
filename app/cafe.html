@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#272624">
-  <meta name="description" content="서울의 날씨가 창밖으로 흐르는 픽셀 아트 동네 PC방. 캐릭터로 매장을 돌아다니고 자리를 골라보세요.">
-  <meta property="og:title" content="길모퉁이PC방 · 우리 동네 PC방">
-  <meta property="og:description" content="서울의 하늘 아래, 키오스크에서 자리를 고르고 잠깐 쉬어가요.">
+  <meta name="description" content="내 위치의 날씨와 시간이 창밖으로 흐르는 포근한 픽셀 아트 온라인 PC방. 9종의 미니게임과 오픈키친 매점, 실내·야외 흡연구역을 즐겨보세요.">
+  <meta property="og:title" content="길모퉁이PC방 · 우리 동네 코지 픽셀 PC방">
+  <meta property="og:description" content="포근한 우드 감성 동네 PC방에서 자리를 고르고 라면과 미니게임 한 판 하고 가요.">
   <link rel="icon" href="./icons.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="./floor.css">
@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="./chat.css">
   <link rel="stylesheet" href="./cafe-delivery.css">
   <script src="./boot.js" defer></script>
+  <script src="./audio-engine.js" defer></script>
   <script src="./lucian-motion.js" defer></script>
   <script src="./visit.js" defer></script>
   <script src="./cafe-screen-shapes.js" defer></script>
@@ -34,14 +35,13 @@
   <script src="./weather.js" type="module"></script>
   <script src="./ambience.js" type="module"></script>
   <script src="./corner-shop.js" type="module"></script>
-  <title>길모퉁이PC방 · 우리 동네 PC방</title>
+  <title>길모퉁이PC방 · 우리 동네 픽셀 PC방</title>
 </head>
 <body class="cafe-fullscreen">
-  <!-- Lucian UX/UI Prompt #256 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#256 -->
   <div class="ux u256" id="cafe-boot" hidden>
     <div class="u256-ld">
       <div class="u256-hf u256-a"></div><div class="u256-hf u256-b"></div>
-      <div class="u256-bn">길모퉁이PC방 <small>· 24H</small></div>
+      <div class="u256-bn">길모퉁이PC방 <small>· COZY PIXEL 24H</small></div>
       <div class="u256-ct" role="progressbar" aria-label="PC방 입장 준비" aria-valuenow="0">
         <small id="boot-label">입장 준비 중</small>
         <div class="u256-n"><span>0</span><i>%</i></div>
@@ -58,7 +58,7 @@
       </a>
       <div class="top-actions">
         <span class="open-status mono"><i></i> 24H OPEN</span>
-        <!-- Lucian UX/UI Prompt #013 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#013 -->
+        <button class="walk-button" id="sfx-toggle" type="button" aria-pressed="true">🔊 효과음 켜짐</button>
         <div class="ux u013">
           <div class="u013-txt">
             <b class="u013-lab" id="rain-label">빗소리</b>
@@ -79,13 +79,13 @@
   <main class="shell" id="main">
     <section class="intro" aria-labelledby="title">
       <div>
-        <p class="overline mono"><span></span> 서울 골목 2층 <i aria-hidden="true"></i> 24시간 영업</p>
+        <p class="overline mono"><span></span> 우리 동네 2층 <i aria-hidden="true"></i> 24시간 영업</p>
         <h1 id="title">길모퉁이<em>PC방</em><span aria-hidden="true">✦</span></h1>
-        <p class="intro-text">창밖은 오늘의 서울. 내 자리에 앉아 한 판 하고 가요.</p>
+        <p class="intro-text">창밖은 지금 내 위치의 날씨와 시간. 내 자리에 앉아 한 판 하고 가요.</p>
       </div>
       <div class="clock">
         <svg aria-hidden="true"><use href="./icons.svg#clock"/></svg>
-        <div><small class="mono">SEOUL / KST</small><time class="mono" id="clock">--:--</time></div>
+        <div><small class="mono">LOCAL TIME</small><time class="mono" id="clock">--:--</time></div>
       </div>
     </section>
 
@@ -94,7 +94,7 @@
         <div class="room-head">
           <div class="window-title"><span class="stage-brand">길모퉁이PC방</span><h2 id="room-title">PC방 입구</h2></div>
           <div class="room-hud">
-            <a class="window-weather mono" id="window-weather" href="https://open-meteo.com/" target="_blank" rel="noopener" aria-label="날씨 출처: Open-Meteo">서울 · 날씨 연결 중</a>
+            <a class="window-weather mono" id="window-weather" href="https://open-meteo.com/" target="_blank" rel="noopener" aria-label="날씨 출처: Open-Meteo">내 위치 · 날씨 연결 중</a>
             <span class="room-live" id="cafe-connection" role="status">매장 연결 중</span>
             <button class="walk-button view-button" id="cafe-overview" type="button" aria-pressed="false">전체 지도</button>
             <button class="walk-button view-button" id="cafe-fullscreen" type="button" aria-pressed="false">
@@ -105,22 +105,27 @@
         </div>
         <div class="scene-viewport">
           <div class="scene" data-space="lobby" tabindex="0" aria-label="매장 이동 화면. 방향키 또는 W A S D로 움직이세요.">
-            <img id="lobby-art" src="./corner-hall-timber.webp" fetchpriority="high" width="1536" height="1024" draggable="false" alt="우드 바닥의 픽셀 아트 PC방에 1인·2인·5인·6인 게임룸과 매점이 보이는 모습">
-            <img id="rooms-art" data-src="./pcbang-rooms-pastel.webp" width="1536" height="1024" draggable="false" alt="" hidden>
-            <img class="cafe-empty-counter" id="cafe-empty-counter" src="./cafe-counter-empty.svg" width="116" height="116" fetchpriority="low" alt="" hidden>
+            <img id="lobby-art" src="./corner-hall-timber.webp" fetchpriority="high" width="1536" height="1024" draggable="false" alt="우드 바닥의 포근한 픽셀 아트 PC방에 1인·2인·5인·6인 게임룸, 오픈키친 매점, 실내 흡연구역, 야외 흡연구역이 보이는 모습">
+            <img id="rooms-art" data-src="./pcbang-rooms-pixel.png" width="1536" height="1024" draggable="false" alt="" hidden>
+            <img id="booth-art" data-src="./pcbang-smoking-booth.png" width="1536" height="1024" draggable="false" alt="따뜻한 우드와 반투명 유리, 환풍기가 도는 실내 흡연구역" hidden>
+            <img id="terrace-art" data-src="./pcbang-night-terrace.png" width="1536" height="1024" draggable="false" alt="우리 동네 하늘과 밀크커피 자판기가 있는 2층 야외 흡연구역" hidden>
+            <img class="hall-prop" id="hall-booth-prop" src="./sprites/hall-smoking-booth.png" width="180" height="112" alt="" aria-hidden="true">
+            <img class="hall-prop" id="hall-terrace-prop" src="./sprites/hall-terrace-door.png" width="132" height="88" alt="" aria-hidden="true">
+            <img class="cafe-empty-counter" id="cafe-empty-counter" src="./sprites/counter-open-kitchen.png" width="116" height="116" fetchpriority="low" alt="" hidden>
             <div id="window-view" class="window-view" aria-hidden="true"></div>
             <div id="cafe-ambience" aria-hidden="true"></div>
             <div id="monitor-layer" aria-hidden="true"></div>
             <div class="cafe-avatars" id="cafe-avatars" aria-hidden="true"></div>
             <div id="cafe-delivery-clerk" class="cafe-delivery-clerk" aria-hidden="true" hidden>
-              <div class="cafe-clerk-body"><img src="./cafe-clerk-walk.svg" alt="" fetchpriority="low"><span class="cafe-clerk-tray"></span></div>
+              <div class="cafe-clerk-body"></div>
             </div>
             <div id="cafe-delivery-trays" class="cafe-delivery-trays"></div>
             <button id="seat-marker" class="seat-marker mono" type="button" hidden></button>
             <button id="kiosk-pin" class="kiosk-pin" type="button" aria-label="입구 키오스크에서 자리 고르기"><span>자리 선택기</span></button>
-            <button class="stage-room-door snack-counter" type="button" data-open="snack-board">매점 주문표</button>
-            <div id="room-doors" aria-label="룸 입구"></div>
+            <button class="stage-room-door snack-counter" type="button" data-open="snacks">매점 · 오픈키친</button>
+            <div id="room-doors" aria-label="구역 입구"></div>
           </div>
+          <div class="relax-hud" id="relax-hud" hidden></div>
           <div class="seat-journey ux u042" id="seat-journey" aria-hidden="true" hidden>
             <ol class="u042-steps">
               <li class="u042-line"><i></i></li>
@@ -134,22 +139,26 @@
           <div class="cafe-joystick" id="cafe-joystick" aria-hidden="true"><span></span></div>
         </div>
         <div class="walk-controls">
-          <p class="walk-guide"><strong>매장 둘러보기</strong><span class="walk-key-hint"><kbd>WASD</kbd> <kbd>↑ ↓ ← →</kbd> 또는 바닥 누르기</span><span class="walk-touch-hint">조이스틱 밀기 · 바닥 탭</span></p>
-          <button class="walk-button" id="cafe-wave" type="button">👋 손 흔들기</button>
+          <p class="walk-guide"><strong>매장 둘러보기</strong><span class="walk-key-hint"><kbd>WASD</kbd> <kbd>↑ ↓ ← →</kbd> · 바닥 클릭 · <kbd>E</kbd> 상호작용</span><span class="walk-touch-hint">조이스틱 밀기 · 바닥 탭</span></p>
+          <button class="walk-button" id="open-wardrobe" type="button">👕 옷장</button>
+          <button class="walk-button" id="cafe-wave" type="button">👋 인사</button>
           <div class="game-view-actions">
             <button class="walk-button stage-key" id="game-view-floor" type="button">좌석 선택</button>
             <button class="walk-button" id="game-view-pc" type="button" hidden>내 PC</button>
-            <button class="walk-button" id="cafe-menu-open" type="button">게임 메뉴</button>
+            <button class="walk-button stage-key" id="quick-return-seat" type="button" hidden>💻 내 자리 복귀</button>
+            <button class="walk-button" id="quick-booth" type="button">🚬 실내 흡연구역</button>
+            <button class="walk-button" id="quick-terrace" type="button">🌿 야외 흡연구역</button>
+            <button class="walk-button" id="cafe-menu-open" type="button">메뉴</button>
           </div>
           <form class="walk-name" id="cafe-name-form">
-            <label for="cafe-name">내 닉네임</label>
+            <label for="cafe-name">닉네임</label>
             <input id="cafe-name" type="text" maxlength="12" pattern="[\p{L}\p{N} _·\-]{1,12}" autocomplete="off">
             <button class="walk-button" type="submit">저장</button>
           </form>
           <div class="cafe-chat-controls">
             <form class="cafe-chat-form" id="cafe-chat-form">
               <label class="pc-sr-only" for="cafe-chat-input">채팅</label>
-              <input id="cafe-chat-input" type="text" maxlength="80" autocomplete="off" placeholder="같은 공간의 손님에게 말하기" required>
+              <input id="cafe-chat-input" type="text" maxlength="80" autocomplete="off" placeholder="같은 구역 손님에게 말하기" required>
               <button class="walk-button" type="submit">보내기</button>
               <p class="pc-sr-only" id="cafe-chat-status" role="status"></p>
             </form>
@@ -170,7 +179,7 @@
       </section>
 
       <dialog class="controls hub-menu" id="cafe-menu" aria-labelledby="cafe-menu-title">
-        <div class="hub-heading"><h2 id="cafe-menu-title">게임 메뉴</h2><button class="close" type="button" data-close aria-label="게임 메뉴 닫기">×</button></div>
+        <div class="hub-heading"><h2 id="cafe-menu-title">길모퉁이 메뉴</h2><button class="close" type="button" data-close aria-label="메뉴 닫기">×</button></div>
         <div class="hub-ambience"></div>
         <section class="kiosk" id="kiosk" aria-labelledby="kiosk-title">
           <div class="kiosk-top"><span><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg> 길모퉁이PC방</span><span class="kiosk-led"><i></i> 키오스크</span></div>
@@ -180,7 +189,7 @@
             <p class="kiosk-copy" id="kiosk-copy">전체 좌석도에서 앉고 싶은 자리를 골라요.</p>
             <div class="kiosk-counts" id="kiosk-counts"><span><strong>88</strong> 일반석</span><span><strong>14</strong> 룸 좌석</span></div>
             <div id="stage-seated" hidden>
-              <div class="ticket"><span class="mono">MY SEAT</span><strong id="ticket-seat"></strong><small>이용 시간 <time class="mono" id="session-time">00:00</time></small></div>
+              <div class="ticket"><span class="mono">MY SEAT</span><strong id="ticket-seat"></strong><small>이용 시간 <time class="mono" id="session-time">00:00</time> · <b data-gpoints>150 G</b></small></div>
               <button class="primary enter" id="open-monitor" type="button"><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg> 내 PC 열기</button>
             </div>
             <button class="primary enter" id="open-floor" type="button"><span>전체 좌석도 열기</span><svg aria-hidden="true"><use href="./icons.svg#arrow"/></svg></button>
@@ -203,10 +212,36 @@
     </div>
 
     <footer class="footer">
-      <span class="mono">GILMOTUNGI PC BANG <span class="footer-dot">✦</span> 우리 동네 PC방</span>
+      <span class="mono">GILMOTUNGI PC BANG <span class="footer-dot">✦</span> 우리 동네 픽셀 PC방</span>
       <span>함께 둘러보는 온라인 PC방</span>
     </footer>
   </main>
+
+  <!-- Avatar Customization Wardrobe Modal -->
+  <dialog id="avatar-wardrobe" aria-labelledby="wardrobe-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono">PIXEL WARDROBE / AVATAR</span><button class="close" type="button" data-close aria-label="옷장 닫기">×</button></div>
+      <h2 id="wardrobe-title">내 캐릭터 옷장</h2>
+      <p class="panel-copy">헤어, 후드·과잠 코디, 게이밍 헤드셋과 안경을 자유롭게 조합해 보세요.</p>
+      <div class="wardrobe-stage">
+        <canvas id="wardrobe-preview" width="32" height="40" aria-label="캐릭터 미리보기"></canvas>
+        <div>
+          <strong class="mono">4방향 정통 픽셀 아바타</strong>
+          <p class="panel-copy">매장 걷기, 착석 타이핑, 흡연·밀크커피 포즈에 모두 반영돼요.</p>
+          <div class="wardrobe-poses">
+            <button class="walk-button" type="button" data-pose-preview="idle">기본</button>
+            <button class="walk-button" type="button" data-pose-preview="walk">걷기</button>
+            <button class="walk-button" type="button" data-pose-preview="sit">착석</button>
+            <button class="walk-button" type="button" data-pose-preview="smoke">흡연</button>
+            <button class="walk-button" type="button" data-pose-preview="coffee">밀크커피</button>
+            <button class="walk-button" type="button" id="wardrobe-random">🎲 랜덤 코디</button>
+          </div>
+        </div>
+      </div>
+      <div class="wardrobe-controls" id="wardrobe-controls"></div>
+      <button class="primary enter" id="wardrobe-save" type="button">이 스타일로 갈아입기</button>
+    </div>
+  </dialog>
 
   <dialog class="floor-kiosk" id="floor-kiosk" aria-labelledby="floor-title">
     <div class="floor-top">
@@ -239,7 +274,9 @@
                     <use href="./room-bays.svg#room-squad"/><text x="1401" y="657">6인룸</text>
                   </a>
                 </svg>
-                <span class="floor-map-marker" style="--x:11%;--y:71%">카운터</span>
+                <span class="floor-map-marker" style="--x:11%;--y:11%">실내 흡연구역</span>
+                <span class="floor-map-marker" style="--x:86%;--y:10%">야외 흡연구역</span>
+                <span class="floor-map-marker" style="--x:11%;--y:71%">오픈키친</span>
                 <span class="floor-map-marker" style="--x:26%;--y:85%">키오스크</span>
                 <span class="floor-map-marker" style="--x:49%;--y:88%">입구</span>
               </div>
@@ -269,9 +306,10 @@
     </div>
   </dialog>
 
+  <!-- GILMOTUNGI OS 2.0 DESKTOP -->
   <dialog class="pc-desktop" id="pc-desktop" aria-labelledby="pc-title">
     <div class="pc-statusbar">
-      <span class="mono"><i></i> 길모퉁이 OS</span>
+      <span class="mono"><i></i> 길모퉁이 OS 2.0 · COZY LAUNCHER</span>
       <button class="close" type="button" data-close aria-label="PC 화면 닫기">×</button>
     </div>
     <div class="pc-workspace">
@@ -302,24 +340,35 @@
       <h2 class="pc-sr-only" id="pc-title" tabindex="-1">길모퉁이PC방 바탕화면</h2>
       <div class="pc-shortcuts" aria-label="바탕화면 바로가기">
         <button class="pc-shortcut" type="button" data-launcher><span class="pc-app-icon sage"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg></span>게임 런처</button>
+        <button class="pc-shortcut" type="button" data-open="snacks"><span class="pc-app-icon cream"><svg aria-hidden="true"><use href="./icons.svg#bowl"/></svg></span>매점 2.0</button>
         <button class="pc-shortcut" type="button" data-open="focus"><span class="pc-app-icon lilac"><svg aria-hidden="true"><use href="./icons.svg#clock"/></svg></span>집중 모드</button>
         <button class="pc-shortcut" type="button" data-wallpaper><span class="pc-app-icon cream"><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg></span>배경 설정</button>
       </div>
       <section class="pc-cafe" aria-labelledby="pc-cafe-title">
-        <div class="pc-panel-heading"><span class="pc-status-dot"></span><h3 id="pc-cafe-title">길모퉁이PC방</h3></div>
+        <div class="pc-panel-heading"><span class="pc-status-dot"></span><h3 id="pc-cafe-title">좌석 관리 위젯</h3><span class="mono" data-gpoints>150 G</span></div>
         <p id="pc-seat" class="mono"></p>
         <dl><dt>이용 시간</dt><dd><time class="mono" id="pc-session-time">00:00</time></dd></dl>
-        <button class="primary enter" type="button" data-open="snacks"><svg aria-hidden="true"><use href="./icons.svg#bowl"/></svg>먹거리 주문</button>
+        <button class="primary enter" type="button" data-open="snacks"><svg aria-hidden="true"><use href="./icons.svg#bowl"/></svg>먹거리 주문 (24종)</button>
+        <button class="pc-sub-btn" type="button" data-open="snack-gift">🎁 옆 자리 간식 쏘기</button>
         <p id="pc-order-summary">내 자리로 간식 보내기</p>
-        <button class="pc-end" id="pc-end" type="button">사용 종료</button>
+        <div class="pc-break-row">
+          <button class="pc-break-btn" type="button" data-pc-break="booth">🚬 실내 흡연구역</button>
+          <button class="pc-break-btn" type="button" data-pc-break="terrace">🌿 야외 흡연구역</button>
+        </div>
+        <button class="pc-end" id="pc-end" type="button">자리 반납 · 사용 종료</button>
       </section>
       <section class="pc-launcher" aria-labelledby="pc-launcher-title">
-        <div class="pc-panel-heading"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg><h3 id="pc-launcher-title" tabindex="-1">게임 런처</h3><span class="mono">04 GAMES</span></div>
+        <div class="pc-panel-heading"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg><h3 id="pc-launcher-title" tabindex="-1">길모퉁이 게임 런처</h3><span class="mono">09 GAMES · LIVE RANK</span></div>
         <div class="pc-apps">
-          <button class="pc-app" type="button" data-open="arcade"><span class="pc-app-icon lilac" aria-hidden="true">▦</span><span><strong>모퉁이 벽돌깨기</strong><small>공을 튕겨 벽돌을 깨요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
-          <button class="pc-app" type="button" data-open="merge"><span class="pc-app-icon sage mono" aria-hidden="true">2²</span><span><strong>2048</strong><small>같은 숫자를 밀어서 합쳐요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
-          <button class="pc-app" type="button" data-open="mines"><span class="pc-app-icon cream" aria-hidden="true"><svg><use href="./icons.svg#mine"/></svg></span><span><strong>지뢰찾기</strong><small>안전한 칸을 모두 열어요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
-          <button class="pc-app" type="button" data-open="sudoku"><span class="pc-app-icon sage mono" aria-hidden="true">9</span><span><strong>스도쿠</strong><small>빈칸에 숫자 1~9를 채워요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="pvp"><span class="pc-app-icon pixel-launcher-slot" style="--lx:0%" aria-hidden="true"></span><span><strong>모퉁이 대국장 <em class="pc-hot">LIVE</em></strong><small>좌석 간 실시간 오목·알까기</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="tetris"><span class="pc-app-icon pixel-launcher-slot" style="--lx:12.5%" aria-hidden="true"></span><span><strong>모퉁이 블록 드롭 <em class="pc-hot">NEW</em></strong><small>홀드·고스트 정통 테트리스</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="bungeoppang"><span class="pc-app-icon pixel-launcher-slot" style="--lx:25%" aria-hidden="true"></span><span><strong>길모퉁이 붕어빵 포차</strong><small>팥·슈크림·피자 황금굽기 타이쿤</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="snack-tycoon"><span class="pc-app-icon pixel-launcher-slot" style="--lx:37.5%" aria-hidden="true"></span><span><strong>알바냥의 매점 러시</strong><small>짜계치·얼박사 스피드 조리</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="acidrain"><span class="pc-app-icon pixel-launcher-slot" style="--lx:50%" aria-hidden="true"></span><span><strong>코지 빗방울 산성비</strong><small>청축·갈축·적축 타자 디펜스</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="mines"><span class="pc-app-icon pixel-launcher-slot" style="--lx:62.5%" aria-hidden="true"></span><span><strong>지뢰찾기 (초·중·고급)</strong><small>3단계 난이도와 양클릭 오픈</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="arcade"><span class="pc-app-icon pixel-launcher-slot" style="--lx:75%" aria-hidden="true"></span><span><strong>모퉁이 벽돌깨기 DX</strong><small>멀티볼·와이드 아이템 아케이드</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="merge"><span class="pc-app-icon pixel-launcher-slot" style="--lx:87.5%" aria-hidden="true"></span><span><strong>2048</strong><small>같은 숫자를 밀어서 합쳐요</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="sudoku"><span class="pc-app-icon pixel-launcher-slot" style="--lx:100%" aria-hidden="true"></span><span><strong>스도쿠 (3단계)</strong><small>쉬움·보통·어려움 두뇌 퍼즐</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
         </div>
       </section>
     </div>
@@ -327,16 +376,20 @@
       <details class="pc-start" id="pc-start">
         <summary><i aria-hidden="true"></i>시작</summary>
         <div class="pc-start-menu">
-          <button type="button" data-launcher>게임 런처</button>
-          <button type="button" data-open="snacks">먹거리 주문</button>
+          <button type="button" data-launcher>게임 런처 (9종)</button>
+          <button type="button" data-open="snacks">매점 2.0 주문</button>
+          <button type="button" data-open="snack-gift">옆 자리 간식 쏘기</button>
+          <button type="button" data-pc-break="booth">실내 흡연구역 외출</button>
+          <button type="button" data-pc-break="terrace">야외 흡연구역 외출</button>
           <button type="button" data-wallpaper>바탕화면 설정</button>
         </div>
       </details>
       <button class="pc-task" type="button" data-launcher><svg aria-hidden="true"><use href="./icons.svg#game"/></svg>게임</button>
+      <button class="pc-task" type="button" data-open="snacks"><svg aria-hidden="true"><use href="./icons.svg#bowl"/></svg>매점</button>
       <button class="pc-task" type="button" data-wallpaper><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg>배경</button>
       <time class="mono" id="pc-clock">--:--</time>
     </div>
-    <div class="pc-bezel mono"><span>길모퉁이PC방</span><i aria-hidden="true"></i></div>
+    <div class="pc-bezel mono"><span>길모퉁이PC방 · COZY PIXEL MONITOR</span><i aria-hidden="true"></i></div>
   </dialog>
 
   <dialog id="wallpaper" aria-labelledby="wallpaper-title">
@@ -357,11 +410,178 @@
     </div>
   </dialog>
 
+  <!-- GAME 01: SEAT-TO-SEAT PVP ARENA (OMOK & ALKKAGI) -->
+  <dialog id="pvp" aria-labelledby="pvp-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>01</span> / LIVE PVP ARENA</span><button class="close" type="button" data-close aria-label="대국장 닫기">×</button></div>
+      <h2 id="pvp-title">모퉁이 대국장 (오목 · 알까기)</h2>
+      <p class="panel-copy">같은 매장 좌석 손님과 실시간 1:1 대전을 펼치거나 고양이 알바 AI와 한 수 두어 보세요.</p>
+      <div class="pvp-toolbar">
+        <select id="pvp-game-type" aria-label="대전 종목">
+          <option value="omok">⚫ 정통 15줄 오목</option>
+          <option value="alkkagi">🎯 물리 바둑돌 알까기</option>
+        </select>
+        <select id="pvp-invite-seat" aria-label="초대할 좌석"></select>
+        <button class="walk-button stage-key" id="pvp-create" type="button">대국방 만들기</button>
+        <button class="walk-button" id="pvp-vs-ai" type="button">🐱 알바 AI 대국</button>
+        <button class="walk-button" id="pvp-leave" type="button" hidden>방 나가기</button>
+      </div>
+      <div class="pvp-rooms" id="pvp-rooms"></div>
+      <canvas id="pvp-canvas" width="360" height="360" aria-label="오목 및 알까기 대국판"></canvas>
+      <p class="game-status" id="pvp-status" role="status">대국 종목을 고르고 방을 만들거나 AI 대국을 시작하세요.</p>
+    </div>
+  </dialog>
+
+  <!-- GAME 02: NEON TETRIS -->
+  <dialog id="tetris" aria-labelledby="tetris-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>02</span> / BLOCK DROP</span><button class="close" type="button" data-close aria-label="테트리스 닫기">×</button></div>
+      <h2 id="tetris-title">모퉁이 블록 드롭 (테트리스)</h2>
+      <div class="game-hud mono">
+        <span>점수 <strong id="tetris-score">0</strong></span>
+        <span>최고 <strong id="tetris-best">0</strong></span>
+        <span>라인 <strong id="tetris-lines">0</strong></span>
+        <span>레벨 <strong id="tetris-level">1</strong></span>
+      </div>
+      <div class="tetris-stage">
+        <div class="tetris-side">
+          <small class="mono">HOLD (C)</small>
+          <canvas id="tetris-hold" width="64" height="56"></canvas>
+        </div>
+        <canvas id="tetris-canvas" width="220" height="440" tabindex="0" aria-label="테트리스 보드"></canvas>
+        <div class="tetris-side">
+          <small class="mono">NEXT</small>
+          <canvas id="tetris-next" width="64" height="142"></canvas>
+        </div>
+      </div>
+      <div class="tetris-touch-pad" aria-label="터치 조작 패드">
+        <button class="walk-button" type="button" data-tetris-cmd="hold">홀드</button>
+        <button class="walk-button" type="button" data-tetris-cmd="left">◀</button>
+        <button class="walk-button" type="button" data-tetris-cmd="rotate">↻ 회전</button>
+        <button class="walk-button" type="button" data-tetris-cmd="right">▶</button>
+        <button class="walk-button" type="button" data-tetris-cmd="down">▼</button>
+        <button class="walk-button stage-key" type="button" data-tetris-cmd="drop">⚡ 드롭</button>
+      </div>
+      <p class="game-status" id="tetris-status" role="status">아래 버튼으로 시작해요.</p>
+      <button class="primary dialog-action" id="tetris-action" type="button">게임 시작</button>
+    </div>
+  </dialog>
+
+  <!-- GAME 03: BUNGEOPPANG TYCOON -->
+  <dialog id="bungeoppang" aria-labelledby="bungeo-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>03</span> / PASTRY TYCOON</span><button class="close" type="button" data-close aria-label="붕어빵 타이쿤 닫기">×</button></div>
+      <h2 id="bungeo-title">길모퉁이 붕어빵 포차</h2>
+      <div class="game-hud mono">
+        <span>매출 점수 <strong id="bungeo-score">0</strong></span>
+        <span>남은 시간 <strong id="bungeo-time">75초</strong></span>
+        <span>연속 서빙 <strong id="bungeo-combo">0콤보</strong></span>
+      </div>
+      <div class="tycoon-order-banner" id="bungeo-order"></div>
+      <div class="bungeo-tools" role="group" aria-label="조리 도구">
+        <button class="walk-button" type="button" data-bungeo-tool="batter" aria-pressed="true">🥣 반죽 붓기</button>
+        <button class="walk-button" type="button" data-bungeo-tool="pat">🫘 통팥</button>
+        <button class="walk-button" type="button" data-bungeo-tool="cream">🍮 슈크림</button>
+        <button class="walk-button" type="button" data-bungeo-tool="pizza">🧀 피자</button>
+        <button class="walk-button" type="button" data-bungeo-tool="flip">🔄 뒤집기</button>
+      </div>
+      <div class="bungeo-molds" id="bungeo-molds" role="group" aria-label="6구 붕어빵 철판"></div>
+      <div class="bungeo-bag-bar">
+        <span class="mono" id="bungeo-bag">봉투: 🫘통팥 0 · 🍮슈크림 0 · 🧀피자 0</span>
+        <button class="walk-button" id="bungeo-trash" type="button">봉투 비우기</button>
+      </div>
+      <div class="timer-buttons">
+        <button class="primary dialog-action" id="bungeo-serve" type="button" disabled>🛍️ 손님에게 서빙하기</button>
+        <button class="secondary dialog-action" id="bungeo-start" type="button">장사 시작</button>
+      </div>
+      <p class="game-status" id="bungeo-status" role="status">반죽 → 소 넣기 → 뒤집기 → 황금빛일 때 꺼내 봉투에 담아 서빙하세요!</p>
+    </div>
+  </dialog>
+
+  <!-- GAME 04: CAT SNACK BAR TYCOON -->
+  <dialog id="snack-tycoon" aria-labelledby="tycoon-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>04</span> / KITCHEN RUSH</span><button class="close" type="button" data-close aria-label="매점 타이쿤 닫기">×</button></div>
+      <h2 id="tycoon-title">알바냥의 매점 러시</h2>
+      <div class="game-hud mono">
+        <span>점수 <strong id="tycoon-score">0</strong></span>
+        <span>남은 시간 <strong id="tycoon-time">70초</strong></span>
+        <span>콤보 <strong id="tycoon-combo">0콤보</strong></span>
+      </div>
+      <div class="tycoon-tickets" id="tycoon-tickets" aria-label="대기 중인 좌석 주문서"></div>
+      <div class="tycoon-tray-box" id="tycoon-tray"></div>
+      <div class="tycoon-stations" id="tycoon-stations" role="group" aria-label="오픈키친 재료"></div>
+      <div class="timer-buttons">
+        <button class="primary dialog-action" id="tycoon-serve" type="button" disabled>🛎️ 배달 출발!</button>
+        <button class="walk-button" id="tycoon-clear" type="button">비우기</button>
+        <button class="secondary dialog-action" id="tycoon-start" type="button">알바 시작</button>
+      </div>
+      <p class="game-status" id="tycoon-status" role="status">밀려드는 PC방 좌석 주문 레시피를 조합해 빠르게 배달하세요!</p>
+    </div>
+  </dialog>
+
+  <!-- GAME 05: NEON ACID RAIN TYPING DEFENSE -->
+  <dialog id="acidrain" aria-labelledby="acid-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>05</span> / TYPING DEFENSE</span><button class="close" type="button" data-close aria-label="산성비 닫기">×</button></div>
+      <h2 id="acid-title">코지 빗방울 산성비</h2>
+      <div class="acid-top-row">
+        <div class="game-hud mono">
+          <span>점수 <strong id="acid-score">0</strong></span>
+          <span>타수 <strong id="acid-cpm">0타</strong></span>
+          <span>실드 <strong id="acid-hp">♥♥♥♥♥</strong></span>
+          <span>웨이브 <strong id="acid-wave">W1</strong></span>
+        </div>
+        <label class="acid-switch-label">스위치
+          <select id="acid-switch">
+            <option value="blue">청축 (찰칵)</option>
+            <option value="brown">갈축 (도각)</option>
+            <option value="red">적축 (보글)</option>
+          </select>
+        </label>
+      </div>
+      <canvas id="acid-canvas" width="460" height="250" aria-label="네온 산성비 화면"></canvas>
+      <form class="acid-form" id="acid-form">
+        <input id="acid-input" type="text" autocomplete="off" placeholder="떨어지는 단어를 입력하고 Enter!">
+        <button class="walk-button stage-key" type="submit">입력</button>
+        <button class="walk-button" id="acid-start" type="button">게임 시작</button>
+      </form>
+      <p class="game-status" id="acid-status" role="status">기계식 키보드 스위치를 고르고 타자 실력을 뽐내 보세요!</p>
+    </div>
+  </dialog>
+
+  <!-- GAME 06: MINESWEEPER (3 DIFFICULTIES) -->
+  <dialog id="mines" aria-labelledby="mines-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>06</span> / MINESWEEPER</span><button class="close" type="button" data-close aria-label="지뢰찾기 닫기">×</button></div>
+      <h2 id="mines-title">지뢰찾기</h2>
+      <div class="mine-tiers" role="group" aria-label="난이도 선택">
+        <button class="walk-button" type="button" data-mine-tier="easy" aria-pressed="true">초급 (9×9 · 10)</button>
+        <button class="walk-button" type="button" data-mine-tier="medium" aria-pressed="false">중급 (16×16 · 40)</button>
+        <button class="walk-button" type="button" data-mine-tier="hard" aria-pressed="false">고급 (24×16 · 80)</button>
+      </div>
+      <div class="mine-toolbar">
+        <div class="mine-hud mono">
+          <span>남은 깃발 <strong id="mine-flags">10</strong></span>
+          <span>시간 <span role="timer" id="mine-time">00:00</span></span>
+        </div>
+        <button class="walk-button mine-toggle" id="mine-toggle" type="button" aria-pressed="false">깃발 모드</button>
+      </div>
+      <div class="mine-scroll">
+        <div class="mine-board" id="mine-board" role="group" aria-label="지뢰찾기 보드" aria-describedby="mine-help"></div>
+      </div>
+      <p class="game-status" id="mine-status" role="status">첫 칸은 어디를 골라도 안전해요.</p>
+      <button class="secondary dialog-action" id="mine-reset" type="button">새 게임</button>
+      <p class="dialog-note" id="mine-help">우클릭·F키로 깃발을 꽂고, 이미 열린 숫자를 클릭하면 주변 안전칸이 한 번에 열려요.</p>
+    </div>
+  </dialog>
+
+  <!-- GAME 07: BREAKOUT DX -->
   <dialog id="arcade" aria-labelledby="arcade-title">
     <div class="dialog-inner">
-      <div class="dialog-head"><span class="panel-index mono"><span>01</span> / ARCADE</span><button class="close" type="button" data-close aria-label="오락실 닫기">×</button></div>
-      <h2 id="arcade-title">모퉁이 벽돌깨기</h2>
-      <p class="panel-copy">패들을 움직여 빛나는 벽돌을 모두 깨보세요.</p>
+      <div class="dialog-head"><span class="panel-index mono"><span>07</span> / ARCADE DX</span><button class="close" type="button" data-close aria-label="벽돌깨기 닫기">×</button></div>
+      <h2 id="arcade-title">모퉁이 벽돌깨기 DX</h2>
+      <p class="panel-copy">멀티볼과 와이드 패들 아이템을 받아 파스텔 벽돌을 모두 깨보세요.</p>
       <div class="game-hud mono">
         <span>라운드 <strong id="game-round">01</strong></span>
         <span>점수 <strong id="score">000</strong></span>
@@ -375,9 +595,11 @@
       <p class="dialog-note">← → 키 또는 마우스·터치로 패들을 움직여요.</p>
     </div>
   </dialog>
+
+  <!-- GAME 08: 2048 -->
   <dialog id="merge" aria-labelledby="merge-title">
     <div class="dialog-inner">
-      <div class="dialog-head"><span class="panel-index mono"><span>02</span> / ARCADE</span><button class="close" type="button" data-close aria-label="2048 닫기">×</button></div>
+      <div class="dialog-head"><span class="panel-index mono"><span>08</span> / PUZZLE</span><button class="close" type="button" data-close aria-label="2048 닫기">×</button></div>
       <h2 id="merge-title">2048</h2>
       <p class="panel-copy">같은 숫자의 타일을 합쳐 2048을 만들어 보세요.</p>
       <div class="merge-hud mono">
@@ -399,31 +621,21 @@
       </div>
     </div>
   </dialog>
-  <dialog id="mines" aria-labelledby="mines-title">
-    <div class="dialog-inner">
-      <div class="dialog-head"><span class="panel-index mono"><span>03</span> / ARCADE</span><button class="close" type="button" data-close aria-label="지뢰찾기 닫기">×</button></div>
-      <h2 id="mines-title">지뢰찾기</h2>
-      <p class="panel-copy">숫자는 주변 8칸에 있는 지뢰 개수예요. 안전한 칸을 모두 열어보세요.</p>
-      <div class="mine-toolbar">
-        <div class="mine-hud mono">
-          <span>남은 깃발 <strong id="mine-flags">10</strong></span>
-          <span>시간 <span role="timer" id="mine-time">00:00</span></span>
-        </div>
-        <button class="walk-button mine-toggle" id="mine-toggle" type="button" aria-pressed="false">깃발 모드</button>
-      </div>
-      <div class="mine-board" id="mine-board" role="group" aria-label="지뢰찾기 9행 9열" aria-describedby="mine-help"></div>
-      <p class="game-status" id="mine-status" role="status">첫 칸은 어디를 골라도 안전해요.</p>
-      <button class="secondary dialog-action" id="mine-reset" type="button">새 게임</button>
-      <p class="dialog-note" id="mine-help">클릭이나 터치로 열고, 우클릭이나 깃발 모드로 표시해요. 키보드는 방향키로 이동, Enter로 열기, F로 깃발이에요.</p>
-    </div>
-  </dialog>
+
+  <!-- GAME 09: SUDOKU -->
   <dialog id="sudoku" aria-labelledby="sudoku-title">
     <div class="dialog-inner">
-      <div class="dialog-head"><span class="panel-index mono"><span>04</span> / ARCADE</span><button class="close" type="button" data-close aria-label="스도쿠 닫기">×</button></div>
+      <div class="dialog-head"><span class="panel-index mono"><span>09</span> / LOGIC</span><button class="close" type="button" data-close aria-label="스도쿠 닫기">×</button></div>
       <h2 id="sudoku-title">스도쿠</h2>
       <p class="panel-copy">가로·세로 줄과 3×3 구역마다 1부터 9까지 한 번씩 채워요.</p>
       <div class="sudoku-toolbar">
-        <label>난이도 <select id="sudoku-level"><option value="42">쉬움</option><option value="34">보통</option></select></label>
+        <label>난이도
+          <select id="sudoku-level">
+            <option value="42">쉬움</option>
+            <option value="34">보통</option>
+            <option value="28">어려움</option>
+          </select>
+        </label>
         <button class="walk-button" id="sudoku-new" type="button">새 퍼즐</button>
       </div>
       <div class="sudoku-board" id="sudoku-board" role="group" aria-label="스도쿠 9행 9열" aria-describedby="sudoku-help"></div>
@@ -436,11 +648,12 @@
       <p id="sudoku-help" class="dialog-note">칸을 고르고 숫자 버튼을 누르세요. 키보드는 방향키, 1~9, Backspace로 조작할 수 있어요.</p>
     </div>
   </dialog>
+
   <dialog id="focus" aria-labelledby="focus-title">
     <div class="dialog-inner">
-      <div class="dialog-head"><span class="panel-index mono"><span>02</span> / FOCUS</span><button class="close" type="button" data-close aria-label="집중 모드 닫기">×</button></div>
+      <div class="dialog-head"><span class="panel-index mono"><span>FOCUS</span> / TIMER</span><button class="close" type="button" data-close aria-label="집중 모드 닫기">×</button></div>
       <h2 id="focus-title">집중 모드</h2>
-      <p class="panel-copy">집중할 시간을 정하고, 내 속도로 시작해요.</p>
+      <p class="panel-copy">집중할 시간을 정하고 완주하면 G-포인트 보너스를 받아요.</p>
       <div class="focus-settings">
         <label for="focus-minutes">집중 시간</label>
         <div class="focus-minutes-field"><input class="mono" type="number" id="focus-minutes" min="1" max="120" step="1" placeholder="예: 30" inputmode="numeric" aria-describedby="focus-minutes-unit focus-duration-error" required><span id="focus-minutes-unit">분</span></div>
@@ -451,7 +664,7 @@
       <p class="timer-note" id="timer-note">창을 닫아도 타이머는 계속 돌아가요.</p>
       <div class="ux u093 focus-completion" id="focus-complete" role="status" hidden>
         <span class="u093-bdg" aria-hidden="true"><svg viewBox="0 0 42 42"><path d="M10 22l7 7 15-16"/></svg></span>
-        <div><strong>집중 완료!</strong><p>잠깐 쉬어가요.</p></div>
+        <div><strong>집중 완료! (+40 G)</strong><p>잠깐 테라스나 매점에서 쉬어가요.</p></div>
       </div>
       <div class="timer-buttons">
         <button class="primary dialog-action" id="timer-toggle" type="button">집중 시작</button>
@@ -459,14 +672,20 @@
       </div>
     </div>
   </dialog>
+
+  <!-- SNACK BAR 2.0 -->
   <dialog id="snacks" aria-labelledby="snacks-title">
     <div class="dialog-inner">
-      <div class="dialog-head"><span class="panel-index mono"><span>03</span> / SNACK BAR</span><button class="close" type="button" data-close aria-label="매점 닫기">×</button></div>
-      <h2 id="snacks-title">길모퉁이 매점</h2>
+      <div class="dialog-head"><span class="panel-index mono"><span>SNACK BAR 2.0</span> / OPEN KITCHEN</span><button class="close" type="button" data-close aria-label="매점 닫기">×</button></div>
+      <h2 id="snacks-title">길모퉁이 매점 2.0</h2>
       <p class="panel-copy" id="order-location">자리에 앉으면 주문할 수 있어요.</p>
-      <div class="shop-links"><button class="walk-button" type="button" data-open="snack-board">실시간 주문표</button><button class="walk-button" type="button" data-open="snack-coupon">단골 쿠폰</button></div>
-      <label class="menu-search">메뉴 찾기<input type="search" id="snack-search" placeholder="예: 라면"></label>
-      <!-- Lucian UX/UI Prompt #242 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#242 -->
+      <div class="shop-links">
+        <button class="walk-button" type="button" data-open="snack-board">실시간 주문표</button>
+        <button class="walk-button" type="button" data-open="snack-coupon">단골 쿠폰</button>
+        <button class="walk-button" type="button" data-open="snack-gift">🎁 간식 쏘기</button>
+        <span class="gpoint-badge" title="길모퉁이 무료 포인트">🪙 <b data-gpoints>150 G</b></span>
+      </div>
+      <label class="menu-search">메뉴 찾기<input type="search" id="snack-search" placeholder="예: 짜계치, 얼박사, 아샷추, 붕어빵"></label>
       <div class="ux u242" id="order-menu">
         <div class="u242-sc" tabindex="0" aria-label="매점 메뉴 목록">
           <nav class="u242-cb" aria-label="메뉴 종류"><div class="u242-cr"></div></nav>
@@ -480,15 +699,41 @@
       </div>
       <button class="primary enter" id="place-order" type="button" disabled>내 자리로 주문하기</button>
       <p class="dialog-note" id="shop-feedback" role="status"></p>
-      <p class="dialog-note">가상 매점 · 무료 체험</p>
+      <p class="dialog-note">가상 매점 · 무료 체험 · 책상에 배달된 쟁반을 클릭해 맛있게 드세요!</p>
     </div>
   </dialog>
+
+  <!-- SEAT GIFT ("옆 자리 간식 쏘기") -->
+  <dialog id="snack-gift" aria-labelledby="snack-gift-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono">SNACK BAR / SEAT GIFT</span><button class="close" type="button" data-close aria-label="간식 선물 닫기">×</button></div>
+      <h2 id="snack-gift-title">옆 자리 손님에게 간식 쏘기</h2>
+      <p class="panel-copy">게임이나 미니게임으로 모은 무료 G-포인트(30 G)로 같은 매장 손님 책상에 간식을 보내 보세요!</p>
+      <div class="shop-links">
+        <button class="walk-button" type="button" data-open="snacks">← 매점 메뉴판</button>
+        <span class="gpoint-badge">내 보유 포인트 · <b data-gpoints>150 G</b></span>
+      </div>
+      <div class="gift-form">
+        <label>받는 분 좌석
+          <select id="gift-seat-select"></select>
+        </label>
+        <label>선물할 메뉴 (30 G)
+          <select id="gift-item-select"></select>
+        </label>
+        <label>짧은 응원 메시지 (선택)
+          <input id="gift-note-input" type="text" maxlength="36" placeholder="예: 승급전 꼭 성공하세요! 화이팅!">
+        </label>
+      </div>
+      <button class="primary enter" id="gift-send-btn" type="button">🎁 고양이 알바생 편으로 선물 보내기 (30 G)</button>
+      <p class="dialog-note" id="gift-feedback" role="status"></p>
+    </div>
+  </dialog>
+
   <dialog id="snack-board" aria-labelledby="snack-board-title">
     <div class="dialog-inner">
       <div class="dialog-head"><span class="panel-index mono">SNACK BAR / LIVE</span><button class="close" type="button" data-close aria-label="주문표 닫기">×</button></div>
       <h2 id="snack-board-title">매점 실시간 주문표</h2>
-      <p class="panel-copy">최근 20분 동안 접수된 가상 주문이에요.</p>
-      <!-- Lucian UX/UI Prompt #227 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#227 -->
+      <p class="panel-copy">최근 20분 동안 접수된 매장 주문 현황이에요.</p>
       <div class="ux u227" id="snack-live">
         <div class="u227-hd"><b><i></i>주문 현황</b><button type="button" class="u227-pz" aria-pressed="false"><span>일시정지</span><em></em></button></div>
         <div class="u227-tb" role="table" aria-label="최근 매점 주문">
@@ -500,12 +745,12 @@
       <button class="walk-button" type="button" data-open="snacks">매점 메뉴 보기</button>
     </div>
   </dialog>
+
   <dialog id="snack-coupon" aria-labelledby="snack-coupon-title">
     <div class="dialog-inner">
       <div class="dialog-head"><span class="panel-index mono">SNACK BAR / LOYALTY</span><button class="close" type="button" data-close aria-label="쿠폰 닫기">×</button></div>
       <h2 id="snack-coupon-title">길모퉁이 단골 쿠폰</h2>
-      <p class="panel-copy" id="coupon-guide">착석 이용 시간이 하루 30분 쌓이면 도장 한 개를 받을 수 있어요.</p>
-      <!-- Lucian UX/UI Prompt #353 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#353 -->
+      <p class="panel-copy" id="coupon-guide">착석 이용 시간이 하루 30분 쌓이면 도장 1개와 +50 G 포인트를 드려요.</p>
       <div class="ux u353" id="coupon-card">
         <div class="u353-cd"><div class="u353-in">
           <div class="u353-fr"><div class="u353-tt"><b>길모퉁이PC방</b><span>도장을 모아 단골 메뉴를 주문하세요.</span></div><div class="u353-gd" aria-hidden="true"></div></div>
@@ -519,7 +764,7 @@
       <p class="dialog-note" id="coupon-feedback" role="status"></p>
     </div>
   </dialog>
-  <!-- Lucian UX/UI Prompt #070 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#070 -->
+
   <div class="ux u070">
     <div class="u070-zone" role="region" aria-label="PC방 알림" tabindex="-1">
       <div class="u070-live" aria-live="polite"></div>

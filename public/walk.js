@@ -1,5 +1,6 @@
-import { canWalk, entrance, kiosk, pathTo, routeToSeat, roomPortals } from "./world.js";
+import { canWalkInSpace, entrance, kiosk, pathTo, routeToSeat, roomPortals, relaxPortals, relaxZones } from "./world.js";
 import { createCafeCamera } from "./camera.js";
+import { AVATAR_WARDROBE, encodeAvatarCode, getAvatarSheetUrl, normalizeAvatarCode, renderAvatarPreview } from "./avatar-sprites.js";
 
 const scene = document.querySelector(".scene");
 const joystick = document.getElementById("cafe-joystick");
@@ -9,13 +10,29 @@ const guests = document.getElementById("cafe-guests");
 const nameInput = document.getElementById("cafe-name");
 const seating = window.cafeSeating;
 const camera = createCafeCamera(scene);
-const palettes = ["#a6bdac", "#c3b0cc", "#ccb99c", "#9eb4c5"];
-const walkSpeed = 14;
-const seatJourneyDuration = 4.2;
+const walkSpeed = 14.5;
+const seatJourneyDuration = 4.0;
 const directions = new Map([
   ["ArrowLeft", [-1, 0]], ["KeyA", [-1, 0]], ["ArrowRight", [1, 0]], ["KeyD", [1, 0]],
   ["ArrowUp", [0, -1]], ["KeyW", [0, -1]], ["ArrowDown", [0, 1]], ["KeyS", [0, 1]],
 ]);
+const activityBadges = {
+  smoke: "🚬 한 모금",
+  coffee: "☕ 밀크커피",
+  candy: "🍭 사탕",
+  eat: "😋 식사 중",
+  focus: "⏱️ 집중 중",
+  "game:pvp": "⚔️ 대국 중",
+  "game:tetris": "🧱 테트리스",
+  "game:bungeoppang": "🐟 붕어빵",
+  "game:tycoon": "🐱 매점러시",
+  "game:acidrain": "🌧️ 산성비",
+  "game:mines": "💣 지뢰찾기",
+  "game:arcade": "🕹️ 벽돌깨기",
+  "game:merge": "🔢 2048",
+  "game:sudoku": "✏️ 스도쿠",
+};
+
 const pressed = new Set();
 const remoteJourneys = new Map();
 let joystickPointer = null;
@@ -28,20 +45,29 @@ function read(storage, key) {
   try { return window[storage].getItem(key); } catch { return null; }
 }
 function save(storage, key, value) {
-  try { window[storage].setItem(key, value); } catch { /* private browsing can disable storage */ }
+  try { window[storage].setItem(key, value); } catch {}
 }
 
 const tokenKey = "neon-cafe-visitor";
 const nameKey = "neon-cafe-nickname";
+const avatarKey = "neon-cafe-avatar-v2";
 const token = read("sessionStorage", tokenKey) || crypto.randomUUID();
 save("sessionStorage", tokenKey, token);
 const arrival = parseInt(token.slice(1, 3), 16) % 8 || 0;
 const spawn = { x: entrance.x - 8 + (arrival % 4) * 5.5, y: entrance.y + (arrival >= 4 ? 1.6 : 0) };
 const location = { ...spawn };
-const color = parseInt(token[0], 16) % palettes.length || 0;
+const color = parseInt(token[0], 16) % 8 || 0;
+
+let avatarConfig = normalizeAvatarCode(read("localStorage", avatarKey), color);
+let avatarCode = encodeAvatarCode(avatarConfig);
+save("localStorage", avatarKey, avatarCode);
+
 let name = read("localStorage", nameKey) || "";
 nameInput.value = name;
 let facing = 1;
+let dirName = "down";
+let activeZone = "hall"; // "hall" | "booth" | "terrace"
+let myActivity = ""; // "" | "smoke" | "coffee" | "candy" | "eat" | "focus" | "game:*"
 let path = [];
 let waveUntil = 0;
 let lastWave = 0;
@@ -57,7 +83,12 @@ let firstMove = true;
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
 function displayedSpace() {
-  return scene.dataset.space === "lobby" ? "hall" : scene.dataset.space;
+  const raw = scene.dataset.space;
+  return raw === "lobby" ? "hall" : raw;
+}
+
+function isOnBreak() {
+  return activeZone === "booth" || activeZone === "terrace";
 }
 
 function makeVisitor(key) {
@@ -65,26 +96,40 @@ function makeVisitor(key) {
   node.className = "cafe-visitor";
   node.dataset.visitorId = key;
   node.classList.toggle("mine", key === "mine");
-  node.innerHTML = `<span class="cafe-wave" hidden>👋</span><span class="cafe-nickname"></span>
-    <svg viewBox="0 0 16 22" aria-hidden="true" shape-rendering="crispEdges">
-      <path fill="#302b2b" d="M5 0h6v1h2v2h1v7h-2v2h2v2h1v4h-2v3h-5v-2h-1v2H2v-3H1v-4h1v-2h2v-2H2V3h1V1h2z"/>
-      <path fill="#615046" d="M5 1h6v1h2v5h-2V5H8v2H3V3h2z"/>
-      <path fill="#e8c5a5" d="M4 7h4V5h3v2h2v3h-2v2H6v-1H4zM2 15h2v2H2zm10 0h2v2h-2z"/>
-      <path fill="#3d3534" d="M9 7h1v2H9zm3 0h1v2h-1z"/>
-      <path fill="var(--shirt)" d="M4 12h2v1h5v-1h2v2h1v1h-2v3H4v-3H2v-1h2z"/>
-      <path fill="#5a5252" d="M4 18h3v2H3v-1h1zm5 0h3v1h1v1H9z"/>
-    </svg>`;
+  node.innerHTML = `
+    <span class="cafe-wave" hidden>👋</span>
+    <span class="cafe-vapor" aria-hidden="true" hidden><i></i><i></i><i></i></span>
+    <span class="cafe-activity-pill" hidden></span>
+    <span class="cafe-nickname"></span>
+    <span class="cafe-sprite" aria-hidden="true"></span>`;
   avatars.append(node);
-  const visitor = { node, label: node.querySelector(".cafe-nickname"), wave: node.querySelector(".cafe-wave") };
+  const visitor = {
+    node,
+    spriteEl: node.querySelector(".cafe-sprite"),
+    label: node.querySelector(".cafe-nickname"),
+    wave: node.querySelector(".cafe-wave"),
+    vapor: node.querySelector(".cafe-vapor"),
+    pill: node.querySelector(".cafe-activity-pill"),
+  };
   visitors.set(key, visitor);
   return visitor;
 }
 
-function paint(key, data, point, walking) {
+function resolveDir(dx, dy, fallback = "down") {
+  if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01) return fallback;
+  if (Math.abs(dy) > Math.abs(dx) * 1.15) return dy < 0 ? "up" : "down";
+  return dx < 0 ? "left" : "right";
+}
+
+function paint(key, data, point, walking, awayAtDesk = false) {
   const sprite = visitors.get(key) || makeVisitor(key);
-  const { node, label, wave } = sprite;
-  const moved = point.x !== sprite.x || point.y !== sprite.y;
-  if (key !== "mine" && moved && sprite.x !== undefined && !data.seat) {
+  const { node, spriteEl, label, wave, vapor, pill } = sprite;
+  const prevX = sprite.x;
+  const prevY = sprite.y;
+  const moved = point.x !== prevX || point.y !== prevY;
+
+  if (key !== "mine" && moved && prevX !== undefined && !data.seat) {
+    sprite.dir = resolveDir(point.x - prevX, point.y - prevY, sprite.dir || "down");
     if (data.walking !== undefined) {
       clearTimeout(sprite.stopWalking);
       node.classList.toggle("walking", data.walking);
@@ -94,6 +139,9 @@ function paint(key, data, point, walking) {
       sprite.stopWalking = setTimeout(() => node.classList.remove("walking"), 850);
     }
   }
+  if (key === "mine") sprite.dir = dirName;
+  else if (!sprite.dir) sprite.dir = data.facing === -1 ? "left" : "down";
+
   if (moved) {
     sprite.x = point.x;
     sprite.y = point.y;
@@ -101,14 +149,49 @@ function paint(key, data, point, walking) {
     node.style.top = point.y + "%";
     node.style.zIndex = String(Math.round(point.y));
   }
-  if (sprite.color !== data.color) node.style.setProperty("--shirt", palettes[data.color] || palettes[0]);
-  if (sprite.facing !== data.facing) node.style.setProperty("--facing", data.facing);
-  sprite.color = data.color;
-  sprite.facing = data.facing;
+
+  const code = data.avatar || encodeAvatarCode(normalizeAvatarCode("", data.color ?? 0));
+  if (sprite.avatarCode !== code) {
+    sprite.avatarCode = code;
+    spriteEl.style.backgroundImage = `url("${getAvatarSheetUrl(code, data.color ?? 0)}")`;
+  }
+
+  node.classList.toggle("away-desk", awayAtDesk);
   if (key === "mine" || data.seat || data.walking !== undefined) node.classList.toggle("walking", walking);
   node.classList.toggle("remote-path", data.walking !== undefined);
-  node.classList.toggle("seated", Boolean(data.seat));
-  const regular = key === "mine" && window.cafeIsRegular();
+  const seatedHere = Boolean(data.seat) && !awayAtDesk && data.zone !== "booth" && data.zone !== "terrace";
+  node.classList.toggle("seated", seatedHere);
+
+  // Determine sprite row & column
+  const act = awayAtDesk ? "away" : (data.activity || "");
+  let row = { down: 0, up: 1, right: 2, left: 3 }[sprite.dir] ?? 0;
+  let breakCol = -1;
+  if (seatedHere) {
+    row = 4; // Seated typing row!
+  } else if (!walking && (act === "smoke" || act === "coffee" || act === "candy")) {
+    row = 5;
+    breakCol = act === "smoke" ? 0 : act === "coffee" ? 2 : 3;
+  }
+  node.style.setProperty("--sprite-row", String(row));
+  if (breakCol >= 0) {
+    node.dataset.pose = act;
+    node.style.setProperty("--sprite-col", String(breakCol));
+  } else {
+    delete node.dataset.pose;
+    node.style.removeProperty("--sprite-col");
+  }
+
+  // Vapor / Smoke / Warm Breath particles in booth or terrace!
+  const emitVapor = !awayAtDesk && (act === "smoke" || act === "coffee" || displayedSpace() === "terrace");
+  vapor.hidden = !emitVapor;
+  if (emitVapor) vapor.dataset.kind = act === "smoke" ? "smoke" : "steam";
+
+  // Activity pill badge
+  const badgeText = awayAtDesk ? "🌙 휴식 외출 중" : (activityBadges[act] || "");
+  pill.hidden = !badgeText;
+  if (pill.textContent !== badgeText) pill.textContent = badgeText;
+
+  const regular = key === "mine" && window.cafeIsRegular?.();
   if (sprite.name !== data.name || sprite.regular !== regular) {
     sprite.name = data.name;
     sprite.regular = regular;
@@ -133,34 +216,73 @@ function paint(key, data, point, walking) {
 function drawSelf(walking = false) {
   const mine = seating.current();
   const phase = seating.phase();
+  const space = displayedSpace();
+
+  if (isOnBreak()) {
+    // In booth or terrace!
+    const sprite = paint("mine", {
+      name: name || "나", color, avatar: avatarCode, facing, waveUntil,
+      seat: null, zone: activeZone, activity: myActivity,
+    }, location, walking, false);
+    sprite.node.classList.remove("sitting");
+    camera.follow(location, mine);
+    return;
+  }
+
   const seat = phase === "walking" ? null : mine;
   const point = seat ? seating.position(seat) : location;
-  if (point) {
-    const sprite = paint("mine", { name: name || "나", color, facing, waveUntil, seat }, point, walking);
+  if (point && (!seat || seat.startsWith(space + ":"))) {
+    const sprite = paint("mine", {
+      name: name || "나", color, avatar: avatarCode, facing, waveUntil,
+      seat, zone: activeZone, activity: myActivity,
+    }, point, walking, false);
     sprite.node.classList.toggle("sitting", phase === "sitting");
   }
   camera.follow(point, phase ? null : mine);
 }
 
 function draw() {
-  drawSelf(wasWalking);
-  const visible = new Set(["mine"]);
+  const space = displayedSpace();
+  const visible = new Set();
+
+  // Draw self if in displayedSpace
+  const mySeat = seating.current();
+  const mySeatSpace = mySeat?.split(":")[0] || "hall";
+  if ((isOnBreak() && space === activeZone) || (!isOnBreak() && space === (mySeat ? mySeatSpace : "hall")) || seating.phase()) {
+    drawSelf(wasWalking);
+    visible.add("mine");
+  } else if (isOnBreak() && mySeat && mySeatSpace === space) {
+    // Show "away on break" marker at my own desk if viewing seat space
+    const deskPoint = seating.position(mySeat);
+    if (deskPoint) {
+      paint("mine", { name: name || "나", color, avatar: avatarCode, facing: 1, waveUntil: 0, seat: mySeat }, deskPoint, false, true);
+      visible.add("mine");
+    }
+  }
+
   for (const peer of peers) {
     const remoteJourney = remoteJourneys.get(peer.id);
     if (remoteJourney) {
       remoteJourney.visitor = peer;
-      if (remoteJourney.leg?.space !== displayedSpace() || !remoteJourney.point) continue;
-      paint(peer.id, { ...peer, seat: null, walking: true }, remoteJourney.point, true);
+      if (remoteJourney.leg?.space !== space || !remoteJourney.point) continue;
+      paint(peer.id, { ...peer, seat: null, walking: true }, remoteJourney.point, true, false);
       visible.add(peer.id);
       continue;
     }
-    const space = peer.seat?.split(":")[0] || "hall";
-    if (space !== displayedSpace()) continue;
+    const peerBreak = peer.zone === "booth" || peer.zone === "terrace";
+    if (peerBreak && peer.zone === space) {
+      paint(peer.id, { ...peer, seat: null }, peer, false, false);
+      visible.add(peer.id);
+      continue;
+    }
+    const seatSpace = peer.seat?.split(":")[0] || "hall";
+    if (seatSpace !== space) continue;
     const target = peer.seat ? seating.position(peer.seat) : peer;
     if (!target) continue;
-    paint(peer.id, peer, target, false);
+    paint(peer.id, peer, target, false, peerBreak && Boolean(peer.seat));
     visible.add(peer.id);
   }
+
   for (const [id, sprite] of visitors) {
     if (visible.has(id)) continue;
     clearTimeout(sprite.stopWalking);
@@ -193,40 +315,34 @@ function receive(result) {
       remoteJourney.visitor = peer;
       continue;
     }
-    if (remoteJourney) {
-      remoteJourneys.delete(peer.id);
-    }
+    if (remoteJourney) remoteJourneys.delete(peer.id);
     if (!oldPeer || !peer.seat || peer.seat === oldSeat || reducedMotion.matches) continue;
 
     const target = seating.position(peer.seat);
     const origin = oldSeat ? seating.position(oldSeat) : { x: peer.x, y: peer.y };
     if (!target || !origin) continue;
-    const route = routeToSeat(
-      origin,
-      oldSeat,
-      peer.seat,
-      seating.position,
-    );
+    const route = routeToSeat(origin, oldSeat, peer.seat, seating.position);
     if (!route.length) continue;
-    const nextJourney = {
-      seat: peer.seat,
-      visitor: peer,
-      legs: route,
-      leg: null,
-      point: null,
-      speed: 0,
-    };
+    const nextJourney = { seat: peer.seat, visitor: peer, legs: route, leg: null, point: null, speed: 0 };
     if (startRemoteLeg(nextJourney)) remoteJourneys.set(peer.id, nextJourney);
   }
   for (const id of remoteJourneys.keys()) {
     if (!received.has(id)) remoteJourneys.delete(id);
   }
   peers = incoming;
+  const zoneCounts = {
+    booth: result.visitors.filter((v) => v.zone === "booth").length,
+    terrace: result.visitors.filter((v) => v.zone === "terrace").length,
+  };
+  document.dispatchEvent(new CustomEvent("cafe-zone-counts", { detail: { counts: zoneCounts, visitors: result.visitors, selfId: result.id } }));
   setStatus("접속 " + result.visitors.length + "명");
-  const roster = peers.length ? "함께 있는 손님 · " + peers.map((peer) => peer.name).join(", ") : "";
+  const roster = peers.length ? "함께 있는 손님 · " + peers.map((peer) => {
+    const tag = peer.zone === "booth" ? "(실내 흡연구역)" : peer.zone === "terrace" ? "(야외 흡연구역)" : peer.seat ? `(${seating.label(peer.seat) || "착석"})` : "";
+    return peer.name + tag;
+  }).join(", ") : "";
   guests.hidden = !roster;
   if (guests.textContent !== roster) guests.textContent = roster;
-  seating.refresh(peers.flatMap((peer) => peer.seat ? [peer.seat] : []));
+  seating.refresh(peers.flatMap((peer) => peer.seat ? [peer.seat] : []), peers);
   draw();
   if (Array.isArray(result.chat)) {
     document.dispatchEvent(new CustomEvent("cafe-chat-sync", {
@@ -235,6 +351,7 @@ function receive(result) {
         visitorId: result.id,
         space: displayedSpace(),
         messages: result.chat,
+        visitors: result.visitors,
       },
     }));
   }
@@ -253,7 +370,7 @@ function disconnected() {
     peers = [];
     remoteJourneys.clear();
     guests.hidden = true;
-    seating.refresh([]);
+    seating.refresh([], []);
     draw();
   }
 }
@@ -263,7 +380,10 @@ function send(action, seat, extra = {}) {
     const response = await fetch("./api/presence", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, name, color, facing, x: location.x, y: location.y, action, seat, ...extra }),
+      body: JSON.stringify({
+        token, name, color, avatar: avatarCode, activity: myActivity,
+        zone: activeZone, facing, x: location.x, y: location.y, action, seat, ...extra,
+      }),
       signal: AbortSignal.timeout(7000),
     });
     const result = await response.json();
@@ -280,12 +400,16 @@ function send(action, seat, extra = {}) {
 }
 
 window.cafeChatSay = (text) => !seating.phase()
-  ? send("say", undefined, { text, space: seating.current()?.split(":")[0] ?? "hall" })
+  ? send("say", undefined, {
+    text,
+    space: isOnBreak() ? activeZone : (seating.current()?.split(":")[0] ?? "hall"),
+  })
   : Promise.resolve({ error: "chat_room_changed" });
 
 async function changeSeat(action, seat) {
   pendingSeatChanges++;
   try {
+    if (action === "reserve") activeZone = "hall";
     return await send(action, seat);
   } catch (error) {
     disconnected();
@@ -295,10 +419,72 @@ async function changeSeat(action, seat) {
   }
 }
 
+// Enter or leave Smoking Booth / 2F Night Terrace (supports Seated Break Mode!)
+function enterRelaxZone(zoneId, initialMode = "") {
+  if (!relaxZones[zoneId] || seating.phase()) return;
+  const desktop = document.getElementById("pc-desktop");
+  if (desktop?.open) desktop.close();
+  pressed.clear();
+  stopJoystick();
+  path = [];
+  activeZone = zoneId;
+  const cfg = relaxZones[zoneId];
+  location.x = cfg.door.x + (Math.random() * 6 - 3);
+  location.y = cfg.door.y - 3;
+  dirName = "up";
+  myActivity = initialMode || (zoneId === "terrace" ? "coffee" : "smoke");
+  window.cafeShowZone?.(zoneId);
+  window.cafeAudioSetZone?.(zoneId);
+  draw();
+  send("sync").catch(disconnected);
+}
+
+function exitRelaxZone() {
+  if (!isOnBreak()) return;
+  const prevZone = activeZone;
+  activeZone = "hall";
+  if (myActivity === "smoke" || myActivity === "coffee" || myActivity === "candy") myActivity = "";
+  pressed.clear();
+  stopJoystick();
+  path = [];
+  const mySeat = seating.current();
+  if (!mySeat) {
+    const portal = relaxPortals[prevZone] || entrance;
+    location.x = portal.x;
+    location.y = portal.y + 2.2;
+    dirName = "down";
+  } else {
+    dirName = "up";
+  }
+  window.cafeShowZone?.(null);
+  window.cafeAudioSetZone?.(mySeat ? mySeat.split(":")[0] : "hall");
+  draw();
+  send("sync").catch(disconnected);
+}
+
+function setActivity(nextActivity) {
+  if (myActivity === nextActivity) return;
+  myActivity = nextActivity;
+  draw();
+  send("sync").catch(disconnected);
+}
+
 window.cafeWorld = {
   async reserve(seat) { return (await changeSeat("reserve", seat)).mine === seat; },
-  release() { changeSeat("release").catch(() => {}); },
+  release() {
+    activeZone = "hall";
+    myActivity = "";
+    changeSeat("release").catch(() => {});
+  },
+  enterRelaxZone,
+  exitRelaxZone,
+  isOnBreak,
+  currentZone: () => activeZone,
+  setActivity,
+  getProfile: () => ({ name: name || "손님", avatar: avatarCode, token }),
+  getPeers: () => peers.slice(),
   walkToSeat(seat, previous, showSpace) {
+    activeZone = "hall";
     if (reducedMotion.matches) return Promise.resolve();
     const legs = routeToSeat(location, previous, seat, seating.position);
     if (!legs.length) return Promise.resolve();
@@ -323,7 +509,6 @@ window.cafeWorld = {
 function startRemoteLeg(remoteJourney) {
   const leg = remoteJourney.legs.shift();
   if (!leg) return false;
-
   let total = 0;
   let previous = leg.start;
   for (const point of leg.points) {
@@ -343,7 +528,6 @@ function advanceRemoteJourneys(dt) {
       remoteJourneys.delete(id);
       continue;
     }
-
     let remaining = remoteJourney.speed * dt;
     const points = remoteJourney.leg.points;
     while (remaining > 0 && points.length) {
@@ -373,7 +557,7 @@ function advanceRemoteJourneys(dt) {
 function drawRemoteJourneys() {
   for (const [id, remoteJourney] of remoteJourneys) {
     if (remoteJourney.leg?.space !== displayedSpace() || !remoteJourney.point) continue;
-    paint(id, { ...remoteJourney.visitor, seat: null, walking: true }, remoteJourney.point, true);
+    paint(id, { ...remoteJourney.visitor, seat: null, walking: true }, remoteJourney.point, true, false);
   }
 }
 
@@ -404,6 +588,7 @@ function advanceJourney(dt) {
     const dx = point.x - location.x;
     const dy = point.y - location.y;
     const length = Math.hypot(dx, dy * .67);
+    dirName = resolveDir(dx, dy, dirName);
     if (Math.abs(dx) > .02) facing = dx < 0 ? -1 : 1;
     if (length > remaining) {
       location.x += dx * remaining / length;
@@ -439,6 +624,7 @@ function wave() {
   if (Date.now() - lastWave < 1100) return;
   lastWave = Date.now();
   waveUntil = lastWave + 3200;
+  window.cafeAudioPlay?.("wave");
   draw();
   send("wave").catch(disconnected);
 }
@@ -452,8 +638,115 @@ document.getElementById("cafe-name-form").addEventListener("submit", (event) => 
   send("sync").catch(disconnected);
 });
 
+// Wardrobe Customization UI Setup
+function initWardrobe() {
+  const modal = document.getElementById("avatar-wardrobe");
+  const openBtn = document.getElementById("open-wardrobe");
+  if (!modal || !openBtn) return;
+  const preview = document.getElementById("wardrobe-preview");
+  const controlsRoot = document.getElementById("wardrobe-controls");
+  let draft = { ...avatarConfig };
+  let previewAction = "idle";
+  let previewTick = 0;
+  let previewTimer = 0;
+
+  const categories = [
+    ["skin", "피부톤", AVATAR_WARDROBE.skins],
+    ["hair", "헤어스타일", AVATAR_WARDROBE.hairs],
+    ["hairColor", "머리색", AVATAR_WARDROBE.hairColors],
+    ["outfit", "의상 코디", AVATAR_WARDROBE.outfits],
+    ["headset", "헤드셋·모자", AVATAR_WARDROBE.headsets],
+    ["accessory", "안경·마스크", AVATAR_WARDROBE.accessories],
+  ];
+
+  function repaintPreview() {
+    renderAvatarPreview(preview, encodeAvatarCode(draft), previewAction, previewTick % 4);
+    for (const [key] of categories) {
+      const row = controlsRoot.querySelector(`[data-part="${key}"]`);
+      if (!row) continue;
+      for (const btn of row.querySelectorAll("button")) {
+        btn.setAttribute("aria-pressed", String(Number(btn.dataset.val) === draft[key]));
+      }
+    }
+  }
+
+  controlsRoot.replaceChildren(...categories.map(([key, title, list]) => {
+    const group = document.createElement("div");
+    group.className = "wardrobe-group";
+    group.dataset.part = key;
+    const label = document.createElement("strong");
+    label.textContent = title;
+    const chips = document.createElement("div");
+    chips.className = "wardrobe-chips";
+    for (const item of list) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "walk-button wardrobe-chip";
+      btn.dataset.val = String(item.id);
+      const swatch = item.base || item.body || item.color;
+      if (swatch) {
+        const dot = document.createElement("i");
+        dot.style.background = swatch;
+        btn.append(dot);
+      }
+      btn.append(document.createTextNode(item.name));
+      btn.addEventListener("click", () => {
+        draft[key] = item.id;
+        window.cafeAudioPlay?.("tick");
+        repaintPreview();
+      });
+      chips.append(btn);
+    }
+    group.append(label, chips);
+    return group;
+  }));
+
+  modal.querySelectorAll("[data-pose-preview]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      previewAction = btn.dataset.posePreview;
+      repaintPreview();
+    });
+  });
+
+  document.getElementById("wardrobe-random")?.addEventListener("click", () => {
+    draft = {
+      skin: Math.floor(Math.random() * AVATAR_WARDROBE.skins.length),
+      hair: Math.floor(Math.random() * AVATAR_WARDROBE.hairs.length),
+      hairColor: Math.floor(Math.random() * AVATAR_WARDROBE.hairColors.length),
+      outfit: Math.floor(Math.random() * AVATAR_WARDROBE.outfits.length),
+      headset: Math.floor(Math.random() * AVATAR_WARDROBE.headsets.length),
+      accessory: Math.floor(Math.random() * AVATAR_WARDROBE.accessories.length),
+    };
+    window.cafeAudioPlay?.("tick");
+    repaintPreview();
+  });
+
+  document.getElementById("wardrobe-save")?.addEventListener("click", () => {
+    avatarConfig = { ...draft };
+    avatarCode = encodeAvatarCode(avatarConfig);
+    save("localStorage", avatarKey, avatarCode);
+    window.closeCafeWindow?.(modal) ?? modal.close();
+    draw();
+    send("sync").catch(disconnected);
+  });
+
+  openBtn.addEventListener("click", () => {
+    draft = { ...avatarConfig };
+    repaintPreview();
+    window.openCafeWindow ? window.openCafeWindow(modal, openBtn) : modal.showModal();
+    clearInterval(previewTimer);
+    previewTimer = setInterval(() => {
+      if (!modal.open) { clearInterval(previewTimer); return; }
+      previewTick++;
+      renderAvatarPreview(preview, encodeAvatarCode(draft), previewAction, previewTick % 4);
+    }, 260);
+  });
+}
+
 function canMove() {
-  return !seating.current() && !seating.phase() && !document.querySelector("dialog[open]");
+  if (seating.phase() || document.querySelector("dialog[open]")) return false;
+  if (isOnBreak()) return true; // Can always walk freely inside Smoking Booth & Night Terrace!
+  return !seating.current();
 }
 
 function startMovement() {
@@ -469,16 +762,30 @@ scene.addEventListener("click", (event) => {
   scene.focus({ preventScroll: true });
   const box = scene.getBoundingClientRect();
   const target = { x: (event.clientX - box.left) * 100 / box.width, y: (event.clientY - box.top) * 100 / box.height };
-  path = pathTo(location, target);
+  path = pathTo(location, target, isOnBreak() ? activeZone : "hall");
   if (path.length) startMovement();
 });
 
 document.addEventListener("keydown", (event) => {
   if (event.altKey || event.metaKey || event.ctrlKey || !canMove() ||
       event.target.closest("input, textarea, select, button, a, summary, [contenteditable]")) return;
-  if (event.code === "KeyE" && Math.hypot(location.x - kiosk.x, location.y - kiosk.y) < 6) {
-    document.getElementById("kiosk-pin").click();
-    return;
+  if (event.code === "KeyE") {
+    if (!isOnBreak() && Math.hypot(location.x - kiosk.x, location.y - kiosk.y) < 6) {
+      document.getElementById("kiosk-pin").click();
+      return;
+    }
+    if (!isOnBreak() && Math.hypot(location.x - relaxPortals.booth.x, location.y - relaxPortals.booth.y) < 6) {
+      enterRelaxZone("booth");
+      return;
+    }
+    if (!isOnBreak() && Math.hypot(location.x - relaxPortals.terrace.x, location.y - relaxPortals.terrace.y) < 6) {
+      enterRelaxZone("terrace");
+      return;
+    }
+    if (isOnBreak()) {
+      exitRelaxZone();
+      return;
+    }
   }
   if (!directions.has(event.code)) return;
   if (event.code.startsWith("Arrow") && event.target !== scene && event.target !== document.body) return;
@@ -488,6 +795,7 @@ document.addEventListener("keydown", (event) => {
   startMovement();
 });
 document.addEventListener("keyup", (event) => pressed.delete(event.code));
+
 function moveJoystick(event) {
   const { x, y, radius, travel } = joystickOrigin;
   const dx = event.clientX - x;
@@ -559,6 +867,7 @@ let lastPhase = seating.phase();
 function requestFrame() {
   if (!frameId && !document.hidden) frameId = requestAnimationFrame(animate);
 }
+
 function animate(time) {
   frameId = 0;
   const dt = lastFrame ? Math.min((time - lastFrame) / 1000, .04) : 0;
@@ -566,11 +875,12 @@ function animate(time) {
   advanceRemoteJourneys(dt);
   drawRemoteJourneys();
   const seat = seating.current();
-  if (lastSeat && !seat) Object.assign(location, spawn);
+  if (lastSeat && !seat && !isOnBreak()) Object.assign(location, spawn);
   if (seat !== lastSeat) path = [];
   const free = canMove();
   if (!free) stopJoystick();
 
+  const walkSpace = isOnBreak() ? activeZone : "hall";
   let walking = false;
   if (journey) {
     advanceJourney(dt);
@@ -592,11 +902,12 @@ function animate(time) {
       const step = path.length ? Math.min(length, walkSpeed * dt) : Math.min(length, 1) * walkSpeed * dt;
       const x = location.x + dx / length * step;
       const y = location.y + dy / length * step / .67;
-      if (canWalk(x, location.y)) { walking ||= x !== location.x; location.x = x; }
-      if (canWalk(location.x, y)) { walking ||= y !== location.y; location.y = y; }
+      if (canWalkInSpace(x, location.y, walkSpace)) { walking ||= x !== location.x; location.x = x; }
+      if (canWalkInSpace(location.x, y, walkSpace)) { walking ||= y !== location.y; location.y = y; }
+      dirName = resolveDir(dx, dy, dirName);
       if (dx) facing = dx < 0 ? -1 : 1;
     }
-    if (path.length && Math.hypot(path[0].x - location.x, path[0].y - location.y) < .06) path.shift();
+    if (path.length && Math.hypot(path[0].x - location.x, path[0].y - location.y) < .08) path.shift();
     else if (path.length && dt && !walking) path = [];
   }
   const phase = seating.phase();
@@ -611,15 +922,18 @@ function animate(time) {
   else lastFrame = 0;
 }
 
-document.addEventListener("cafe-seat-phase", requestFrame);
+document.addEventListener("cafe-seat-phase", () => {
+  draw();
+  requestFrame();
+});
 document.addEventListener("cafe-regular", () => drawSelf(wasWalking));
 reducedMotion.addEventListener("change", () => {
   if (!reducedMotion.matches || !remoteJourneys.size) return;
   remoteJourneys.clear();
   draw();
 });
-seating.placeRoomDoors(roomPortals);
+seating.placeRoomDoors(roomPortals, relaxPortals);
+initWardrobe();
 draw();
 document.dispatchEvent(new Event("cafe-ready"));
 pulse();
-

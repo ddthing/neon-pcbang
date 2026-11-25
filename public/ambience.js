@@ -2,7 +2,7 @@ const layer = document.getElementById("cafe-ambience");
 const scene = layer.closest(".scene");
 const motion = matchMedia("(prefers-reduced-motion: reduce)");
 
-// Coordinates use the same painting grid as the weather masks and screens.
+// Coordinates use the 1536x1024 scene grid
 const lights = {
   hall: [[355,63],[548,63],[789,64],[965,63],[1157,63],[603,875],[901,875],
     [460,726],[685,726],[926,726],[1167,726],[1404,505]],
@@ -62,11 +62,35 @@ const roomEffects = (space) => `
   <path class="ambient-floor-light" d="${floorLight[space]}" fill="url(#cafe-daylight)"/>
   ${halos(space)}${foliage(space)}`;
 
+// Smoking Booth suction wisps drawn toward the ceiling exhaust fans (x=1070,1175 y=140)
+const boothSmoke = Array.from({ length: 14 }, (_, i) => {
+  const sx = 660 + (i * 47) % 560;
+  const sy = 430 + (i * 29) % 130;
+  const dx = 1120 - sx;
+  return `<rect class="booth-smoke-wisp" x="${sx}" y="${sy}" width="${6 + (i % 3) * 3}" height="${4 + (i % 2) * 2}"
+    style="--offset:${-i * 0.65}s;--suction-x:${Math.round(dx * 0.55)}px"/>`;
+}).join("");
+
+// Night Terrace rain droplets & fairy-light warm halos + alley neon shimmer
+const terraceFairy = [[260,132],[320,152],[380,164],[440,164],[500,154],[565,142],[622,108],
+  [668,142],[728,154],[800,154],[865,142],[925,108],[990,142],[1062,158],[1148,164],[1212,158],[1268,142]]
+  .map(([x, y], i) => `<circle class="terrace-bulb" cx="${x}" cy="${y}" r="18" fill="url(#cafe-amber)" style="--offset:${-i * 0.5}s"/>`).join("");
+
+const terraceRain = Array.from({ length: 28 }, (_, i) => {
+  const rx = 280 + (i * 39) % 1020;
+  const ry = 180 + (i * 31) % 260;
+  return `<rect class="terrace-rain-drop" x="${rx}" y="${ry}" width="2" height="14" style="--offset:${-i * 0.21}s"/>`;
+}).join("");
+
 layer.innerHTML = `<svg class="cafe-lighting" viewBox="0 0 1536 1024" aria-hidden="true">
     <defs>
       <radialGradient id="cafe-amber">
-        <stop stop-color="#ffe5b2" stop-opacity=".53"/><stop offset=".46" stop-color="#f0c891" stop-opacity=".28"/>
-        <stop offset="1" stop-color="#efc587" stop-opacity="0"/>
+        <stop stop-color="#ffe7a8" stop-opacity=".55"/><stop offset=".46" stop-color="#f6cf73" stop-opacity=".28"/>
+        <stop offset="1" stop-color="#ecc28e" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="cafe-cyan-neon">
+        <stop stop-color="#ffe7a8" stop-opacity=".46"/><stop offset=".5" stop-color="#ecc28e" stop-opacity=".18"/>
+        <stop offset="1" stop-color="#ecc28e" stop-opacity="0"/>
       </radialGradient>
       <linearGradient id="cafe-daylight" x2=".12" y2="1">
         <stop stop-color="#f7dcb7" stop-opacity=".52"/><stop offset="1" stop-color="#fbefcf" stop-opacity="0"/>
@@ -83,6 +107,8 @@ layer.innerHTML = `<svg class="cafe-lighting" viewBox="0 0 1536 1024" aria-hidde
     <g class="hall-ambience">
       ${roomEffects("hall")}${air(hallMotes)}${fallingLeaves("hall")}
       <ellipse class="counter-neon" cx="192" cy="658" rx="55" ry="41" fill="url(#cafe-amber)"/>
+      <ellipse class="booth-hall-glow" cx="135" cy="95" rx="95" ry="55" fill="url(#cafe-cyan-neon)"/>
+      <ellipse class="terrace-hall-glow" cx="1340" cy="70" rx="85" ry="45" fill="url(#cafe-amber)"/>
       <g clip-path="url(#cafe-kiosk-glass)">
         <rect class="kiosk-glass-scan" x="362" y="798" width="65" height="19" fill="url(#cafe-kiosk-shine)"/>
       </g>
@@ -97,18 +123,31 @@ layer.innerHTML = `<svg class="cafe-lighting" viewBox="0 0 1536 1024" aria-hidde
         <path d="M199 652h2v2h-2z" style="--offset:-4.8s"/>
         <path d="M209 649h3v3h-3z" style="--offset:-6.2s"/>
       </g>
-      <g class="counter-cat-eyes" shape-rendering="crispEdges">
-        <path fill="#f7e1b7" d="M168 707h11v6h-11z M186 707h10v6h-10z"/>
-        <path fill="#433335" d="M172 708h3v6h-3z M189 708h3v6h-3z"/>
-        <path fill="#fff2d4" d="M172 708h1v1h-1z M189 708h1v1h-1z"/>
-      </g>
-      <path class="counter-tail-shine" fill="#fff0c6" d="M218 715h6v2h-7z M215 722h2v3h-2z"/>
       <g clip-path="url(#cafe-entry-tile)">
         <g class="entry-reflections" fill="#f4cea3" shape-rendering="crispEdges">
           <path d="M590 955h20v9h-6v8h-9v-8h-5z M893 956h19v10h-4v7h-8v-8h-7z"/>
           <path d="M594 981h11v5h-11z M600 995h6v4h-6z M896 981h12v5h-12z M900 996h6v5h-6z"/>
         </g>
       </g>
+    </g>
+    <g class="booth-ambience">
+      <ellipse class="booth-neon-halo" cx="975" cy="256" rx="190" ry="78" fill="url(#cafe-amber)"/>
+      <ellipse class="ambient-lamp" cx="1315" cy="360" rx="68" ry="58" fill="url(#cafe-amber)"/>
+      <g class="booth-fan" transform="translate(1070 140)">
+        <circle r="24" fill="#fbe3d322"/>
+        <path class="fan-blades" fill="#dfd0d377" d="M-4 -20h8v16h-8z M-4 4h8v16h-8z M-20 -4h16v8h-16z M4 -4h16v8h-16z"/>
+      </g>
+      <g class="booth-fan" transform="translate(1173 140)">
+        <circle r="24" fill="#fbe3d322"/>
+        <path class="fan-blades" fill="#dfd0d377" d="M-4 -20h8v16h-8z M-4 4h8v16h-8z M-20 -4h16v8h-16z M4 -4h16v8h-16z"/>
+      </g>
+      <g class="booth-smoke-layer" fill="#fff5eb" shape-rendering="crispEdges">${boothSmoke}</g>
+    </g>
+    <g class="terrace-ambience">
+      ${terraceFairy}
+      <ellipse cx="995" cy="285" rx="95" ry="60" fill="url(#cafe-amber)"/>
+      <ellipse cx="195" cy="485" rx="75" ry="65" fill="url(#cafe-amber)"/>
+      <g class="terrace-rain-layer" fill="#e4f2f7aa" shape-rendering="crispEdges">${terraceRain}</g>
     </g>
     ${Object.keys(lights).slice(1).map(room =>
       `<g class="room-ambience" data-room="${room}" transform="scale(2)">

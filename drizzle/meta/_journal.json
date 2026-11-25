@@ -50,6 +50,27 @@
       "when": 1793953600003,
       "tag": "0006_cafe_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1795576800001,
+      "tag": "0007_world_zones_and_avatars",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1795576800002,
+      "tag": "0008_snack_bar_v2",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1795576800003,
+      "tag": "0009_arcade_and_pvp",
+      "breakpoints": true
     }
   ]
 }

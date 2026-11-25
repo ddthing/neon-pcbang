@@ -1,15 +1,66 @@
 .scene { container-type: inline-size; }
-.cafe-avatars { position: absolute; inset: 0; z-index: 1; pointer-events: none; --avatar-scale: 1; }
-.scene:not([data-space="lobby"], [data-space="hall"]) .cafe-avatars { --avatar-scale: 1.65; }
+.cafe-avatars { position: absolute; inset: 0; z-index: 2; pointer-events: none; --avatar-scale: 1; }
+.scene:not([data-space="lobby"], [data-space="hall"]) .cafe-avatars { --avatar-scale: 1.72; }
+.scene:is([data-space="booth"], [data-space="terrace"]) .cafe-avatars { --avatar-scale: 1.95; }
+
 .cafe-visitor {
-  position: absolute; width: calc(2.23cqw * var(--avatar-scale)); height: calc(3.2cqw * var(--avatar-scale));
-  transform: translate(-50%, -100%);
+  position: absolute;
+  width: calc(2.75cqw * var(--avatar-scale));
+  height: calc(3.44cqw * var(--avatar-scale));
+  transform: translate(-50%, -94%);
 }
-.cafe-visitor:not(.mine) { transition: left 1s linear, top 1s linear; }
+.cafe-visitor:not(.mine) { transition: left .95s linear, top .95s linear; }
 .cafe-visitor.remote-path { transition: none; }
-.cafe-visitor::before { content: ""; position: absolute; width: 76%; height: 14%; bottom: 2%; left: 12%; border-radius: 50%; background: #201b1b65; }
-.cafe-visitor svg { position: absolute; width: 100%; height: auto; bottom: 5%; transform: scaleX(var(--facing, 1)); filter: drop-shadow(0 1px 1px #221c1a80); }
-.cafe-visitor.seated svg { height: 70%; width: 80%; left: 10%; }
+.cafe-visitor::before {
+  content: ""; position: absolute; width: 68%; height: 13%; bottom: 2%; left: 16%;
+  border-radius: 50%; background: #14101078;
+}
+.cafe-visitor.away-desk { opacity: .48; filter: saturate(.65); }
+
+/* Crisp 32x40 pixel-art 4x6 sprite sheet renderer */
+.cafe-sprite {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-size: 400% 600%;
+  background-position: calc(var(--sprite-col, 0) * 33.3333%) calc(var(--sprite-row, 0) * 20%);
+  image-rendering: pixelated;
+  filter: drop-shadow(0 1px 1px #19131290);
+}
+.cafe-visitor.seated .cafe-sprite {
+  top: 10%;
+}
+
+/* Activity badge & nickname */
+.cafe-nickname {
+  position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); white-space: nowrap;
+  padding: 2px 5px; border: 1px solid #ded3bf; border-radius: 3px; color: #f7efe1; background: #2d2827f0;
+  font-size: clamp(8px, .78cqw, 14px); font-weight: 800; box-shadow: 0 2px 4px #0006;
+}
+.cafe-visitor.mine .cafe-nickname {
+  color: #1f3329; border-color: #e8f7e4; background: #bce8cf;
+}
+.cafe-activity-pill {
+  position: absolute; left: 50%; bottom: calc(100% + clamp(15px, 1.55cqw, 24px));
+  transform: translateX(-50%); white-space: nowrap;
+  padding: 1px 6px; border-radius: 99px; border: 1px solid #ecc28e;
+  background: #4c383df2; color: #fbe3d3;
+  font-size: clamp(7px, .68cqw, 12px); font-weight: 700;
+  box-shadow: 0 2px 6px #4c383d55;
+}
+.cafe-wave { position: absolute; left: 75%; bottom: 82%; font-size: clamp(11px, 1.4cqw, 26px); z-index: 2; }
+
+/* Pixel Smoke / Warm Coffee Steam / Night Breath Emitter */
+.cafe-vapor {
+  position: absolute; left: 66%; bottom: 62%; width: 14px; height: 26px; pointer-events: none; z-index: 3;
+}
+.cafe-vapor i {
+  position: absolute; bottom: 0; left: 0; width: clamp(3px, .35cqw, 6px); aspect-ratio: 1;
+  background: #fff5ebcc; border-radius: 1px; opacity: 0;
+}
+.cafe-vapor[data-kind="smoke"] i { background: #dfd0d3d9; box-shadow: 0 0 4px #fbe3d366; }
+.cafe-vapor[data-kind="steam"] i { background: #fff5e4cc; }
+
 .scene-viewport { position: relative; }
 .seat-journey {
   position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 3;
@@ -17,34 +68,86 @@
   color: #e5dfcf; background: #38332ced; font-size: 12px; white-space: nowrap;
   pointer-events: none;
 }
-.cafe-nickname {
-  position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); white-space: nowrap;
-  padding: 2px 4px; border: 1px solid #ded3bf; border-radius: 3px; color: #f7efe1; background: #393432ed;
-  font-size: clamp(8px, .8cqw, 15px); font-weight: 800;
-}
-.cafe-visitor.mine .cafe-nickname { color: #2b3c32; border-color: #f2f0df; background: #cfdfc7; }
-.cafe-wave { position: absolute; left: 75%; bottom: 78%; font-size: clamp(11px, 1.4cqw, 26px); z-index: 2; }
 .scene:focus-visible { outline: 2px solid var(--mint); outline-offset: -2px; }
-.scene .seat-marker, .scene .kiosk-pin { z-index: 2; }
-.walk-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 7px 11px; padding: 8px 13px; border-top: 1px solid var(--line); }
+.scene .seat-marker, .scene .kiosk-pin { z-index: 3; }
+
+/* Hall Pixel Props & Relaxation Zone Portals */
+.hall-prop { position: absolute; pointer-events: none; image-rendering: pixelated; z-index: 1; }
+#hall-booth-prop { left: 2.8%; top: 3.1%; width: 12.2%; height: auto; }
+#hall-terrace-prop { left: 82.6%; top: 2.3%; width: 9.2%; height: auto; }
+.scene:not([data-space="lobby"], [data-space="hall"]) .hall-prop { display: none; }
+
+.stage-room-door[data-relax="booth"] {
+  border-color: #ecc28e; background: #4c383df2; color: #fbe3d3;
+  box-shadow: 0 2px #332428, 0 0 10px #f6cf733b;
+}
+.stage-room-door[data-relax="terrace"] {
+  border-color: #93b89c; background: #3b4a3ef2; color: #f5f2e6;
+  box-shadow: 0 2px #263128, 0 0 10px #8ea1473b;
+}
+
+/* Interactive Zone Action Bar inside Cozy Smoking Areas */
+.relax-hud {
+  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 4;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px;
+  padding: 7px 10px; border: 1px solid #ecc28e; border-radius: 7px;
+  background: #4c383deb; box-shadow: 0 8px 24px #33242899; max-width: calc(100% - 24px);
+}
+.scene[data-space="terrace"] .relax-hud {
+  border-color: #b86f4c; background: #47332ceb;
+}
+.relax-hud[hidden] { display: none !important; }
+.relax-chip {
+  min-height: 30px; padding: 4px 9px; border: 1px solid #9e7b82; border-radius: 4px;
+  background: #6e525a; color: #fbe3d3; font-size: 11px; font-weight: 750; white-space: nowrap;
+}
+.scene[data-space="terrace"] .relax-chip { border-color: #b86f4c; background: #6b4738; color: #fff0e0; }
+.relax-chip:hover { filter: brightness(1.1); }
+.relax-chip[aria-pressed="true"] { border-color: #ffe7a8; background: #569e7c; color: #ffffff; }
+.relax-exit { border-color: #f6cf73; background: #b86f4c; color: #fff9f2; }
+
+/* Avatar Wardrobe Modal */
+#avatar-wardrobe { width: min(500px, calc(100% - 24px)); }
+.wardrobe-stage {
+  display: flex; align-items: center; gap: 14px; padding: 12px; margin: 10px 0;
+  border: 1px solid #6c6053; border-radius: 8px;
+  background: radial-gradient(circle at 30% 35%, #3c4a47, #24211f 75%);
+}
+#wardrobe-preview {
+  width: 96px; height: 120px; image-rendering: pixelated;
+  border: 1px solid #7d8f84; border-radius: 6px; background: #1d2422; flex-shrink: 0;
+}
+.wardrobe-poses { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.wardrobe-controls {
+  display: grid; gap: 9px; max-height: 38dvh; overflow-y: auto; padding-right: 4px; margin-bottom: 12px;
+}
+.wardrobe-group strong { display: block; font-size: 11px; color: #e6d2b5; margin-bottom: 4px; }
+.wardrobe-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.wardrobe-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; }
+.wardrobe-chip i { width: 10px; height: 10px; border-radius: 2px; border: 1px solid #ffffff66; display: inline-block; }
+.wardrobe-chip[aria-pressed="true"] {
+  background: #c5dec2; color: #1e2e23; border-color: #eef7ec; font-weight: 800;
+}
+
+.walk-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 7px 9px; padding: 8px 13px; border-top: 1px solid var(--line); }
 .walk-guide { display: grid; gap: 2px; color: var(--sub); font-size: 10px; margin-right: auto; }
 .walk-guide strong { color: var(--text); font-size: 11px; }
 .walk-button { min-height: 30px; padding: 4px 8px; border: 1px solid #6b7263; border-radius: 4px; color: #e3eadc; background: #454e42; font-size: 11px; }
 .walk-button:hover { background: #535e50; }
 .walk-name { display: flex; align-items: center; gap: 5px; color: var(--sub); font-size: 11px; }
-.walk-name input { width: 96px; min-height: 30px; padding: 4px 5px; border: 1px solid var(--line); border-radius: 4px; background: #292825; color: var(--text); font: inherit; }
+.walk-name input { width: 92px; min-height: 30px; padding: 4px 5px; border: 1px solid var(--line); border-radius: 4px; background: #292825; color: var(--text); font: inherit; }
 .walk-name input:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
 .walk-guests { border-top: 1px solid var(--line); padding: 7px 13px; color: var(--sub); font-size: 11px; overflow-wrap: anywhere; }
 .walk-feedback:empty { display: none; }
 .walk-feedback { color: #664d48; font-size: 11px; line-height: 1.5; }
-.room-hud { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.room-hud { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .room-hud .window-weather {
   color: #e4d9c9; text-decoration: none; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .room-hud .window-weather:hover { text-decoration: underline; }
 .view-button { display: inline-flex; flex-shrink: 0; align-items: center; gap: 5px; white-space: nowrap; }
 .view-button svg { width: 13px; height: 13px; }
-.game-view-actions { display: none; gap: 6px; }
+.game-view-actions { display: none; gap: 5px; flex-wrap: wrap; }
 
 body.cafe-fullscreen { overflow: hidden; background: #2c2926; }
 .cafe-fullscreen :is(.topbar, .intro, .controls, .footer, .skip, .room-foot) { display: none; }
@@ -62,7 +165,7 @@ body.cafe-fullscreen { overflow: hidden; background: #2c2926; }
 }
 .cafe-fullscreen .game-view-actions { display: inline-flex; }
 @media (max-width: 560px) {
-  .room-hud { gap: 6px; }
+  .room-hud { gap: 5px; }
   .room-hud .room-live { display: none; }
   .room-head .window-dots { display: none; }
   .cafe-fullscreen .walk-name { margin-left: auto; }
@@ -74,34 +177,62 @@ body.cafe-fullscreen { overflow: hidden; background: #2c2926; }
 .floor-legend .taken { background: #93807d; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .cafe-visitor.walking svg { animation: cafe-steps .4s steps(2, end) infinite; }
+  .cafe-visitor.walking .cafe-sprite {
+    animation: avatar-stride .52s steps(1, end) infinite;
+  }
+  .cafe-visitor.seated:not(.away-desk) .cafe-sprite {
+    animation: avatar-typing .75s steps(1, end) infinite;
+  }
+  .cafe-visitor[data-pose="smoke"] .cafe-sprite {
+    animation: avatar-smoke 2.8s steps(1, end) infinite;
+  }
+  .cafe-vapor i {
+    animation: vapor-rise 2.7s ease-out infinite;
+  }
+  .cafe-vapor i:nth-child(2) { animation-delay: -.9s; left: 3px; }
+  .cafe-vapor i:nth-child(3) { animation-delay: -1.8s; left: -2px; }
   .scene[data-ambience-active] .cafe-visitor.mine.walking:not(.seated)::after {
     content: "";
-    position: absolute;
-    left: 46%;
-    bottom: 2%;
-    width: clamp(2px, .28cqw, 5px);
-    aspect-ratio: 1;
+    position: absolute; left: 46%; bottom: 2%;
+    width: clamp(2px, .28cqw, 5px); aspect-ratio: 1;
     background: #e9cfac;
     box-shadow: .55cqw -.18cqw #c6ad90, -.42cqw .12cqw #d4bb9e;
     animation: step-dust .52s steps(5, end) infinite;
   }
-  .cafe-visitor.mine.sitting svg { transform-origin: bottom center; animation: cafe-sit .30s steps(4, end); }
+  .cafe-visitor.mine.sitting .cafe-sprite { transform-origin: bottom center; animation: cafe-sit .30s steps(4, end); }
   .cafe-wave:not([hidden]) { animation: cafe-hello .35s ease-out both; }
+}
+
+@keyframes avatar-stride {
+  0% { background-position-x: 0%; }
+  25% { background-position-x: 33.3333%; }
+  50% { background-position-x: 66.6667%; }
+  75% { background-position-x: 100%; }
+}
+@keyframes avatar-typing {
+  0%, 49% { background-position-x: 0%; }
+  50%, 100% { background-position-x: 33.3333%; }
+}
+@keyframes avatar-smoke {
+  0%, 65% { background-position-x: 0%; }
+  66%, 100% { background-position-x: 33.3333%; }
+}
+@keyframes vapor-rise {
+  0% { opacity: 0; transform: translate(0, 0) scale(.8); }
+  22% { opacity: .78; }
+  100% { opacity: 0; transform: translate(4px, -22px) scale(1.55); }
 }
 @keyframes step-dust {
   0% { opacity: 0; }
   28% { opacity: .64; }
-  100% { opacity: 0; transform: translate(calc(-1.1cqw * var(--facing, 1)), -.5cqw); }
+  100% { opacity: 0; transform: translate(-8px, -4px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .cafe-visitor:not(.mine) { transition: none; }
 }
-@keyframes cafe-steps { 50% { transform: translateY(-6%) scaleX(var(--facing, 1)); } }
 @keyframes cafe-sit {
-  0% { transform: translateY(-10%) scale(var(--facing, 1), 1.38); }
-  67% { transform: translateY(4%) scale(var(--facing, 1), .9); }
-  100% { transform: scaleX(var(--facing, 1)); }
+  0% { transform: translateY(-10%) scaleY(1.25); }
+  67% { transform: translateY(4%) scaleY(.92); }
+  100% { transform: none; }
 }
 @keyframes cafe-hello { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
-

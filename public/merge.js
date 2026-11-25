@@ -2,6 +2,7 @@
 /* Lucian UX/UI Prompt #022 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#022 */
 /* Lucian UX/UI Prompt #093 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#093 */
 import { BOARD_SIZE, createMergeBoard, moveMergeBoard, canMoveMergeBoard } from "./merge-board.js";
+import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
 
 const goal = 2048;
 const bestKey = "neon-pcbang-merge-best";
@@ -26,6 +27,7 @@ export function initMerge() {
   const reset = document.getElementById("merge-reset");
   const hint = dialog.querySelector(".merge-swipe-demo");
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
+  mountLeaderboardBox(dialog, "merge", () => "standard", (s, m) => `${s.toLocaleString()}점${m ? ` (${m})` : ""}`);
   let showHint = true;
   try { showHint = !sessionStorage.getItem(swipeHintKey); } catch {}
   hint.classList.toggle("is-new", showHint);
@@ -245,7 +247,13 @@ export function initMerge() {
       reachedGoal = true;
       celebrate();
     }
-    if (won || finished) window.recordCafeStamp("game");
+    if (won || finished) {
+      window.recordCafeStamp("game");
+      if (score >= 256) {
+        submitArcadeScore("merge", score, { metric: `최대 ${Math.max(...values)}` });
+      }
+      if (won) window.cafeEarnPoints?.(40, "2048 달성 보너스");
+    }
     status.textContent = won
       ? (finished ? "2048 달성! 더 움직일 수 없어요." : "2048 달성! 더 큰 타일에도 도전해 보세요.")
       : finished ? "더 움직일 수 없어요. 새 게임으로 다시 도전해 보세요."

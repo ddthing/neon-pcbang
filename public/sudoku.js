@@ -1,4 +1,5 @@
 import { makeSudoku, sudokuPeers } from "./sudoku-board.js";
+import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
 
 export function initSudoku() {
   const dialog = document.getElementById("sudoku");
@@ -9,7 +10,9 @@ export function initSudoku() {
   const notesToggle = document.getElementById("sudoku-notes");
   const erase = document.getElementById("sudoku-erase");
   const arrows = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] };
-  let givens, values, notes, active, pencil = false, finished = false;
+  let givens, values, notes, active, pencil = false, finished = false, startedAt = 0;
+
+  mountLeaderboardBox(dialog, "sudoku", () => level.value, (s, m) => m || `${s}점`);
 
   const cells = Array.from({ length: 81 }, (_, index) => {
     const cell = document.createElement("button");
@@ -32,6 +35,7 @@ export function initSudoku() {
 
   function render() {
     let empty = 0, hasConflict = false;
+    const activeVal = values[active];
     for (const [index, cell] of cells.entries()) {
       const number = values[index];
       const conflict = number !== 0 && sudokuPeers[index].some((peer) => values[peer] === number);
@@ -40,6 +44,7 @@ export function initSudoku() {
       cell.toggleAttribute("data-given", Boolean(givens[index]));
       cell.toggleAttribute("data-conflict", conflict);
       cell.toggleAttribute("data-related", sudokuPeers[active].includes(index));
+      cell.toggleAttribute("data-same", Boolean(activeVal && number === activeVal && index !== active));
       cell.setAttribute("aria-pressed", String(index === active));
       cell.tabIndex = index === active ? 0 : -1;
       const memo = [...notes[index]].sort();
@@ -63,10 +68,15 @@ export function initSudoku() {
     }
     if (!empty && !hasConflict && !finished) {
       finished = true;
-      window.recordCafeStamp("game");
+      window.cafeAudioPlay?.("chime");
+      window.recordCafeStamp?.("game");
+      const sec = Math.max(10, Math.floor((performance.now() - startedAt) / 1000));
+      const pts = Math.max(100, (55 - Number(level.value)) * 80 - sec);
+      window.cafeEarnPoints?.(35, "스도쿠 퍼즐 완성");
+      submitArcadeScore("sudoku", pts, { mode: level.value, metric: `${Math.floor(sec / 60)}분 ${sec % 60}초` });
     }
-    status.textContent = finished ? "완성! 모든 구역을 올바르게 채웠어요." :
-      hasConflict ? "같은 줄이나 구역에 겹치는 숫자가 있어요." : `남은 칸 ${empty}개`;
+    status.textContent = finished ? "🎉 퍼즐 완성! 모든 구역을 완벽하게 채웠어요." :
+      hasConflict ? "같은 줄이나 구역에 겹치는 숫자가 있어요." : `남은 빈칸 ${empty}개`;
     const locked = finished || Boolean(givens[active]);
     for (const key of keypad.children) key.disabled = locked;
     erase.disabled = locked;
@@ -80,8 +90,10 @@ export function initSudoku() {
     notes = cells.map(() => new Set());
     active = values.indexOf(0);
     pencil = finished = false;
+    startedAt = performance.now();
+    window.cafeWorld?.setActivity("game:sudoku");
     render();
-    if (moveFocus) cells[active].focus();
+    if (moveFocus && cells[active]) cells[active].focus();
   }
 
   function select(index, moveFocus = false) {
@@ -92,6 +104,7 @@ export function initSudoku() {
 
   function enter(digit) {
     if (finished || givens[active]) return;
+    window.cafeAudioPlay?.("tick");
     const memo = notes[active];
     if (digit && pencil) {
       if (values[active]) {
@@ -103,6 +116,9 @@ export function initSudoku() {
     } else {
       values[active] = digit;
       memo.clear();
+      if (digit) {
+        for (const peer of sudokuPeers[active]) notes[peer].delete(digit);
+      }
     }
     render();
   }
@@ -129,6 +145,8 @@ export function initSudoku() {
     notesToggle.setAttribute("aria-pressed", String(pencil));
   });
   erase.addEventListener("click", () => enter(0));
+  level.addEventListener("change", () => start(true));
   document.getElementById("sudoku-new").addEventListener("click", () => start(true));
+  dialog.addEventListener("close", () => window.cafeWorld?.setActivity(""));
   start();
 }

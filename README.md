@@ -1,13 +1,14 @@
 # 길모퉁이PC방
 
-서울의 날씨가 창밖으로 흐르는 픽셀 아트 온라인 PC방입니다. 같은 매장에 들어온 손님은 서로의 캐릭터와 좌석 상태를 볼 수 있어요.
+내 위치의 날씨와 시간이 창밖으로 흐르는 포근한 픽셀 아트 온라인 PC방입니다. 같은 매장에 들어온 손님은 서로의 캐릭터와 좌석 상태를 볼 수 있어요.
 
-- **이동:** 방향키, WASD, 또는 바닥 누르기.
-- **화면:** 기본 화면은 비율을 유지하면서 창을 채우고 내 캐릭터를 따라갑니다. 오른쪽 위의 전체 지도 버튼으로 매장을 한 번에 볼 수 있어요.
-- **매점**은 접수 순서대로 주문을 배달해요. 고양이 알바생이 쟁반을 들고 자리에 다녀옵니다. 실시간 주문표에는 주문번호, 메뉴, 상태가 표시돼요.
+- **이동 & 아바타 옷장:** 방향키, WASD, 또는 바닥 누르기. `👕 옷장`에서 4방향 정통 픽셀 아바타(헤어, 코디, 게이밍 헤드셋, 안경)를 자유롭게 꾸밀 수 있어요.
+- **휴식·흡연구역 2종 (좌석 유지 외출):** 매장 좌측 상단의 **실내 흡연구역(`booth`)**과 우측 상단의 **야외 흡연구역(`terrace`)**을 내 PC 좌석을 반납하지 않고도 오갈 수 있어요. 비흡연자도 자판기 밀크커피나 멘솔·막대사탕 모드로 구역별 담소를 즐길 수 있습니다.
+- **길모퉁이 매점 2.0 & 오픈키친:** 짜계치·얼박사·아샷추·붕어빵 등 24종 픽셀아트 메뉴와 내 맘대로 토핑 커스텀을 지원해요. 고양이 알바생이 오픈키친에서 조리 후 책상으로 배달하며, 도착한 쟁반을 클릭해 직접 먹거나 무료 `G-포인트`로 옆 자리 손님에게 간식을 선물할 수 있습니다.
+- **길모퉁이 OS 2.0 & 미니게임 9종:** 좌석 간 실시간 1:1 대전(오목·알까기 + 고양이 알바 AI), 모퉁이 블록 드롭(테트리스), 붕어빵 제작 타이쿤, 알바냥 매점 러시, 코지 빗방울 산성비(청축·갈축·적축 타건음 지원), 3단계 지뢰찾기(초·중·고급), 벽돌깨기 DX, 2048, 스도쿠와 D1 실시간 매장 TOP 랭킹을 제공합니다.
 - **채팅**은 같은 공간에 있는 손님에게 잠깐 말풍선으로 표시돼요. 채팅 설정에서 특정 손님이나 다른 손님 모두의 말풍선을 숨길 수 있어요.
 - **단골 쿠폰:** 한국 시간 기준 하루 착석 시간 30분을 채우면 도장 1개를 받을 수 있어요. 10개를 모아 매점의 단골 메뉴로 바꿀 수 있습니다. 이 브라우저에 저장된 손님 정보로 쿠폰을 이어서 사용해요.
-- **창밖:** [Open-Meteo](https://open-meteo.com/)의 서울 날씨와 서울의 일출·일몰 시각을 씁니다. 날씨를 가져오지 못하면 한국 시간에 맞춘 풍경을 보여줍니다.
+- **창밖:** [Open-Meteo](https://open-meteo.com/)를 통해 사용자 현재 위치의 날씨와 일출·일몰 시각, 로컬 시간 흐름을 보여줍니다.
 - **제목 글꼴**은 귀댕이의 [뚝딱감자체](https://blog.naver.com/guidang2/224435435470)이며, [눈누의 웹폰트 주소](https://noonnu.cc/font_page/1969)를 사용합니다.
 
 ## GitHub에서 배포하기
@@ -64,6 +65,9 @@ npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0004_invite_code_vault.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0005_cafe_delivery.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0006_cafe_chat.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0007_world_zones_and_avatars.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0008_snack_bar_v2.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0009_arcade_and_pvp.sql
 npm start
 ```
 
