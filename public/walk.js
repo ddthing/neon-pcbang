@@ -172,9 +172,11 @@ function paint(key, data, point, walking, awayAtDesk = false) {
   const furniture = seatedHere && seating.chair(data.seat);
   if (furniture) {
     node.style.setProperty("--seated-size", furniture.size + "cqw");
+    node.style.setProperty("--seat-lift", (furniture.y - furniture.top) * .18 + "%");
     node.style.zIndex = String(furniture.depth - 1);
   } else {
     node.style.removeProperty("--seated-size");
+    node.style.removeProperty("--seat-lift");
     node.style.zIndex = String(Math.round(point.y * 10));
   }
 

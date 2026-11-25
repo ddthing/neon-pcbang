@@ -328,7 +328,7 @@ function chairGeometry(key) {
   if (!chair) return null;
   const [cx, top, width, height] = chair;
   const y = (top + height - 3) / 256 * 100;
-  return { x: cx / 384 * 100, y, size: width * 1.55 / 384 * 100,
+  return { x: cx / 384 * 100, y, size: width * 1.22 / 384 * 100,
     depth: Math.round(y * 10), left: (cx - Math.floor(width / 2)) / 384 * 100,
     top: top / 256 * 100, width: width / 384 * 100 };
 }

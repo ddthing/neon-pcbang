@@ -321,13 +321,13 @@ body.cafe-fullscreen { overflow: hidden; background: #261b1e; }
 }
 @keyframes cafe-hello { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 
-.scene[data-space="solo"] .cafe-avatars { --avatar-scale: 8.7; }
-.scene[data-space="duo"] .cafe-avatars { --avatar-scale: 7.8; }
-.scene[data-space="team"] .cafe-avatars { --avatar-scale: 5.9; }
-.scene[data-space="squad"] .cafe-avatars { --avatar-scale: 6.2; }
+.scene[data-space="solo"] .cafe-avatars { --avatar-scale: 6.8; }
+.scene[data-space="duo"] .cafe-avatars { --avatar-scale: 6.1; }
+.scene[data-space="team"] .cafe-avatars { --avatar-scale: 4.7; }
+.scene[data-space="squad"] .cafe-avatars { --avatar-scale: 5.5; }
 .cafe-visitor.seated[data-seat-dir="right"] .cafe-sprite { background-position-x: 66.6667%; }
 .cafe-visitor.seated::before { display: none; }
-.cafe-visitor.seated { width: var(--seated-size, 3.2cqw); height: var(--seated-size, 3.2cqw); }
+.cafe-visitor.seated { width: var(--seated-size, 3.2cqw); height: var(--seated-size, 3.2cqw); margin-top: calc(0px - var(--seat-lift, 0px)); }
 .cafe-visitor.seated .cafe-sprite { inset: 0; clip-path: none; }
 .scene .chair-front { position: absolute; height: auto; pointer-events: none; }
 .cafe-visitor.seated .cafe-nickname { top: auto; bottom: 91%; }
