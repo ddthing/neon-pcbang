@@ -15,7 +15,7 @@ const proximityPrompt = document.getElementById("proximity-prompt");
 const snackCounterCoords = { x: 15.5, y: 72 };
 const seating = window.cafeSeating;
 const camera = createCafeCamera(scene);
-const walkSpeed = 14.5;
+const walkSpeed = 9.2;
 const seatJourneyDuration = 4.0;
 const directions = new Map([
   ["ArrowLeft", [-1, 0]], ["KeyA", [-1, 0]], ["ArrowRight", [1, 0]], ["KeyD", [1, 0]],
@@ -578,7 +578,7 @@ function startRemoteLeg(remoteJourney) {
   }
   remoteJourney.leg = leg;
   remoteJourney.point = { ...leg.start };
-  remoteJourney.speed = Math.min(18, Math.max(13, total / seatJourneyDuration));
+  remoteJourney.speed = Math.min(12.5, Math.max(8.5, total / seatJourneyDuration));
   return true;
 }
 
@@ -635,7 +635,7 @@ function startLeg() {
     last = point;
   }
   journey.leg = leg;
-  journey.speed = 15.5;
+  journey.speed = 10.5;
   Object.assign(location, leg.start);
   journey.showSpace(leg.space);
   draw();

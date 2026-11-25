@@ -122,10 +122,12 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
 
   const isWalking = action === "walk";
   const isSeated = action === "sit";
-  const bob = isWalking ? [0, -1, 0, -1][frame % 4] : isSeated ? (frame % 2 === 1 ? 1 : 0) : 0;
-  const stepL = isWalking ? [0, -2, 0, 2][frame % 4] : 0;
-  const stepR = isWalking ? [0, 2, 0, -2][frame % 4] : 0;
-  const armBob = isWalking ? [-1, 0, 1, 0][frame % 4] : 0;
+  const bob = isWalking ? [0, -2, 0, -2][frame % 4] : isSeated ? (frame % 2 === 1 ? 1 : 0) : 0;
+  const stepL = isWalking ? [0, -4, 0, 4][frame % 4] : 0;
+  const stepR = isWalking ? [0, 4, 0, -4][frame % 4] : 0;
+  const armBob = isWalking ? [0, -3, 0, 3][frame % 4] : 0;
+  const leftLegY = isWalking ? (frame % 4 === 1 ? -3 : frame % 4 === 3 ? 1 : 0) : 0;
+  const rightLegY = isWalking ? (frame % 4 === 3 ? -3 : frame % 4 === 1 ? 1 : 0) : 0;
 
   // Crisp plump 48x48 GPT-sheet proportions!
   const headCenterY = (isSeated ? 22 : 19) + bob;
@@ -138,7 +140,7 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
     pellipse(24, headCenterY + 2, 10, hLen - 1, hairCol.base);
   }
 
-  // 1. Legs & Shoes (tucked cleanly when seated)
+  // 1. Legs & Shoes (pronounced alternating footstep lift & side scissor stride)
   if (isSeated) {
     if (side) {
       prect(22, torsoY + 8, 9, 4, "#5c7591");
@@ -153,12 +155,12 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
     prect(20 + stepL, torsoY + 14, 6, 3, "#fff5eb");
     prect(24 + stepR, torsoY + 14, 6, 3, "#dfd0d3");
   } else {
-    prect(17, torsoY + 9 + (stepL < 0 ? -1 : 0), 5, 6, "#5c7591");
-    prect(26, torsoY + 9 + (stepR < 0 ? -1 : 0), 5, 6, "#5c7591");
-    prect(16, torsoY + 14 + (stepL < 0 ? -1 : 0), 6, 3, "#fff5eb");
-    prect(26, torsoY + 14 + (stepR < 0 ? -1 : 0), 6, 3, "#fff5eb");
-    prect(17, torsoY + 16 + (stepL < 0 ? -1 : 0), 5, 1, "#6e4c49");
-    prect(26, torsoY + 16 + (stepR < 0 ? -1 : 0), 5, 1, "#6e4c49");
+    prect(17, torsoY + 9 + leftLegY, 5, 6, "#5c7591");
+    prect(26, torsoY + 9 + rightLegY, 5, 6, "#5c7591");
+    prect(16, torsoY + 14 + leftLegY, 6, 3, "#fff5eb");
+    prect(26, torsoY + 14 + rightLegY, 6, 3, "#fff5eb");
+    prect(17, torsoY + 16 + leftLegY, 5, 1, "#6e4c49");
+    prect(26, torsoY + 16 + rightLegY, 5, 1, "#6e4c49");
   }
 
   // Species tails

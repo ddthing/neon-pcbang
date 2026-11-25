@@ -9,7 +9,7 @@
   height: calc(3.2cqw * var(--avatar-scale));
   transform: translate(-50%, -94%);
 }
-.cafe-visitor:not(.mine) { transition: left .55s linear, top .55s linear; }
+.cafe-visitor:not(.mine) { transition: left .42s linear, top .42s linear; }
 .cafe-visitor.remote-path, .cafe-visitor.instant-move { transition: none !important; }
 .cafe-visitor::before {
   content: ""; position: absolute; width: 68%; height: 13%; bottom: 2%; left: 16%;
@@ -243,15 +243,15 @@ body.cafe-fullscreen { overflow: hidden; background: #261b1e; }
   .cafe-fullscreen .walk-controls { bottom: max(8px, env(safe-area-inset-bottom)); padding: 4px 5px; }
   .cafe-fullscreen .game-view-actions { justify-content: center; }
 }
-@media (prefers-reduced-motion: no-preference) {
-  .cafe-fullscreen .scene.camera-ready { transition: transform 90ms linear; }
-}
 .floor-seat.taken { color: #e5d6d3; background: #635451 !important; border-color: #93807d !important; opacity: .76; }
 .floor-legend .taken { background: #93807d; }
 
 @media (prefers-reduced-motion: no-preference) {
   .cafe-visitor.walking .cafe-sprite {
-    animation: avatar-stride .34s steps(1, end) infinite;
+    animation: avatar-stride .38s steps(1, end) infinite;
+  }
+  .cafe-visitor.walking::before {
+    animation: shadow-step .38s steps(1, end) infinite;
   }
   .cafe-visitor.seated:not(.away-desk):not([data-seat-dir="right"]) .cafe-sprite {
     animation: avatar-typing .75s steps(1, end) infinite;
@@ -288,6 +288,10 @@ body.cafe-fullscreen { overflow: hidden; background: #261b1e; }
   25% { background-position-x: 33.3333%; }
   50% { background-position-x: 66.6667%; }
   75% { background-position-x: 100%; }
+}
+@keyframes shadow-step {
+  0%, 50% { transform: scaleX(1); opacity: .88; }
+  25%, 75% { transform: scaleX(.76); opacity: .55; }
 }
 @keyframes avatar-typing {
   0%, 49% { background-position-x: 0%; }
