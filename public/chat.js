@@ -2,10 +2,33 @@
 
 const form = document.getElementById("cafe-chat-form");
 if (form) {
+  const controlsWrap = document.getElementById("cafe-chat-controls");
+  const chatToggle = document.getElementById("chat-toggle");
+  const chatDrawer = document.getElementById("cafe-chat-drawer");
   const input = document.getElementById("cafe-chat-input");
   const submit = form.querySelector("button[type=submit]");
   const status = document.getElementById("cafe-chat-status");
   const avatars = document.getElementById("cafe-avatars");
+
+  function setChatOpen(open) {
+    if (!chatDrawer || !chatToggle) return;
+    chatDrawer.hidden = !open;
+    chatToggle.setAttribute("aria-expanded", String(open));
+    controlsWrap?.classList.toggle("is-open", open);
+    if (open) setTimeout(() => input.focus(), 20);
+  }
+  chatToggle?.addEventListener("click", () => {
+    setChatOpen(Boolean(chatDrawer?.hidden));
+  });
+  document.addEventListener("keydown", (event) => {
+    if (document.querySelector("dialog[open]")) return;
+    if (event.key === "Enter" && !event.target.closest("input, textarea, select, button, summary")) {
+      event.preventDefault();
+      setChatOpen(true);
+    } else if (event.key === "Escape" && chatDrawer && !chatDrawer.hidden) {
+      setChatOpen(false);
+    }
+  });
   const muteAll = document.getElementById("cafe-chat-mute");
   const mutedList = document.getElementById("cafe-chat-list");
   const muteKey = "neon-pcbang-chat-muted";

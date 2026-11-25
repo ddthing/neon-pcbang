@@ -1016,7 +1016,8 @@ const rainSwitchBtn = document.querySelector(".top-actions .u013-sw");
 function syncHudRainButton(enabled) {
   if (!hudRainBtn) return;
   hudRainBtn.setAttribute("aria-pressed", String(enabled));
-  hudRainBtn.textContent = enabled ? "🌧️ 빗소리 ON" : "🌧️ 빗소리";
+  hudRainBtn.textContent = "🌧️";
+  hudRainBtn.title = enabled ? "빗소리 켜짐 (누르면 끄기)" : "빗소리 꺼짐 (누르면 켜기)";
 }
 hudRainBtn?.addEventListener("click", () => rainSwitchBtn?.click());
 connectCafeSwitch(document.querySelector(".top-actions .u013"), async (enabled) => {

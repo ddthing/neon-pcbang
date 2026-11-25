@@ -437,30 +437,33 @@ function makeCatFrame(mode, frame) {
     c.rect(25, 46, 6, 3, "#6e4c49");
   }
 
-  // Warm cream fur + Cozy Reference Sage Green Apron (#569e7c)
+  // Warm 3-tone calico cream fur + Cozy Reference Sage Green Apron (#569e7c)
   c.rect(15, 27 + bob, 18, 15, "#fbe3d3");
+  c.rect(17, 28 + bob, 14, 3, "#fff5eb");
   c.rect(16, 29 + bob, 16, 13, "#569e7c");
-  c.rect(18, 30 + bob, 12, 5, "#77ba99");
+  c.rect(17, 30 + bob, 14, 4, "#77ba99");
   c.rect(26, 31 + bob, 3, 2, "#ffe7a8");
-  c.rect(19, 37 + bob, 10, 3, "#3f7a5e");
+  c.rect(19, 36 + bob, 10, 4, "#3f7a5e");
+  c.rect(20, 36 + bob, 8, 1, "#84c7a7");
 
   const earTwitch = (mode === "idle" && frame === 1) ? 1 : 0;
   c.rect(14, 9 + bob, 6, 6, "#dc9666");
   c.rect(15, 7 + bob, 4, 3, "#b86f4c");
-  c.rect(16, 10 + bob, 3, 3, "#f5a6b8");
-  c.rect(28, 9 + bob + earTwitch, 6, 6, "#dc9666");
-  c.rect(29, 7 + bob + earTwitch, 4, 3, "#b86f4c");
-  c.rect(29, 10 + bob + earTwitch, 3, 3, "#f5a6b8");
+  c.rect(16, 10 + bob, 3, 3, "#f7a8b8");
+  c.rect(28, 9 + bob + earTwitch, 6, 6, "#6e4c49");
+  c.rect(29, 7 + bob + earTwitch, 4, 3, "#4c383d");
+  c.rect(29, 10 + bob + earTwitch, 3, 3, "#f7a8b8");
 
-  c.ellipse(24, 18 + bob, 11, 8, "#fbe3d3");
-  c.rect(15, 13 + bob, 18, 4, "#dc9666");
-  c.rect(23, 12 + bob, 2, 5, "#b86f4c");
-  c.rect(19, 12 + bob, 2, 3, "#b86f4c");
-  c.rect(27, 12 + bob, 2, 3, "#b86f4c");
+  c.ellipse(24, 18 + bob, 11, 8, "#fff5eb");
+  c.ellipse(24, 20 + bob, 9, 5, "#ffffff");
+  c.rect(14, 12 + bob, 8, 5, "#dc9666");
+  c.rect(26, 12 + bob, 8, 5, "#6e4c49");
+  c.rect(22, 12 + bob, 4, 4, "#b86f4c");
+  c.rect(16, 11 + bob, 4, 2, "#ecc28e");
 
   if (mode === "cook") {
-    c.rect(15, 10 + bob, 18, 4, "#fff9f2");
-    c.rect(16, 13 + bob, 16, 1, "#e8748c");
+    c.rect(15, 9 + bob, 18, 4, "#fff9f2");
+    c.rect(16, 12 + bob, 16, 1, "#e8748c");
   }
 
   const blink = (mode === "idle" && frame === 3);
@@ -470,30 +473,33 @@ function makeCatFrame(mode, frame) {
   } else {
     c.rect(18, 17 + bob, 3, 3, OUTLINE);
     c.pset(18, 17 + bob, "#ffffff");
+    c.pset(20, 19 + bob, "#8c5c4a");
     c.rect(27, 17 + bob, 3, 3, OUTLINE);
     c.pset(27, 17 + bob, "#ffffff");
+    c.pset(29, 19 + bob, "#8c5c4a");
   }
-  c.rect(15, 20 + bob, 3, 2, "#f5a6b8");
-  c.rect(30, 20 + bob, 3, 2, "#f5a6b8");
+  c.rect(14, 20 + bob, 3, 2, "#f28da8");
+  c.rect(31, 20 + bob, 3, 2, "#f28da8");
   c.rect(23, 19 + bob, 2, 2, "#e8748c");
   c.pset(22, 21 + bob, OUTLINE); c.pset(25, 21 + bob, OUTLINE);
 
   if (mode === "walk-tray") {
-    c.rect(11, 27 + bob, 5, 4, "#fbe3d3");
-    c.rect(6, 24 + bob, 16, 2, "#dfd0d3");
-    c.rect(8, 20 + bob, 5, 4, "#e87468");
+    c.rect(11, 27 + bob, 5, 4, "#fff5eb");
+    c.rect(5, 24 + bob, 17, 3, "#dc9666");
+    c.rect(6, 25 + bob, 15, 1, "#fbe3d3");
+    c.rect(8, 20 + bob, 5, 4, "#e8748c");
     c.rect(14, 19 + bob, 4, 5, "#f6cf73");
   } else if (mode === "cook") {
     const stir = frame % 2 === 0 ? 0 : 2;
-    c.rect(11, 29 + bob, 5, 4, "#fbe3d3");
-    c.rect(31, 28 + bob, 6, 4, "#fbe3d3");
+    c.rect(11, 29 + bob, 5, 4, "#fff5eb");
+    c.rect(31, 28 + bob, 6, 4, "#fff5eb");
     c.rect(14, 34, 14, 6, "#ecc28e");
     c.rect(12, 35, 2, 2, "#b86f4c");
     c.rect(28, 35, 2, 2, "#b86f4c");
     c.rect(16 + stir, 27, 2, 8, "#c7aeb3");
   } else {
-    c.rect(12, 29 + bob, 4, 7, "#fbe3d3");
-    c.rect(32, 29 + bob, 4, 7, "#fbe3d3");
+    c.rect(12, 29 + bob, 4, 7, "#fff5eb");
+    c.rect(32, 29 + bob, 4, 7, "#fff5eb");
   }
 
   c.outline(OUTLINE);

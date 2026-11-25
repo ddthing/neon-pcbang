@@ -102,16 +102,20 @@
             <div class="window-title"><span class="stage-brand">길모퉁이PC방</span><h2 id="room-title">PC방 입구</h2></div>
           </div>
           <div class="room-hud">
-            <a class="window-weather mono" id="window-weather" href="https://open-meteo.com/" target="_blank" rel="noopener" aria-label="날씨 출처: Open-Meteo">내 위치 · 날씨 연결 중</a>
-            <time class="hud-clock mono" id="hud-clock">--:--</time>
-            <span class="room-live" id="cafe-connection" role="status">매장 연결 중</span>
-            <button class="walk-button hud-audio-btn" id="sfx-toggle" type="button" aria-pressed="true">🔊 효과음 켜짐</button>
-            <button class="walk-button hud-audio-btn" id="hud-rain-toggle" type="button" aria-pressed="false">🌧️ 빗소리</button>
-            <button class="walk-button view-button" id="cafe-overview" type="button" aria-pressed="false">전체 지도</button>
-            <button class="walk-button view-button" id="cafe-fullscreen" type="button" aria-pressed="false">
-              <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4m4 0h4v4m0 4v4h-4m-4 0H2v-4"/></svg>
-              <span>전체화면</span>
-            </button>
+            <div class="hud-status-row">
+              <a class="window-weather mono" id="window-weather" href="https://open-meteo.com/" target="_blank" rel="noopener" aria-label="날씨 출처: Open-Meteo">날씨 확인 중</a>
+              <time class="hud-clock mono" id="hud-clock">--:--</time>
+              <span class="room-live" id="cafe-connection" role="status">연결 중</span>
+            </div>
+            <div class="hud-icon-row">
+              <button class="walk-button hud-audio-btn" id="sfx-toggle" type="button" aria-pressed="true" title="효과음 켜기/끄기" aria-label="효과음 켜기/끄기">🔊</button>
+              <button class="walk-button hud-audio-btn" id="hud-rain-toggle" type="button" aria-pressed="false" title="빗소리 켜기/끄기" aria-label="빗소리 켜기/끄기">🌧️</button>
+              <button class="walk-button view-button" id="cafe-overview" type="button" aria-pressed="false" title="전체 매장 지도">🗺️ 지도</button>
+              <button class="walk-button view-button" id="cafe-fullscreen" type="button" aria-pressed="false" title="전체화면 전환" aria-label="전체화면 전환">
+                <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4m4 0h4v4m0 4v4h-4m-4 0H2v-4"/></svg>
+                <span>전체화면</span>
+              </button>
+            </div>
           </div>
         </div>
         <div class="scene-viewport">
@@ -150,25 +154,28 @@
         <div class="walk-controls">
           <p class="walk-guide"><strong>매장 둘러보기</strong><span class="walk-key-hint"><kbd>WASD</kbd> <kbd>↑↓←→</kbd> · 바닥 클릭 · <kbd>E</kbd> 상호작용</span><span class="walk-touch-hint">조이스틱 밀기 · 바닥 탭</span></p>
           <div class="game-view-actions">
-            <button class="walk-button stage-key" id="game-view-floor" type="button">🪑 좌석 선택</button>
+            <button class="walk-button stage-key" id="game-view-floor" type="button">🪑 좌석</button>
             <button class="walk-button" id="game-view-pc" type="button" hidden>💻 내 PC</button>
-            <button class="walk-button stage-key" id="quick-return-seat" type="button" hidden>💻 자리 복귀</button>
+            <button class="walk-button stage-key" id="quick-return-seat" type="button" hidden>💻 복귀</button>
             <button class="walk-button" id="quick-snacks" type="button" data-open="snacks">🍜 매점</button>
-            <button class="walk-button" id="quick-booth" type="button">🚬 실내 흡연구역</button>
-            <button class="walk-button" id="quick-terrace" type="button">🌿 야외 흡연구역</button>
+            <button class="walk-button" id="quick-booth" type="button">🚬 실내</button>
+            <button class="walk-button" id="quick-terrace" type="button">🌿 야외</button>
             <button class="walk-button" id="open-wardrobe" type="button">👕 캐릭터</button>
             <button class="walk-button" id="cafe-wave" type="button">👋 인사</button>
-            <button class="walk-button" id="cafe-menu-open" type="button">📋 메뉴</button>
+            <button class="walk-button" id="cafe-menu-open" type="button">☰ 메뉴</button>
           </div>
-          <div class="cafe-chat-controls">
+        </div>
+        <div class="cafe-chat-controls" id="cafe-chat-controls">
+          <button class="walk-button hud-chat-pill" id="chat-toggle" type="button" aria-expanded="false">💬 채팅</button>
+          <div class="cafe-chat-drawer" id="cafe-chat-drawer" hidden>
             <form class="cafe-chat-form" id="cafe-chat-form">
               <label class="pc-sr-only" for="cafe-chat-input">채팅</label>
-              <input id="cafe-chat-input" type="text" maxlength="80" autocomplete="off" placeholder="같은 구역 손님에게 말하기" required>
-              <button class="walk-button" type="submit">보내기</button>
+              <input id="cafe-chat-input" type="text" maxlength="80" autocomplete="off" placeholder="같은 구역 손님에게 말하기 (Enter)" required>
+              <button class="walk-button stage-key" type="submit">전송</button>
               <p class="pc-sr-only" id="cafe-chat-status" role="status"></p>
             </form>
             <details class="cafe-chat-options" id="cafe-chat-options">
-              <summary class="walk-button">채팅 설정</summary>
+              <summary class="walk-button" title="채팅 설정">⚙️</summary>
               <div class="cafe-chat-options-panel">
                 <label><input type="checkbox" id="cafe-chat-mute"> 다른 손님 말풍선 숨기기</label>
                 <div id="cafe-chat-list"></div>
@@ -229,7 +236,7 @@
       <h2 id="wardrobe-title">내 캐릭터 옷장</h2>
       <p class="panel-copy">헤어, 후드·과잠 코디, 게이밍 헤드셋과 안경을 자유롭게 조합해 보세요.</p>
       <div class="wardrobe-stage">
-        <canvas id="wardrobe-preview" width="32" height="40" aria-label="캐릭터 미리보기"></canvas>
+        <canvas id="wardrobe-preview" width="48" height="48" aria-label="캐릭터 미리보기"></canvas>
         <div>
           <strong class="mono">4방향 정통 픽셀 아바타</strong>
           <p class="panel-copy">매장 걷기, 착석 타이핑, 흡연·밀크커피 포즈에 모두 반영돼요.</p>

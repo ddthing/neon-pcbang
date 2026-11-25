@@ -1,14 +1,15 @@
 #monitor-layer { position: absolute; inset: 0; pointer-events: none; }
 .pc-screen {
   position: absolute; left: var(--x); top: var(--y); width: var(--screen-width); height: var(--screen-height);
-  clip-path: var(--screen-outline); background: linear-gradient(155deg,#25292c,#151719 62%);
+  border-radius: 3px; background: transparent;
 }
 .pc-screen.is-on {
-  background: linear-gradient(145deg, #569e7c 0 36%, #fbe3d3 36% 42%, #82b59b 42% 100%);
-  box-shadow: 0 0 6px #f6cf7344;
+  background: radial-gradient(ellipse at center, #ffe7a880 0%, #569e7c55 58%, transparent 100%);
+  box-shadow: 0 0 8px #ffe7a866;
 }
 .pc-screen.is-on.is-away {
-  background: linear-gradient(145deg, #7e5e68 0 42%, #ecc28e 42% 48%, #9e7b82 48% 100%);
+  background: radial-gradient(ellipse at center, #ecc28e66 0%, #9e7b8244 60%, transparent 100%);
+  box-shadow: 0 0 6px #ecc28e44;
 }
 .scene .seat-marker { margin-top: -16px; }
 #stage-seated:not([hidden]) + #open-floor {

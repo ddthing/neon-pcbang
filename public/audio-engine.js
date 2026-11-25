@@ -123,7 +123,8 @@
     if (!btn) return;
     const renderBtn = () => {
       btn.setAttribute("aria-pressed", String(sfxEnabled));
-      btn.textContent = sfxEnabled ? "🔊 효과음 켜짐" : "🔇 효과음 꺼짐";
+      btn.textContent = sfxEnabled ? "🔊" : "🔇";
+      btn.title = sfxEnabled ? "효과음 켜짐 (누르면 끄기)" : "효과음 꺼짐 (누르면 켜기)";
     };
     renderBtn();
     btn.addEventListener("click", () => {
