@@ -278,6 +278,13 @@ function renderRelaxHud() {
     return btn;
   }));
 
+  const countChip = document.createElement("span");
+  countChip.className = "relax-chip mono";
+  countChip.id = "relax-zone-count";
+  const zCount = window.cafeZoneCounts?.[activeBreakZone] || 1;
+  countChip.textContent = `👥 이 구역 ${zCount}명`;
+  relaxHud.prepend(countChip);
+
   const exitBtn = document.createElement("button");
   exitBtn.type = "button";
   exitBtn.className = "relax-chip relax-exit";
@@ -285,6 +292,15 @@ function renderRelaxHud() {
   exitBtn.addEventListener("click", () => window.cafeWorld?.exitRelaxZone?.());
   relaxHud.append(exitBtn);
 }
+
+document.addEventListener("cafe-zone-counts", ({ detail }) => {
+  window.cafeZoneCounts = detail.counts || {};
+  const chip = $("#relax-zone-count");
+  if (chip && activeBreakZone) {
+    const n = window.cafeZoneCounts[activeBreakZone] || 1;
+    chip.textContent = `👥 이 구역 ${n}명`;
+  }
+});
 
 function renderRoom() {
   const view = activeBreakZone ?? seatJourney?.space ?? room.space ?? "lobby";

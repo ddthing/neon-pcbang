@@ -127,6 +127,13 @@ function renderTrays(arrivals = new Set()) {
     const node = createTray(entry, point, arrivals.has(entry.key));
     paintedTrays.set(entry.key, node);
     trayLayer.append(node);
+    if (arrivals.has(entry.key) && entry.giftFrom && seating.current() === entry.seat) {
+      window.cafeAudioPlay?.("chime");
+      const note = entry.giftNote ? ` "${entry.giftNote}"` : "";
+      document.querySelector(".u070")?.dispatchEvent(new CustomEvent("pcbang-notice", {
+        detail: { message: `🎁 ${entry.giftFrom}님이 간식을 쐈어요!${note} (책상 쟁반을 눌러 먹기)`, kind: "ok" },
+      }));
+    }
   }
 }
 

@@ -9,8 +9,8 @@
   height: calc(3.44cqw * var(--avatar-scale));
   transform: translate(-50%, -94%);
 }
-.cafe-visitor:not(.mine) { transition: left .95s linear, top .95s linear; }
-.cafe-visitor.remote-path { transition: none; }
+.cafe-visitor:not(.mine) { transition: left .55s linear, top .55s linear; }
+.cafe-visitor.remote-path, .cafe-visitor.instant-move { transition: none !important; }
 .cafe-visitor::before {
   content: ""; position: absolute; width: 68%; height: 13%; bottom: 2%; left: 16%;
   border-radius: 50%; background: #14101078;
@@ -32,23 +32,24 @@
   clip-path: inset(0 0 12% 0);
 }
 
-/* Activity badge & nickname */
+/* Activity badge & nickname (nickname below character feet so speech bubbles never collide!) */
 .cafe-nickname {
-  position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); white-space: nowrap;
-  padding: 2px 5px; border: 1px solid #ded3bf; border-radius: 3px; color: #f7efe1; background: #2d2827f0;
-  font-size: clamp(8px, .78cqw, 14px); font-weight: 800; box-shadow: 0 2px 4px #0006;
+  position: absolute; left: 50%; top: calc(100% + 2px); transform: translateX(-50%); white-space: nowrap;
+  padding: 2px 5px; border: 1px solid #4c383d; border-radius: 3px; color: #fbe3d3; background: #4c383df2;
+  font-size: clamp(8px, .74cqw, 13px); font-weight: 800; box-shadow: 0 2px 0 #261b1eaa;
 }
 .cafe-visitor.mine .cafe-nickname {
-  color: #1f3329; border-color: #e8f7e4; background: #bce8cf;
+  color: #fff9f2; border-color: #4c383d; background: #569e7cf5;
 }
 .cafe-activity-pill {
-  position: absolute; left: 50%; bottom: calc(100% + clamp(15px, 1.55cqw, 24px));
+  position: absolute; left: 50%; bottom: calc(100% + 3px);
   transform: translateX(-50%); white-space: nowrap;
   padding: 1px 6px; border-radius: 99px; border: 1px solid #ecc28e;
   background: #4c383df2; color: #fbe3d3;
-  font-size: clamp(7px, .68cqw, 12px); font-weight: 700;
+  font-size: clamp(7px, .66cqw, 12px); font-weight: 700;
   box-shadow: 0 2px 6px #4c383d55;
 }
+.cafe-visitor:has(.cafe-speech-bubble) .cafe-activity-pill { display: none; }
 .cafe-wave { position: absolute; left: 75%; bottom: 82%; font-size: clamp(11px, 1.4cqw, 26px); z-index: 2; }
 
 /* Pixel Smoke / Warm Coffee Steam / Night Breath Emitter */
@@ -141,6 +142,7 @@
 
 /* Avatar Wardrobe Modal */
 #avatar-wardrobe { width: min(500px, calc(100% - 24px)); }
+#avatar-wardrobe[data-mode="entry"] .close { display: none; }
 .wardrobe-stage {
   display: flex; align-items: center; gap: 14px; padding: 12px; margin: 10px 0;
   border: 1px solid #6c6053; border-radius: 8px;
@@ -219,7 +221,7 @@ body.cafe-fullscreen { overflow: hidden; background: #2c2926; }
 
 @media (prefers-reduced-motion: no-preference) {
   .cafe-visitor.walking .cafe-sprite {
-    animation: avatar-stride .52s steps(1, end) infinite;
+    animation: avatar-stride .34s steps(1, end) infinite;
   }
   .cafe-visitor.seated:not(.away-desk):not([data-seat-dir="right"]) .cafe-sprite {
     animation: avatar-typing .75s steps(1, end) infinite;

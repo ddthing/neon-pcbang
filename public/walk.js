@@ -56,6 +56,7 @@ function save(storage, key, value) {
 const tokenKey = "neon-cafe-visitor";
 const nameKey = "neon-cafe-nickname";
 const avatarKey = "neon-cafe-avatar-v2";
+const onboardKey = "neon-cafe-onboarded-v2";
 const token = read("sessionStorage", tokenKey) || crypto.randomUUID();
 save("sessionStorage", tokenKey, token);
 const arrival = parseInt(token.slice(1, 3), 16) % 8 || 0;
@@ -148,11 +149,14 @@ function paint(key, data, point, walking, awayAtDesk = false) {
   else if (!sprite.dir) sprite.dir = data.facing === -1 ? "left" : "down";
 
   if (moved) {
+    const jumped = key !== "mine" && prevX !== undefined && Math.hypot(point.x - prevX, point.y - prevY) > 15;
+    if (jumped) node.classList.add("instant-move");
     sprite.x = point.x;
     sprite.y = point.y;
     node.style.left = point.x + "%";
     node.style.top = point.y + "%";
     node.style.zIndex = String(Math.round(point.y));
+    if (jumped) requestAnimationFrame(() => node.classList.remove("instant-move"));
   }
 
   const code = data.avatar || encodeAvatarCode(normalizeAvatarCode("", data.color ?? 0));
@@ -537,6 +541,7 @@ window.cafeWorld = {
   isOnBreak,
   currentZone: () => activeZone,
   setActivity,
+  syncNow: () => send("sync").catch(disconnected),
   getProfile: () => ({ name: name || "손님", avatar: avatarCode, token }),
   getPeers: () => peers.slice(),
   walkToSeat(seat, previous, showSpace) {
@@ -573,7 +578,7 @@ function startRemoteLeg(remoteJourney) {
   }
   remoteJourney.leg = leg;
   remoteJourney.point = { ...leg.start };
-  remoteJourney.speed = Math.max(20, total / seatJourneyDuration);
+  remoteJourney.speed = Math.min(18, Math.max(13, total / seatJourneyDuration));
   return true;
 }
 
@@ -630,7 +635,7 @@ function startLeg() {
     last = point;
   }
   journey.leg = leg;
-  journey.speed = Math.max(20, total / seatJourneyDuration);
+  journey.speed = 15.5;
   Object.assign(location, leg.start);
   journey.showSpace(leg.space);
   draw();
@@ -779,25 +784,34 @@ function initWardrobe() {
     repaintPreview();
   });
 
+  const titleEl = document.getElementById("wardrobe-title");
+  const saveBtn = document.getElementById("wardrobe-save");
+
   document.getElementById("wardrobe-save")?.addEventListener("click", () => {
-    const nextName = nameInput.value.trim().slice(0, 12);
-    if (nextName !== name) {
-      name = nextName;
-      save("localStorage", nameKey, name);
-    }
+    const nextName = (nameInput.value.trim() || name || "코지손님").slice(0, 12);
+    name = nextName;
+    nameInput.value = nextName;
+    save("localStorage", nameKey, name);
+    save("localStorage", onboardKey, "1");
     avatarConfig = { ...draft };
     avatarCode = encodeAvatarCode(avatarConfig);
     save("localStorage", avatarKey, avatarCode);
     syncHudProfile();
+    modal.dataset.mode = "edit";
     window.closeCafeWindow?.(modal) ?? modal.close();
     draw();
     send("sync").catch(disconnected);
+    window.cafeAudioPlay?.("pop");
   });
 
-  const openModal = (trigger) => {
+  const openModal = (trigger, entryMode = false) => {
     draft = { ...avatarConfig };
+    modal.dataset.mode = entryMode ? "entry" : "edit";
+    if (titleEl) titleEl.textContent = entryMode ? "길모퉁이PC방 입장 준비" : "내 캐릭터 옷장";
+    if (saveBtn) saveBtn.textContent = entryMode ? "🎮 이 캐릭터로 PC방 입장하기" : "이 스타일로 갈아입기";
     repaintPreview();
     window.openCafeWindow ? window.openCafeWindow(modal, trigger) : modal.showModal();
+    if (entryMode) setTimeout(() => nameInput.focus(), 60);
     clearInterval(previewTimer);
     previewTimer = setInterval(() => {
       if (!modal.open) { clearInterval(previewTimer); return; }
@@ -805,8 +819,17 @@ function initWardrobe() {
       renderAvatarPreview(preview, encodeAvatarCode(draft), previewAction, previewTick % 4);
     }, 260);
   };
-  openBtn.addEventListener("click", () => openModal(openBtn));
-  hudProfileBtn?.addEventListener("click", () => openModal(hudProfileBtn));
+  openBtn.addEventListener("click", () => openModal(openBtn, false));
+  hudProfileBtn?.addEventListener("click", () => openModal(hudProfileBtn, false));
+
+  modal.addEventListener("cancel", (event) => {
+    if (modal.dataset.mode === "entry") event.preventDefault();
+  });
+
+  // Pre-entry customization flow for new visitors or unset nicknames
+  if (!read("localStorage", onboardKey) && !seating.current() && !document.querySelector("dialog[open]")) {
+    openModal(hudProfileBtn || openBtn, true);
+  }
 }
 
 function canMove() {
@@ -918,6 +941,7 @@ document.addEventListener("visibilitychange", () => {
 let frameId = 0;
 let lastFrame = 0;
 let wasWalking = false;
+let lastMoveSyncAt = 0;
 let lastPhase = seating.phase();
 function requestFrame() {
   if (!frameId && !document.hidden) frameId = requestAnimationFrame(animate);
@@ -970,7 +994,13 @@ function animate(time) {
   const motionChanged = walking !== wasWalking;
   wasWalking = walking;
   if (changed) draw();
-  else if (walking || motionChanged) drawSelf(walking);
+  else if (walking || motionChanged) {
+    drawSelf(walking);
+    if (!journey && connected && (motionChanged || (walking && time - lastMoveSyncAt > 550))) {
+      lastMoveSyncAt = time;
+      send("sync").catch(disconnected);
+    }
+  }
   lastPhase = phase;
   lastSeat = seat;
   if (journey || remoteJourneys.size || (free && (pressed.size || joystickX || joystickY || path.length))) requestFrame();

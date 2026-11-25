@@ -71,7 +71,8 @@ if (form) {
       const remaining = message.expiresAt - now;
       if (remaining <= 0 || muted.has(message.sender) ||
           (mutedAll && message.sender !== window.cafeChatVisitorId)) continue;
-      const sprite = avatars.querySelector('.cafe-visitor[data-visitor-id="' + CSS.escape(message.sender) + '"]');
+      const domId = message.sender === window.cafeChatVisitorId ? "mine" : message.sender;
+      const sprite = avatars.querySelector('.cafe-visitor[data-visitor-id="' + CSS.escape(domId) + '"]');
       if (!sprite) continue;
       visible.add(message.sender);
       let bubble = bubbles.get(message.sender);
@@ -198,8 +199,10 @@ if (form) {
       input.value = "";
       announce("메시지를 보냈어요.");
       cooldownUntil = Date.now() + 2000;
+      if (result?.id) window.cafeChatVisitorId = result.id;
       if (Array.isArray(result.chat)) showMessages({
         now: result.now,
+        visitorId: result.id || window.cafeChatVisitorId,
         space: document.querySelector(".scene").dataset.space === "lobby"
           ? "hall"
           : document.querySelector(".scene").dataset.space,

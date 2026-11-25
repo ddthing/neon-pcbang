@@ -719,12 +719,18 @@ function initGiftModal() {
       });
       applyData(result);
       noteInput.value = "";
-      setText(feedback, "🎁 선물 주문 접수 완료! 고양이 알바생이 배달을 시작해요 (-30 G)");
+      setText(feedback, "🎁 선물 주문 접수 완료! 고양이 알바생이 지금 바로 배달을 시작해요 (-30 G)");
       window.cafeAudioPlay?.("chime");
+      window.cafeWorld?.syncNow?.();
     } catch (err) {
-      setText(feedback, err?.payload?.error === "gift_note_blocked"
+      const code = err?.payload?.error;
+      setText(feedback, code === "gift_note_blocked"
         ? "응원 메시지에 사용할 수 없는 표현이 있어요."
-        : "선물을 보내지 못했어요. G-포인트(30G)나 상대 좌석을 확인해 주세요.");
+        : code === "insufficient_points"
+          ? "보유 G-포인트가 부족해요! (필요: 30 G)"
+          : code === "target_not_seated"
+            ? "받는 손님이 자리를 비웠거나 이동했어요. 다른 좌석을 골라주세요."
+            : "선물을 보내지 못했어요. G-포인트(30G)나 상대 좌석을 확인해 주세요.");
     }
   }));
 
@@ -779,6 +785,7 @@ submit.addEventListener("click", () => action(async () => {
       rewardToggle.checked = false;
       setText(shopFeedback, "");
       window.cafeAudioPlay?.("chime");
+      window.cafeWorld?.syncNow?.();
     } else setText(shopFeedback, "좌석이나 쿠폰 상태가 바뀌었거나 이미 조리 중인 주문이 있어요.");
     applyData(result, false, Boolean(result.rejected));
   } catch { setText(shopFeedback, "주문을 확인하지 못했어요. 다시 눌러주세요."); }
