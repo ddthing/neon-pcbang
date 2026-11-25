@@ -3,14 +3,8 @@
   position: absolute; left: var(--x); top: var(--y); width: var(--screen-width); height: var(--screen-height);
   border-radius: 3px; background: transparent;
 }
-.pc-screen.is-on {
-  background: radial-gradient(ellipse at center, #ffe7a880 0%, #569e7c55 58%, transparent 100%);
-  box-shadow: 0 0 8px #ffe7a866;
-}
-.pc-screen.is-on.is-away {
-  background: radial-gradient(ellipse at center, #ecc28e66 0%, #9e7b8244 60%, transparent 100%);
-  box-shadow: 0 0 6px #ecc28e44;
-}
+.pc-screen.is-on { clip-path: var(--screen-outline); border-radius: 0; background: url("./sprites/monitor-on.png") center / 100% 100%; image-rendering: pixelated; }
+.pc-screen.is-on.is-away { background-image: url("./sprites/monitor-away.png"); }
 .scene .seat-marker { margin-top: -16px; }
 #stage-seated:not([hidden]) + #open-floor {
   margin-top: 7px; background: #e6e9de; color: #405248; border-color: #b3bcae; box-shadow: none;

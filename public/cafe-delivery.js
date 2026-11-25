@@ -48,10 +48,8 @@ function createTray(entry, point, arriving) {
   if (isMine) {
     node.title = (entry.giftFrom ? `🎁 ${entry.giftFrom}님의 선물! ` : "") + `${summary} · 클릭해서 맛있게 먹기!`;
   }
-  const [space, index] = entry.seat.split(":");
-  const offset = space === "hall" ? (Number(index) % 2 ? -3.2 : 3.2) : 1;
-  node.style.setProperty("--tray-x", (point.x + offset) + "%");
-  node.style.setProperty("--tray-y", (point.y - 3.6) + "%");
+  node.style.setProperty("--tray-x", point.x + "%");
+  node.style.setProperty("--tray-y", point.y + "%");
   node.style.setProperty("--food-columns", Math.min(3, entry.items.length));
 
   if (entry.giftFrom) {
@@ -122,7 +120,7 @@ function renderTrays(arrivals = new Set()) {
   }
   for (const entry of bySeat.values()) {
     if (paintedTrays.has(entry.key)) continue;
-    const point = seating.position(entry.seat);
+    const point = seating.trayPosition(entry.seat);
     if (!point) continue;
     const node = createTray(entry, point, arrivals.has(entry.key));
     paintedTrays.set(entry.key, node);

@@ -11,4 +11,17 @@
   <symbol id="mine" viewBox="0 0 24 24"><path fill="currentColor" d="M11 2h2v3h3v2h2v2h2v2h2v2h-2v2h-2v2h-2v2h-3v3h-2v-3H8v-2H6v-2H4v-2H2v-2h2V9h2V7h2V5h3Zm-2 6v3h3V8Z" fill-rule="evenodd"/></symbol>
   <symbol id="bowl" viewBox="0 0 24 24"><path d="M3 12h18a9 9 0 0 1-18 0Zm6 8h6m-7-11c2-1 .5-2.5 1.5-4m3 4c2-1 .5-2.5 1.5-4m3 4c2-1 .5-2.5 1.5-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="chevron" viewBox="0 0 24 24"><path d="m10 6 6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="pixel-sound" viewBox="0 0 16 16"><path fill="currentColor" shape-rendering="crispEdges" d="M2 6h3l3-3h1v10H8l-3-3H2zm9 0h1v4h-1zm2-2h1v2h-1zm1 2h1v4h-1zm-1 4h1v2h-1z"/></symbol>
+  <symbol id="pixel-mute" viewBox="0 0 16 16"><path fill="currentColor" shape-rendering="crispEdges" d="M1 6h3l3-3h1v10H7l-3-3H1zm9 0h1v1h-1zm3 0h1v1h-1zm-2 1h2v2h-2zm-1 2h1v1h-1zm3 0h1v1h-1z"/></symbol>
+  <symbol id="pixel-rain" viewBox="0 0 16 16"><path fill="currentColor" shape-rendering="crispEdges" d="M2 6h2V4h2V3h4v1h2v2h2v3H2zm2 5h2v3H4zm4-1h2v3H8zm4 2h2v3h-2z"/></symbol>
+  <symbol id="pixel-map" viewBox="0 0 16 16"><path fill="currentColor" fill-rule="evenodd" shape-rendering="crispEdges" d="M1 4h1V3h3v1h3v1h3V4h4v8h-4v1H8v-1H5v-1H2v1H1zm2 1v5h2V5zm4 1v4h1v1h1V7H8V6zm4 1v4h2V6h-1v1z"/></symbol>
+  <symbol id="pixel-fullscreen" viewBox="0 0 16 16"><path fill="currentColor" shape-rendering="crispEdges" d="M2 2h5v2H4v3H2zm7 0h5v5h-2V4H9zM2 9h2v3h3v2H2zm10 0h2v5H9v-2h3z"/></symbol>
+  <symbol id="pixel-seat" viewBox="0 0 16 16"><path fill="currentColor" shape-rendering="crispEdges" d="M5 2h6v6H5zM3 9h10v2h-1v3h-2v-3H6v3H4v-3H3z"/><path fill="#231d28" fill-opacity=".42" d="M6 3h4v1H6z"/></symbol>
+  <symbol id="pixel-pc" viewBox="0 0 16 16"><path fill="currentColor" fill-rule="evenodd" shape-rendering="crispEdges" d="M1 2h14v9H9v2h3v1H4v-1h3v-2H1zm2 2v5h10V4z"/><path fill="currentColor" fill-opacity=".55" d="M4 5h2v2H4zm3 0h2v1H7z"/></symbol>
+  <symbol id="pixel-bowl" viewBox="0 0 16 16"><path fill="currentColor" shape-rendering="crispEdges" d="M5 2h1v3H5zm4 0h1v3H9zM2 7h12v3h-1v2h-2v1H5v-1H3v-2H2z"/><path fill="#231d28" fill-opacity=".4" d="M3 8h10v1H3z"/></symbol>
+  <symbol id="pixel-door" viewBox="0 0 16 16"><path fill="currentColor" fill-rule="evenodd" shape-rendering="crispEdges" d="M4 2h8v11h2v1H2v-1h2zm2 2v9h4V4zm2 4h2v1H8z"/></symbol>
+  <symbol id="pixel-leaf" viewBox="0 0 16 16"><path fill="currentColor" shape-rendering="crispEdges" d="M14 2v6h-1v2h-2v2H6v1H4v1H2v-2h2v-2H3V7h1V5h2V4h4V3h2V2z"/><path fill="#231d28" fill-opacity=".54" d="M6 9h2V8h2V7h2V6h1v2h-2v1H9v1H6z"/></symbol>
+  <symbol id="pixel-wave" viewBox="0 0 16 16"><path fill="currentColor" shape-rendering="crispEdges" d="M3 6h2v2h1V3h1v4h1V2h1v5h1V3h1v5h1V5h1v6h-1v2h-2v1H6v-1H4v-2H3V9H2V7h1zm-2-5h1v3H1zm1 3h2v1H2zm12-3h1v3h-1z"/></symbol>
+  <symbol id="pixel-menu" viewBox="0 0 16 16"><path fill="currentColor" shape-rendering="crispEdges" d="M2 3h12v2H2zm0 4h12v2H2zm0 4h12v2H2z"/></symbol>
+  <symbol id="pixel-chat" viewBox="0 0 16 16"><path fill="currentColor" fill-rule="evenodd" shape-rendering="crispEdges" d="M2 3h12v1h1v7h-1v1H8v1H6v1H4v-2H2v-1H1V4h1zm2 4h2v2H4zm3 0h2v2H7zm3 0h2v2h-2z"/></symbol>
 </svg>

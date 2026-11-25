@@ -121,9 +121,10 @@
   document.addEventListener("DOMContentLoaded", () => {
     const btn = document.getElementById("sfx-toggle");
     if (!btn) return;
+    const icon = btn.querySelector("use");
     const renderBtn = () => {
       btn.setAttribute("aria-pressed", String(sfxEnabled));
-      btn.textContent = sfxEnabled ? "🔊" : "🔇";
+      icon.setAttribute("href", sfxEnabled ? "./icons.svg#pixel-sound" : "./icons.svg#pixel-mute");
       btn.title = sfxEnabled ? "효과음 켜짐 (누르면 끄기)" : "효과음 꺼짐 (누르면 켜기)";
     };
     renderBtn();

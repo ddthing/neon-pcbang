@@ -156,6 +156,20 @@ function prepareZoneArt(zoneId) {
   if (el && !el.hasAttribute("src")) el.src = el.dataset.src;
 }
 
+// The 88 computers share a packed sheet. Positions follow the glass calibration.
+const hardwareLayer = document.querySelector(".hall-hardware");
+for (const [index, polygon] of cafeScreenShapes.hall.entries()) {
+  const x = Math.round(Math.min(...polygon.map(point => point[0])) / 2) - 3;
+  const y = Math.round(Math.min(...polygon.map(point => point[1])) / 2) - 2;
+  const col = Math.floor(index / 22) * 2 + index % 2;
+  const row = Math.floor(index % 22 / 2);
+  const hardware = document.createElement("span");
+  Object.assign(hardware.style, { left: x / 768 * 100 + "%", top: y / 512 * 100 + "%",
+    width: 22 / 768 * 100 + "%", height: 20 / 512 * 100 + "%",
+    backgroundSize: "800% 1100%", backgroundPosition: col / 7 * 100 + "% " + row * 10 + "%" });
+  hardwareLayer.append(hardware);
+}
+
 function renderMonitorPower(spaceId) {
   if (spaceId === "booth" || spaceId === "terrace") {
     monitorLayer.hidden = true;
@@ -169,7 +183,7 @@ function renderMonitorPower(spaceId) {
     const scale = spaceId === "hall" ? 1 : 2;
     const panels = groups.flatMap((group) => cafeScreenShapes[group].map((points, index) =>
       [group.replace("hall-", "") + ":" + index, points]));
-    monitorLayer.replaceChildren(...panels.map(([key, points], index) => {
+    monitorLayer.replaceChildren(...panels.map(([key, points]) => {
       const xs = points.map(([x]) => x), ys = points.map(([, y]) => y);
       const x = Math.min(...xs), y = Math.min(...ys);
       const width = Math.max(...xs) - x, height = Math.max(...ys) - y;
@@ -180,7 +194,6 @@ function renderMonitorPower(spaceId) {
       screen.style.setProperty("--y", y * scale / 10.24 + "%");
       screen.style.setProperty("--screen-width", width * scale / 15.36 + "%");
       screen.style.setProperty("--screen-height", height * scale / 10.24 + "%");
-      screen.style.setProperty("--screen-offset", -(index % 13) * 0.71 + "s");
       screen.style.setProperty("--screen-outline", "polygon(" + points.map(([px, py]) =>
         ((px - x) / width * 100).toFixed(2) + "% " + ((py - y) / height * 100).toFixed(2) + "%").join(",") + ")");
       return screen;
@@ -302,6 +315,41 @@ document.addEventListener("cafe-zone-counts", ({ detail }) => {
   }
 });
 
+// Each chair has a separate foreground sprite and a seated pose origin.
+const roomChairs = {
+  solo: [[205, 142, 69, 60]],
+  duo: [[141, 143, 62, 58], [258, 143, 62, 58]],
+  team: [[77, 136, 47, 43], [141, 136, 47, 43], [205, 136, 47, 43], [269, 136, 47, 43], [333, 136, 47, 43]],
+  squad: [[124, 86, 43, 22], [210, 86, 43, 22], [290, 86, 43, 22], [114, 162, 57, 54], [212, 162, 57, 54], [309, 162, 57, 54]]
+};
+function chairGeometry(key) {
+  const [space, index] = key.split(":");
+  const chair = roomChairs[space]?.[index];
+  if (!chair) return null;
+  const [cx, top, width, height] = chair;
+  const y = (top + height - 3) / 256 * 100;
+  return { x: cx / 384 * 100, y, size: width * 1.55 / 384 * 100,
+    depth: Math.round(y * 10), left: (cx - Math.floor(width / 2)) / 384 * 100,
+    top: top / 256 * 100, width: width / 384 * 100 };
+}
+
+function renderChairFronts(space) {
+  const layer = document.getElementById("cafe-avatars");
+  if (layer.dataset.furniture === space) return;
+  layer.dataset.furniture = space;
+  layer.querySelectorAll(".chair-front").forEach(node => node.remove());
+  for (const index of (roomChairs[space] ?? []).keys()) {
+    const chair = chairGeometry(space + ":" + index);
+    const node = document.createElement("img");
+    node.className = "chair-front";
+    node.alt = "";
+    node.src = "./sprites/chair-" + space + "-" + index + ".png";
+    Object.assign(node.style, { left: chair.left + "%", top: chair.top + "%",
+      width: chair.width + "%", zIndex: String(chair.depth) });
+    layer.append(node);
+  }
+}
+
 function renderRoom() {
   const view = activeBreakZone ?? seatJourney?.space ?? room.space ?? "lobby";
   const space = spaces[view];
@@ -312,6 +360,7 @@ function renderRoom() {
   const inSpecial = inSubRoom || inBooth || inTerrace;
 
   $(".scene").dataset.space = view;
+  renderChairFronts(view);
   $("#lobby-art").hidden = inSpecial;
   if (inSubRoom) prepareRoomArt();
   if (inBooth) prepareZoneArt("booth");
@@ -1016,7 +1065,6 @@ const rainSwitchBtn = document.querySelector(".top-actions .u013-sw");
 function syncHudRainButton(enabled) {
   if (!hudRainBtn) return;
   hudRainBtn.setAttribute("aria-pressed", String(enabled));
-  hudRainBtn.textContent = "🌧️";
   hudRainBtn.title = enabled ? "빗소리 켜짐 (누르면 끄기)" : "빗소리 꺼짐 (누르면 켜기)";
 }
 hudRainBtn?.addEventListener("click", () => rainSwitchBtn?.click());
@@ -1080,7 +1128,18 @@ window.cafeSeating = {
   current: () => room.space ? room.space + ":" + room.seat : null,
   phase: () => seatJourney?.phase ?? null,
   label(key) { return floorSeats.get(key)?.code ?? null; },
+  chair: chairGeometry,
+  trayPosition(key) {
+    const seat = floorSeats.get(key);
+    if (!seat) return null;
+    const [x, y] = spaces[seat.space].positions[seat.index];
+    if (seat.space === "hall") return { x: x + (seat.index % 2 ? -1.2 : 1.2), y: y - 1 };
+    const chair = chairGeometry(key);
+    return { x: chair.x - chair.width * .43, y: chair.top - 1 };
+  },
   position(key) {
+    const chair = chairGeometry(key);
+    if (chair) return { x: chair.x, y: chair.y };
     const seat = floorSeats.get(key);
     if (!seat) return null;
     const [x, y] = spaces[seat.space].positions[seat.index];

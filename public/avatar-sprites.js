@@ -270,6 +270,17 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
     pellipse(24, headCenterY + 3, 4, 3, skin.muzzle);
   }
 
+  // Fur follows the crown and nape in the rear seated view.
+  if (dir === "up" && skin.species !== "human") {
+    pellipse(24, headCenterY + 2, 10, 6, skin.shade);
+    pellipse(23, headCenterY, 10, 6, skin.base);
+    prect(18, headCenterY - 4, 5, 1, skin.hi);
+    prect(16, headCenterY - 3, 3, 1, skin.hi);
+    prect(27, headCenterY + 4, 3, 1, skin.shade);
+    prect(30, headCenterY + 2, 2, 2, skin.shade);
+    if (skin.species === "cat") pellipse(29, headCenterY - 3, 4, 3, "#806158");
+  }
+
   // 6. Rich Layered Hair & Cozy Hats
   if (skin.species === "human") {
     pellipse(24, headCenterY - 5, side ? 9 : 11, 5, hairCol.base);
@@ -294,8 +305,19 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
     }
   }
   if (cfg.hair === 3) {
-    prect(13, headCenterY - 9, 22, 6, hairCol.base);
-    prect(14, headCenterY - 5, 20, 2, hairCol.hi);
+    // Knit crown, folded ribbing and a stitched side label.
+    pellipse(24, headCenterY - 6, 11, 5, hairCol.base);
+    prect(18, headCenterY - 10, 7, 1, hairCol.hi);
+    prect(15, headCenterY - 8, 2, 3, hairCol.hi);
+    prect(13, headCenterY - 5, 22, 3, hairCol.sh);
+    for (let x = 15; x <= 32; x += 3) prect(x, headCenterY - 5, 2, 2, hairCol.base);
+    prect(28, headCenterY - 5, 3, 2, "#dcb995");
+    if (dir === "up") {
+      prect(16, headCenterY, 3, 3, hairCol.sh);
+      prect(19, headCenterY + 3, 3, 2, hairCol.sh);
+      prect(28, headCenterY + 2, 4, 2, hairCol.sh);
+      prect(22, headCenterY + 5, 6, 1, hairCol.sh);
+    }
   } else if (cfg.hair === 5 && dir === "down") {
     prect(29, headCenterY - 5, 3, 2, "#f6cf73");
     p(px(30), headCenterY - 5, "#fff5eb");

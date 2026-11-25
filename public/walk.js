@@ -155,7 +155,6 @@ function paint(key, data, point, walking, awayAtDesk = false) {
     sprite.y = point.y;
     node.style.left = point.x + "%";
     node.style.top = point.y + "%";
-    node.style.zIndex = String(Math.round(point.y));
     if (jumped) requestAnimationFrame(() => node.classList.remove("instant-move"));
   }
 
@@ -170,6 +169,14 @@ function paint(key, data, point, walking, awayAtDesk = false) {
   node.classList.toggle("remote-path", data.walking !== undefined);
   const seatedHere = Boolean(data.seat) && !awayAtDesk && data.zone !== "booth" && data.zone !== "terrace";
   node.classList.toggle("seated", seatedHere);
+  const furniture = seatedHere && seating.chair(data.seat);
+  if (furniture) {
+    node.style.setProperty("--seated-size", furniture.size + "cqw");
+    node.style.zIndex = String(furniture.depth - 1);
+  } else {
+    node.style.removeProperty("--seated-size");
+    node.style.zIndex = String(Math.round(point.y * 10));
+  }
 
   // Determine directional seated / break sprite row & column cleanly
   const act = awayAtDesk ? "away" : (data.activity || "");
@@ -297,7 +304,10 @@ function drawSelf(walking = false) {
     }, point, walking, false);
     sprite.node.classList.toggle("sitting", phase === "sitting");
   }
-  camera.follow(point, phase ? null : mine);
+  const chair = seat && seating.chair(seat);
+  // Frame the back of the chair and the display together in the private rooms.
+  const focus = chair ? { x: point.x, y: (chair.top + point.y) / 2 - 5 } : point;
+  camera.follow(focus, phase ? null : mine);
   updateProximityPrompt();
 }
 
@@ -552,7 +562,6 @@ window.cafeWorld = {
     pressed.clear();
     stopJoystick();
     path = [];
-    camera.track();
     return new Promise((resolve) => {
       journey = { legs, showSpace, resolve, leg: null };
       startLeg();
@@ -841,7 +850,6 @@ function canMove() {
 function startMovement() {
   if (firstMove) {
     firstMove = false;
-    if (!reducedMotion.matches) camera.track();
   }
   requestFrame();
 }

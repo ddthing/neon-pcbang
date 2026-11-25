@@ -1,9 +1,10 @@
+// Each room in the atlas and each standalone painting uses this pixel grid.
+const worldPixels = { width: 768, height: 512 };
+
 export function createCafeCamera(scene) {
   const viewport = scene.parentElement;
   const button = document.getElementById("cafe-fullscreen");
-  const overviewButton = document.getElementById("cafe-overview");
   const pcButton = document.getElementById("game-view-pc");
-  let overview = false;
   let busy = false;
   let position;
   let bounds;
@@ -17,13 +18,13 @@ export function createCafeCamera(scene) {
       pcButton.hidden = !seat;
       lastSeat = seat;
     }
-    if (!bounds || !point) return;
-    const { width, height, worldWidth, worldHeight } = bounds;
+    if (!bounds) return;
+    const { width, height, worldWidth, worldHeight, density } = bounds;
     const clamp = (target, overscan) => overscan < 0 ? -overscan / 2 : Math.min(0, Math.max(-overscan, target));
-    const x = clamp(width * .5 - worldWidth * point.x / 100, worldWidth - width);
-    const y = clamp(height * .53 - worldHeight * point.y / 100, worldHeight - height);
-    const nextX = Math.round(x);
-    const nextY = Math.round(y);
+    const x = clamp(width * .5 - worldWidth * (point?.x ?? 50) / 100, worldWidth - width);
+    const y = clamp(height * .53 - worldHeight * (point?.y ?? 50) / 100, worldHeight - height);
+    const nextX = Math.round(x * density) / density;
+    const nextY = Math.round(y * density) / density;
     if (nextX !== cameraX) {
       scene.style.setProperty("--camera-x", nextX + "px");
       cameraX = nextX;
@@ -36,29 +37,18 @@ export function createCafeCamera(scene) {
 
   function resize() {
     const { clientWidth: width, clientHeight: height } = viewport;
-    const worldWidth = overview
-      ? Math.floor(Math.min(width, height * 1.5))
-      : Math.ceil(Math.max(width, height * 1.5) * 1.12);
-    const worldHeight = Math.ceil(worldWidth * 2 / 3);
-    bounds = { width, height, worldWidth, worldHeight };
+    if (!width || !height) return;
+    const density = window.devicePixelRatio;
+    const scale = Math.max(1, Math.round(height * density / 360),
+      Math.ceil(width * density / worldPixels.width), Math.ceil(height * density / worldPixels.height));
+    const worldWidth = worldPixels.width * scale / density;
+    const worldHeight = worldPixels.height * scale / density;
+    bounds = { width, height, worldWidth, worldHeight, density };
     scene.style.setProperty("--camera-width", worldWidth + "px");
     scene.style.setProperty("--camera-height", worldHeight + "px");
     follow(position, lastSeat);
   }
 
-  function setOverview(value) {
-    if (value === overview) return;
-    overview = value;
-    scene.classList.toggle("camera-ready", !overview);
-    overviewButton.setAttribute("aria-pressed", String(overview));
-    overviewButton.textContent = overview ? "가까이 보기" : "전체 지도";
-    resize();
-  }
-
-  overviewButton.addEventListener("click", () => {
-    setOverview(!overview);
-    scene.focus({ preventScroll: true });
-  });
   button.addEventListener("click", async () => {
     if (busy) return;
     busy = true;
@@ -78,8 +68,16 @@ export function createCafeCamera(scene) {
     resize();
   });
   if (!document.fullscreenEnabled) button.hidden = true;
+  function watchDensity() {
+    window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
+      .addEventListener("change", () => {
+        resize();
+        watchDensity();
+      }, { once: true });
+  }
+  watchDensity();
   new ResizeObserver(resize).observe(viewport);
-  scene.classList.add("camera-ready");
+  resize();
   pcButton.addEventListener("click", () => document.getElementById("open-monitor").click());
-  return { follow, track: () => setOverview(false) };
+  return { follow };
 }

@@ -91,3 +91,5 @@
   78% { opacity: .20; }
   79% { opacity: .06; }
 }
+
+.scene:not([data-space="lobby"],[data-space="hall"]) #cafe-sky > :not(.sky-rain,.sky-snow,.sky-storm-flash,.sky-fog) { display:none; }

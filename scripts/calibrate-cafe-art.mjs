@@ -6,7 +6,8 @@ import { writeFile } from "node:fs/promises";
 const hallFile = "public/pcbang-cozy-hall.png";
 const roomFile = "public/pcbang-rooms-pixel.png";
 const width = 1536, height = 1024;
-const pixels = (file) => sharp(file).removeAlpha().raw().toBuffer();
+// Masks and screen polygons are stored in the original 1536×1024 coordinates.
+const pixels = (file) => sharp(file).resize(width, height, { kernel: "nearest" }).removeAlpha().raw().toBuffer();
 const [hall, rooms] = await Promise.all([pixels(hallFile), pixels(roomFile)]);
 const rgb = (image, x, y) => image.subarray((y * width + x) * 3, (y * width + x) * 3 + 3);
 const rectangle = (l, t, r, b) => [[l,t],[r,t],[r,b],[l,b]];
