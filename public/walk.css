@@ -240,8 +240,15 @@ body.cafe-fullscreen { overflow: hidden; background: #261b1e; }
 @media (max-width: 680px) {
   .room-hud { gap: 4px; }
   .room-hud .room-live, .cafe-fullscreen .window-title { display: none; }
-  .cafe-fullscreen .walk-controls { bottom: max(8px, env(safe-area-inset-bottom)); padding: 4px 5px; }
-  .cafe-fullscreen .game-view-actions { justify-content: center; }
+  .cafe-fullscreen .walk-controls {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    padding: 4px 6px;
+    width: calc(100vw - 16px);
+  }
+  .cafe-fullscreen .game-view-actions { justify-content: center; width: 100%; }
+  .cafe-fullscreen .game-view-actions .walk-button { min-height: 38px; padding: 4px 7px; font-size: 11px; }
+  .cafe-fullscreen .proximity-prompt { bottom: calc(108px + env(safe-area-inset-bottom)); min-height: 44px; touch-action: manipulation; }
+  .cafe-fullscreen .relax-hud { bottom: calc(100px + env(safe-area-inset-bottom)); }
 }
 .floor-seat.taken { color: #e5d6d3; background: #635451 !important; border-color: #93807d !important; opacity: .76; }
 .floor-legend .taken { background: #93807d; }

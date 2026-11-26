@@ -112,25 +112,37 @@ export function initBungeoppang() {
     renderMolds();
   }
 
+  const moldSlots = Array.from({ length: 6 }, (_, idx) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "bungeo-mold";
+    const fish = document.createElement("span");
+    fish.className = "bungeo-fish";
+    const label = document.createElement("small");
+    btn.append(fish, label);
+    btn.addEventListener("click", () => clickMold(molds[idx]));
+    return { btn, fish, label };
+  });
+  moldsRoot.replaceChildren(...moldSlots.map((s) => s.btn));
+
   function renderMolds() {
-    moldsRoot.replaceChildren(...molds.map((m) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "bungeo-mold";
-      btn.dataset.stage = m.stage;
+    for (let i = 0; i < molds.length; i++) {
+      const m = molds[i];
+      const slot = moldSlots[i];
       const fillBadge = m.filling ? FILLINGS[m.filling].badge : "";
       const stageLabel = {
         empty: "빈 철판 (반죽 붓기)",
         batter: "반죽됨 (앙금 넣기)",
-        filled: m.heat >= 2.2 ? `🔥 뒤집기 타이밍! (${fillBadge})` : `익는 중… (${fillBadge})`,
+        filled: m.heat >= 2.2 ? `🔥 뒤집기! (${fillBadge})` : `익는 중… (${fillBadge})`,
         flipped: "노릇하게 굽는 중…",
-        golden: `✨ 황금 완성! 클릭해 담기 (${fillBadge})`,
-        burnt: "💨 까맣게 탔어요 (클릭 폐기)",
+        golden: `✨ 황금 완성! 담기 (${fillBadge})`,
+        burnt: "💨 탔어요 (클릭 폐기)",
       }[m.stage];
-      btn.innerHTML = `<span class="bungeo-fish" data-fill="${m.filling || ""}"></span><small>${stageLabel}</small>`;
-      btn.addEventListener("click", () => clickMold(m));
-      return btn;
-    }));
+      if (slot.btn.dataset.stage !== m.stage) slot.btn.dataset.stage = m.stage;
+      const fillVal = m.filling || "";
+      if (slot.fish.dataset.fill !== fillVal) slot.fish.dataset.fill = fillVal;
+      if (slot.label.textContent !== stageLabel) slot.label.textContent = stageLabel;
+    }
   }
 
   function renderUi() {

@@ -377,11 +377,13 @@
         </div>
         <button class="pc-end" id="pc-end" type="button">자리 반납 · 사용 종료</button>
       </section>
-      <section class="pc-launcher" aria-labelledby="pc-launcher-title">
-        <div class="pc-panel-heading"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg><h3 id="pc-launcher-title" tabindex="-1">길모퉁이 게임 런처</h3><span class="mono">09 GAMES · LIVE RANK</span></div>
+      <section class="pc-launcher" id="pc-launcher" aria-labelledby="pc-launcher-title" hidden>
+        <div class="pc-panel-heading"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg><h3 id="pc-launcher-title" tabindex="-1">길모퉁이 게임 런처</h3><span class="mono">11 GAMES · LIVE RANK</span><button class="pc-launcher-close" id="pc-launcher-close" type="button" aria-label="게임 런처 닫기">×</button></div>
         <div class="pc-apps">
           <button class="pc-app" type="button" data-open="pvp"><span class="pc-app-icon pixel-launcher-slot" style="--lx:0%" aria-hidden="true"></span><span><strong>모퉁이 대국장 <em class="pc-hot">LIVE</em></strong><small>좌석 간 실시간 오목·알까기</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
           <button class="pc-app" type="button" data-open="tetris"><span class="pc-app-icon pixel-launcher-slot" style="--lx:12.5%" aria-hidden="true"></span><span><strong>모퉁이 블록 드롭 <em class="pc-hot">NEW</em></strong><small>홀드·고스트 정통 테트리스</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="solitaire"><span class="pc-app-icon cream" aria-hidden="true">🃏</span><span><strong>코지 솔리테어 <em class="pc-hot">NEW</em></strong><small>클론다이크 1·3장 뽑기</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
+          <button class="pc-app" type="button" data-open="knit"><span class="pc-app-icon lilac" aria-hidden="true">🧶</span><span><strong>뜨개 실풀기 <em class="pc-hot">NEW</em></strong><small>겹친 색실을 같은 실타래로 정리</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
           <button class="pc-app" type="button" data-open="bungeoppang"><span class="pc-app-icon pixel-launcher-slot" style="--lx:25%" aria-hidden="true"></span><span><strong>길모퉁이 붕어빵 포차</strong><small>팥·슈크림·피자 황금굽기 타이쿤</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
           <button class="pc-app" type="button" data-open="snack-tycoon"><span class="pc-app-icon pixel-launcher-slot" style="--lx:37.5%" aria-hidden="true"></span><span><strong>알바냥의 매점 러시</strong><small>짜계치·얼박사 스피드 조리</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
           <button class="pc-app" type="button" data-open="acidrain"><span class="pc-app-icon pixel-launcher-slot" style="--lx:50%" aria-hidden="true"></span><span><strong>코지 빗방울 산성비</strong><small>청축·갈축·적축 타자 디펜스</small></span><svg aria-hidden="true"><use href="./icons.svg#chevron"/></svg></button>
@@ -396,7 +398,7 @@
       <details class="pc-start" id="pc-start">
         <summary><i aria-hidden="true"></i>시작</summary>
         <div class="pc-start-menu">
-          <button type="button" data-launcher>게임 런처 (9종)</button>
+          <button type="button" data-launcher>게임 런처 (11종)</button>
           <button type="button" data-open="snacks">매점 2.0 주문</button>
           <button type="button" data-open="snack-gift">옆 자리 간식 쏘기</button>
           <button type="button" data-pc-break="booth">실내 흡연구역 외출</button>
@@ -648,6 +650,11 @@
       <div class="dialog-head"><span class="panel-index mono"><span>09</span> / LOGIC</span><button class="close" type="button" data-close aria-label="스도쿠 닫기">×</button></div>
       <h2 id="sudoku-title">스도쿠</h2>
       <p class="panel-copy">가로·세로 줄과 3×3 구역마다 1부터 9까지 한 번씩 채워요.</p>
+      <div class="sudoku-legend" aria-label="숫자 구분 안내">
+        <span class="sudoku-leg"><i class="leg-given">7</i>고정 숫자</span>
+        <span class="sudoku-leg"><i class="leg-user">4</i>내 입력</span>
+        <span class="sudoku-leg"><i class="leg-conflict">9</i>중복 오류</span>
+      </div>
       <div class="sudoku-toolbar">
         <label>난이도
           <select id="sudoku-level">
@@ -662,10 +669,56 @@
       <div class="sudoku-keys mono" id="sudoku-keys" role="group" aria-label="숫자 입력"></div>
       <div class="sudoku-toolbar">
         <button class="walk-button" id="sudoku-notes" type="button" aria-pressed="false">메모</button>
+        <button class="walk-button" id="sudoku-undo" type="button" disabled>되돌리기</button>
         <button class="walk-button" id="sudoku-erase" type="button">지우기</button>
       </div>
       <p id="sudoku-status" class="game-status" role="status"></p>
-      <p id="sudoku-help" class="dialog-note">칸을 고르고 숫자 버튼을 누르세요. 키보드는 방향키, 1~9, Backspace로 조작할 수 있어요.</p>
+      <p id="sudoku-help" class="dialog-note">칸을 고르고 숫자 버튼을 누르세요. 키보드는 방향키, 1~9, Backspace, Ctrl+Z로 조작할 수 있어요.</p>
+    </div>
+  </dialog>
+
+  <!-- GAME 10: KLONDIKE SOLITAIRE -->
+  <dialog id="solitaire" aria-labelledby="solitaire-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>10</span> / CARD PUZZLE</span><button class="close" type="button" data-close aria-label="솔리테어 닫기">×</button></div>
+      <h2 id="solitaire-title">코지 솔리테어</h2>
+      <div class="game-hud mono">
+        <span>점수 <strong id="sol-score">0</strong></span>
+        <span>이동 <strong id="sol-moves">0</strong></span>
+        <span>시간 <strong id="sol-time">00:00</strong></span>
+      </div>
+      <div class="sol-toolbar">
+        <button class="walk-button" id="sol-draw-mode" type="button" aria-pressed="false">1장 뽑기</button>
+        <button class="walk-button" id="sol-undo" type="button" disabled>되돌리기</button>
+        <button class="walk-button" id="sol-hint" type="button">힌트</button>
+        <button class="walk-button" id="sol-auto" type="button" hidden>자동 완성</button>
+        <button class="walk-button" id="sol-new" type="button">새 판</button>
+      </div>
+      <div class="sol-board" id="sol-board" aria-label="클론다이크 솔리테어 보드"></div>
+      <p id="sol-status" class="game-status" role="status">카드를 눌러 선택한 뒤 옮길 칸을 누르세요. 더블클릭/연속 탭으로 바로 올릴 수 있어요.</p>
+    </div>
+  </dialog>
+
+  <!-- GAME 11: KNIT UNRAVEL -->
+  <dialog id="knit" aria-labelledby="knit-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono"><span>11</span> / KNIT PUZZLE</span><button class="close" type="button" data-close aria-label="실풀기 닫기">×</button></div>
+      <h2 id="knit-title">뜨개 실풀기 (Knit Unravel)</h2>
+      <div class="game-hud mono">
+        <span>스테이지 <strong id="knit-stage">1 / 10</strong></span>
+        <span>실타래 <strong id="knit-spools">0 / 0</strong></span>
+        <span>점수 <strong id="knit-score">0</strong></span>
+      </div>
+      <div class="knit-toolbar">
+        <label>단계 <select id="knit-select"></select></label>
+        <button class="walk-button" id="knit-undo" type="button" disabled>되돌리기</button>
+        <button class="walk-button" id="knit-hint" type="button">힌트</button>
+        <button class="walk-button" id="knit-reset" type="button">다시하기</button>
+      </div>
+      <div class="knit-bobbins" id="knit-bobbins" aria-label="목표 실타래"></div>
+      <div class="knit-board" id="knit-board" aria-label="겹친 뜨개실 보드"></div>
+      <div class="knit-tray" id="knit-tray" aria-label="대기 실칸"></div>
+      <p id="knit-status" class="game-status" role="status">위에 다른 실이 덮여있지 않은 색실을 눌러 실타래를 완성하세요.</p>
     </div>
   </dialog>
 

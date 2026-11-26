@@ -37,13 +37,14 @@ body {
 .game-view-actions { display: inline-flex; }
 .walk-name { margin-left: auto; }
 .cafe-joystick {
-  display: none; place-items: center; position: absolute; z-index: 4;
-  left: max(14px, env(safe-area-inset-left)); bottom: 15px;
-  width: clamp(88px, 24vw, 104px); aspect-ratio: 1; border-radius: 50%;
-  border: 1px solid #c3cab78c; background: #282e28b8;
-  box-shadow: inset 0 0 0 5px #d2d7bf12, 0 3px 12px #201c1a5c;
+  display: none; place-items: center; position: fixed; z-index: 23;
+  left: max(12px, env(safe-area-inset-left)); bottom: calc(82px + env(safe-area-inset-bottom));
+  width: clamp(82px, 21vw, 98px); aspect-ratio: 1; border-radius: 50%;
+  border: 2px solid #dc9666aa; background: #2d2226d6;
+  box-shadow: inset 0 0 0 4px #f6cf7318, 0 4px 14px #18111399;
   touch-action: none; user-select: none; -webkit-user-select: none;
 }
+.cafe-joystick[hidden] { display: none !important; }
 .cafe-joystick::before {
   content: ""; position: absolute; inset: 16%; border: 1px dashed #e1e9d34a; border-radius: 50%;
   pointer-events: none;

@@ -184,6 +184,9 @@ export function initAcidRain() {
     raf = requestAnimationFrame(loop);
   }
 
+  input.addEventListener("input", () => {
+    if (state === "playing") draw();
+  });
   input.addEventListener("keydown", (e) => {
     if (e.key.length === 1 || e.key === "Backspace" || e.key === "Enter") playSwitchSound();
   });
@@ -261,6 +264,15 @@ export function initAcidRain() {
     state = "idle";
     cancelAnimationFrame(raf);
     window.cafeWorld?.setActivity("");
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden || !dialog.open) {
+      cancelAnimationFrame(raf);
+      lastTime = 0;
+    } else if (state === "playing") {
+      lastTime = 0;
+      raf = requestAnimationFrame(loop);
+    }
   });
 
   updateHud();

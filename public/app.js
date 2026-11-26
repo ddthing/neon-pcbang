@@ -241,6 +241,7 @@ function openDesktop(fromSeat = false) {
   if (fromSeat) poweredMonitor.scrollIntoView({ block: "nearest" });
   desktopReturnFocus = fromSeat ? $("#seat-marker") : document.activeElement;
   window.prepareCafeWallpaper?.();
+  setLauncherOpen(false);
   openCafeWindow(desktop, poweredMonitor);
   $("#pc-title").focus({ preventScroll: true });
 }
@@ -618,18 +619,48 @@ document.querySelectorAll("[data-pc-break]").forEach((btn) => {
 
 desktop.addEventListener("close", () => desktopReturnFocus?.focus({ preventScroll: true }));
 const startMenu = $("#pc-start");
-desktop.addEventListener("close", () => { startMenu.open = false; });
-desktop.addEventListener("cancel", (event) => {
-  if (!startMenu.open) return;
-  event.preventDefault();
+const launcher = $("#pc-launcher");
+const launcherClose = $("#pc-launcher-close");
+function setLauncherOpen(open, focusTitle = false) {
+  if (!launcher) return;
+  launcher.hidden = !open;
+  document.querySelectorAll("[data-launcher]").forEach((btn) => {
+    btn.setAttribute("aria-expanded", String(open));
+  });
+  if (open && focusTitle) $("#pc-launcher-title")?.focus({ preventScroll: true });
+}
+desktop.addEventListener("close", () => {
   startMenu.open = false;
-  startMenu.querySelector("summary").focus();
+  setLauncherOpen(false);
+});
+desktop.addEventListener("cancel", (event) => {
+  if (startMenu.open) {
+    event.preventDefault();
+    startMenu.open = false;
+    startMenu.querySelector("summary").focus();
+    return;
+  }
+  if (launcher && !launcher.hidden) {
+    event.preventDefault();
+    setLauncherOpen(false);
+    document.querySelector(".pc-shortcut[data-launcher]")?.focus();
+  }
 });
 startMenu.addEventListener("click", (event) => {
   if (event.target.closest("button")) startMenu.open = false;
 });
 document.querySelectorAll("[data-launcher]").forEach((button) => {
-  button.addEventListener("click", () => $("#pc-launcher-title").focus());
+  button.setAttribute("aria-expanded", "false");
+  button.addEventListener("click", () => {
+    const fromStartMenu = Boolean(startMenu.contains(button));
+    if (fromStartMenu) startMenu.open = false;
+    const nextOpen = fromStartMenu ? true : Boolean(launcher?.hidden);
+    setLauncherOpen(nextOpen, nextOpen);
+  });
+});
+launcherClose?.addEventListener("click", () => {
+  setLauncherOpen(false);
+  document.querySelector(".pc-shortcut[data-launcher]")?.focus();
 });
 floorSelect.addEventListener("change", () => {
   selectedSeat = floorSeats.get(floorSelect.value) ?? null;
@@ -737,7 +768,7 @@ async function leaveSeat() {
 $("#leave").addEventListener("click", leaveSeat);
 $("#pc-end").addEventListener("click", leaveSeat);
 
-// All 9 Mini-Games Lazy Loaders!
+// All 11 Mini-Games Lazy Loaders!
 const gameLoaders = {
   pvp: () => import("./pvp.js").then(({ initPvp }) => initPvp()),
   tetris: () => import("./tetris.js").then(({ initTetris }) => initTetris()),
@@ -748,6 +779,8 @@ const gameLoaders = {
   mines: () => import("./game.js").then(({ initMines }) => initMines()),
   sudoku: () => import("./sudoku.js").then(({ initSudoku }) => initSudoku()),
   merge: () => import("./merge.js").then(({ initMerge }) => initMerge()),
+  solitaire: () => import("./solitaire.js").then(({ initSolitaire }) => initSolitaire()),
+  knit: () => import("./knit-unravel.js").then(({ initKnitUnravel }) => initKnitUnravel()),
 };
 const requestedGames = new Set();
 
@@ -758,6 +791,7 @@ document.querySelectorAll("[data-open]").forEach((button) => {
   button.addEventListener("click", () => {
     const source = cafeWindowOrigin(button);
     if (hub.contains(button) && hub.open) hub.close();
+    if (launcher && launcher.contains(button)) setLauncherOpen(false);
     const next = document.getElementById(button.dataset.open);
     if (!next) return;
     const origin = button.closest("dialog");

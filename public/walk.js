@@ -36,6 +36,8 @@ const activityBadges = {
   "game:arcade": "🕹️ 벽돌깨기",
   "game:merge": "🔢 2048",
   "game:sudoku": "✏️ 스도쿠",
+  "game:solitaire": "🃏 솔리테어",
+  "game:knit": "🧶 실풀기",
 };
 
 const pressed = new Set();
@@ -295,7 +297,15 @@ function updateProximityPrompt() {
 }
 proximityPrompt?.addEventListener("click", () => activeProximity?.run());
 
+function syncMobileJoystickVisibility() {
+  if (!joystick) return;
+  const movable = canMove();
+  joystick.hidden = !movable;
+  if (!movable) stopJoystick();
+}
+
 function drawSelf(walking = false) {
+  syncMobileJoystickVisibility();
   const mine = seating.current();
   const phase = seating.phase();
   const space = displayedSpace();
@@ -1032,7 +1042,7 @@ function animate(time) {
   }
   if (seat !== lastSeat) path = [];
   const free = canMove();
-  if (!free) stopJoystick();
+  syncMobileJoystickVisibility();
 
   const walkSpace = isOnBreak() ? activeZone : "hall";
   let walking = false;

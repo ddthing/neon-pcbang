@@ -160,8 +160,10 @@
 }
 @media (max-width: 700px) {
   .cafe-chat-controls { order: 5; flex: 1 1 100%; }
+  .cafe-fullscreen .cafe-chat-controls { left: auto; right: max(10px, env(safe-area-inset-right)); }
+  .cafe-fullscreen .cafe-chat-form { width: min(210px, 52vw); }
   .cafe-chat-form { flex: 1 1 auto; }
-  .cafe-chat-form input { font-size: 12px; }
+  .cafe-chat-form input { font-size: 12px; min-height: 36px; }
   .cafe-fullscreen .cafe-chat-options-panel { bottom: calc(100% + 8px); }
 }
 @media (max-width: 380px) {

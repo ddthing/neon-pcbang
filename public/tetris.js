@@ -269,10 +269,13 @@ export function initTetris() {
 
     if (active && state !== "over") {
       const gy = ghostY();
+      ctx.save();
+      ctx.setLineDash([2, 2]);
       for (const [cx, cy] of active.cells) {
-        ctx.strokeStyle = SHAPES[active.type].color + "88";
+        ctx.strokeStyle = SHAPES[active.type].color + "aa";
         ctx.strokeRect((active.x + cx) * CELL + 2, (gy + cy) * CELL + 2, CELL - 4, CELL - 4);
       }
+      ctx.restore();
       for (const [cx, cy] of active.cells) {
         if (active.y + cy >= 0) drawBlock(ctx, (active.x + cx) * CELL, (active.y + cy) * CELL, CELL, active.type);
       }
@@ -359,7 +362,7 @@ export function initTetris() {
   });
 
   dialog.querySelectorAll("[data-tetris-cmd]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    const runCmd = () => {
       if (state !== "playing") return;
       const cmd = btn.dataset.tetrisCmd;
       if (cmd === "left") moveHorizontal(-1);
@@ -368,6 +371,18 @@ export function initTetris() {
       else if (cmd === "down") softDrop();
       else if (cmd === "drop") hardDrop();
       else if (cmd === "hold") { holdPiece(); draw(); }
+    };
+    let touched = false;
+    btn.addEventListener("pointerdown", (e) => {
+      if (e.pointerType !== "mouse") {
+        e.preventDefault();
+        touched = true;
+        runCmd();
+      }
+    });
+    btn.addEventListener("click", () => {
+      if (touched) { touched = false; return; }
+      runCmd();
     });
   });
 
@@ -375,7 +390,9 @@ export function initTetris() {
     pauseGame();
     window.cafeWorld?.setActivity("");
   });
-  document.addEventListener("visibilitychange", () => { if (document.hidden) pauseGame(); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden || !dialog.open) pauseGame();
+  });
 
   resetGame();
 }
