@@ -192,36 +192,6 @@ function drawRug(x, y, w, h, bodyColor, trimColor) {
   }
 }
 
-function drawWindowScene(x, y, w, h, timeSec) {
-  px(x - 2, y + h - 1, w + 4, 4, C.shade);
-  framedRect(x, y, w, h, C.glass, C.ink);
-  px(x + 2, y + 2, w - 4, h - 4, C.slate);
-  // Distant building silhouettes
-  px(x + 4, y + 10, 12, h - 12, "#35455e");
-  px(x + 18, y + 6, 16, h - 8, "#2d3c52");
-  px(x + 36, y + 11, 12, h - 13, "#384863");
-  px(x + 50, y + 8, 12, h - 10, "#2f3e55");
-  // Distant lit windows
-  px(x + 7, y + 13, 2, 2, C.gold);
-  px(x + 21, y + 9, 2, 3, C.milk);
-  px(x + 26, y + 13, 2, 2, C.gold);
-  px(x + 40, y + 14, 2, 2, C.aqua);
-  // Diagonal rain streaks inside glass
-  const drift = reducedMotionQuery.matches ? 0 : Math.floor(timeSec * 22) % 14;
-  ctx.fillStyle = "rgba(131, 201, 197, 0.35)";
-  for (let i = 0; i < 6; i++) {
-    const rx = x + 6 + ((i * 11 + drift) % Math.max(8, w - 12));
-    const ry = y + 4 + ((i * 7 + drift) % Math.max(6, h - 10));
-    ctx.fillRect(rx, ry, 1, 4);
-  }
-  // Center window mullion
-  px(x + Math.floor(w / 2) - 1, y + 1, 2, h - 2, C.ink);
-  px(x + Math.floor(w / 2), y + 2, 1, h - 4, C.blue);
-  px(x + 2, y + 2, w - 4, 1, C.blue);
-  px(x - 2, y + h, w + 4, 1, "#b08085");
-  px(x + 4, y + h + 1, w - 8, 1, C.plum);
-}
-
 // ---------- Doors (threshold + sliding leaf + foreground lintel occlusion) ----------
 function drawDoorFloorAndLeaves(door) {
   const open = state.doorOpen[door.id] || 0;

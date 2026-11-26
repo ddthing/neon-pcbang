@@ -35,6 +35,8 @@ try {
       await Promise.all([
         "cafe-art.js", "cafe-art.css", "cafe-interface.css", "camera.js",
         "cafe-delivery.js", "sprites/cat-clerk-service.png",
+        "renewal-layout.mjs", "renewal-effects.mjs", "renewal-slice-art.mjs",
+        "renewal-seat-picker.mjs", "renewal-slice.html", "renewal-slice.js", "walk.js",
       ].map(async (path) => {
         const expected = await readFile(new URL("../public/" + path, import.meta.url));
         const response = await request("/" + path, { headers });

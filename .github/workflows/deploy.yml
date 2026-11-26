@@ -7,9 +7,12 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/deploy.yml"
-      - "lib/invite-gate.ts"
+      - "app/**"
+      - "lib/**"
+      - "public/**"
       - "tests/invite-gate.test.mjs"
       - "tests/smoke-live-login.mjs"
+      - "tests/smoke-live-game.mjs"
 
 permissions:
   contents: read
