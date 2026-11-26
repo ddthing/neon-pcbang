@@ -1,3 +1,4 @@
+import { createSliceArt } from "./renewal-slice-art.mjs";
 import {
   AISLES,
   CHARACTER_SPEC,
@@ -110,6 +111,8 @@ function px(x, y, w, h, color) {
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 }
 
+const art = createSliceArt(ctx, px);
+
 function framedRect(x, y, w, h, fill, border = C.ink) {
   px(x, y, w, h, border);
   px(x + 1, y + 1, w - 2, h - 2, fill);
@@ -124,18 +127,19 @@ function drawFloorPlanks(x, y, w, h, swatches) {
   const plankW = 40;
   const plankH = 12;
   for (let row = 0; row * plankH < h + plankH; row++) {
-    const offset = (row % 3) * 14;
+    const offset = (row * 19 + (row % 3) * 7) % plankW;
     for (let col = -1; col * plankW < w + plankW; col++) {
-      const hash = Math.abs(col * 37 + row * 53);
+      const hash = Math.abs(Math.imul(col + 103, 0x45d9f3b) ^ Math.imul(row + 13, 0x27d4eb2d));
       const lx = x + col * plankW + offset;
       const ty = y + row * plankH;
       px(lx, ty, plankW - 1, plankH - 1, swatches[hash % swatches.length]);
-      px(lx + 1, ty + 1, plankW - 4, 1, C.lightWood);
+      px(lx + 2, ty + 1, plankW - 5, 1, "#ad786c");
       if (hash % 3 === 0) {
-        px(lx + 6 + (hash % 12), ty + 5, 9, 1, "#986267");
+        px(lx + 6 + (hash % 12), ty + 5, 5 + (hash % 5), 1, "#9d6965");
       }
       if (hash % 5 === 0) {
-        px(lx + 14, ty + 8, 6, 1, C.lightWood);
+        px(lx + 20, ty + 8, 3, 1, "#b58272");
+        px(lx + 21, ty + 9, 6, 1, "#996663");
       }
     }
   }
@@ -156,7 +160,7 @@ function drawSlateTiles(x, y, w, h) {
       const ty = y + row * tile;
       const tone = tones[(row * 7 + col * 3) % tones.length];
       px(tx, ty, tile - 1, tile - 1, tone);
-      px(tx + 1, ty + 1, 9, 1, "#6f809f");
+      px(tx + 2, ty + 1, 7 + (row + col * 3) % 5, 1, "#61728e");
     }
   }
   ctx.restore();
@@ -166,13 +170,22 @@ function drawRug(x, y, w, h, bodyColor, trimColor) {
   px(x + 2, y + 2, w, h, "rgba(41, 36, 53, 0.38)");
   framedRect(x, y, w, h, bodyColor, C.ink);
   framedRect(x + 2, y + 2, w - 4, h - 4, bodyColor, trimColor);
-  for (let dx = 5; dx < w - 4; dx += 5) {
-    px(x + dx, y + 1, 2, 1, C.paper);
-    px(x + dx, y + h - 2, 2, 1, C.paper);
+  framedRect(x + 5, y + 5, w - 10, h - 10, bodyColor, "rgba(255, 215, 180, 0.16)");
+  for (let dx = 8; dx < w - 7; dx += 5) {
+    px(x + dx, y + 1, 2, 1, trimColor);
+    px(x + dx, y + h - 2, 2, 1, trimColor);
+  }
+  for (const dx of [7, w - 16]) {
+    for (const dy of [7, h - 16]) {
+      px(x + dx, y + dy + 3, 9, 3, trimColor);
+      px(x + dx + 3, y + dy, 3, 9, trimColor);
+      px(x + dx + 4, y + dy + 4, 1, 1, C.paper);
+    }
   }
 }
 
 function drawWindowScene(x, y, w, h, timeSec) {
+  px(x - 2, y + h - 1, w + 4, 4, C.shade);
   framedRect(x, y, w, h, C.glass, C.ink);
   px(x + 2, y + 2, w - 4, h - 4, C.slate);
   // Distant building silhouettes
@@ -197,95 +210,8 @@ function drawWindowScene(x, y, w, h, timeSec) {
   px(x + Math.floor(w / 2) - 1, y + 1, 2, h - 2, C.ink);
   px(x + Math.floor(w / 2), y + 2, 1, h - 4, C.blue);
   px(x + 2, y + 2, w - 4, 1, C.blue);
-}
-
-// ---------- Plants (3 distinct silhouettes) ----------
-function drawPlant(item, timeSec) {
-  const { x, y } = item.anchor;
-  const sway = reducedMotionQuery.matches ? 0 : Math.round(Math.sin(timeSec * 1.6 + x * 0.05));
-
-  if (item.species === "broadleaf") {
-    // Ground shadow
-    px(x - 10, y - 2, 21, 5, "rgba(41, 36, 53, 0.35)");
-    // Terracotta pot with visible rim and soil
-    framedRect(x - 7, y - 12, 14, 12, C.rust, C.ink);
-    framedRect(x - 8, y - 14, 16, 4, C.peach, C.ink);
-    px(x - 6, y - 12, 12, 2, "#4a3235"); // dark soil
-    px(x - 5, y - 8, 3, 6, C.peach);
-    // Broad paddle leaves
-    px(x - 1, y - 24, 2, 13, C.green);
-    px(x - 10 + sway, y - 29, 8, 10, C.ink);
-    px(x - 9 + sway, y - 28, 6, 8, C.green);
-    px(x - 8 + sway, y - 27, 4, 5, C.mint);
-    px(x + 2 - sway, y - 31, 9, 11, C.ink);
-    px(x + 3 - sway, y - 30, 7, 9, C.mint);
-    px(x + 4 - sway, y - 29, 3, 6, "#b7cea4");
-    px(x - 5, y - 35 + Math.abs(sway), 10, 11, C.ink);
-    px(x - 4, y - 34 + Math.abs(sway), 8, 9, C.mint);
-    px(x - 2, y - 33 + Math.abs(sway), 2, 6, C.milk);
-  } else if (item.species === "pothos") {
-    // Pot with cascading trailing vines
-    px(x - 9, y - 2, 19, 4, "rgba(41, 36, 53, 0.35)");
-    framedRect(x - 6, y - 11, 13, 10, C.violet, C.ink);
-    framedRect(x - 7, y - 13, 15, 4, "#9d85a6", C.ink);
-    px(x - 5, y - 11, 11, 2, "#4a3235");
-    // Bushy crown
-    px(x - 8, y - 22, 16, 10, C.ink);
-    px(x - 7, y - 21, 14, 8, C.green);
-    px(x - 5, y - 20, 10, 5, C.mint);
-    px(x - 2, y - 24 + sway, 5, 3, C.mint);
-    // Cascading trailing vines draping over pot lip
-    px(x - 9 + sway, y - 15, 4, 11, C.ink);
-    px(x - 8 + sway, y - 14, 3, 9, C.mint);
-    px(x + 5 - sway, y - 14, 4, 9, C.ink);
-    px(x + 6 - sway, y - 13, 2, 7, C.green);
-    px(x - 2, y - 13, 3, 6, C.mint);
-  } else {
-    // Compact geometric succulent rosette
-    px(x - 8, y - 2, 17, 4, "rgba(41, 36, 53, 0.35)");
-    framedRect(x - 6, y - 9, 12, 9, C.slate, C.ink);
-    framedRect(x - 7, y - 11, 14, 3, C.blue, C.ink);
-    px(x - 5, y - 9, 10, 2, "#4a3235");
-    // Outer rosette petals
-    px(x - 8, y - 16, 16, 6, C.ink);
-    px(x - 7, y - 15, 14, 4, C.green);
-    px(x - 5, y - 19, 10, 7, C.ink);
-    px(x - 4, y - 18, 8, 5, C.mint);
-    px(x - 2, y - 20, 4, 4, "#b8d2a7");
-    px(x - 1, y - 19 + (sway > 0 ? 1 : 0), 2, 2, C.milk);
-  }
-}
-
-// ---------- Kiosk ----------
-function drawKiosk(item, timeSec) {
-  const { x, y, width, height } = item.visualRect;
-  px(x + 2, y + height - 3, width - 2, 5, "rgba(41, 36, 53, 0.4)");
-  // Pedestal base
-  framedRect(x + 4, y + 26, width - 8, 15, C.slate, C.ink);
-  px(x + 6, y + 28, width - 12, 10, C.blue);
-  // Display head housing
-  framedRect(x + 1, y, width - 2, 28, C.plum, C.ink);
-  framedRect(x + 4, y + 4, width - 8, 18, C.glass, C.ink);
-  // Kiosk screen state mirrors modal / seat selection
-  if (state.kioskMode === "confirmed") {
-    px(x + 6, y + 6, width - 12, 14, "#3b5954");
-    px(x + 8, y + 8, 12, 3, C.mint);
-    px(x + 9, y + 13, 10, 4, C.milk);
-  } else if (state.kioskMode === "selecting") {
-    px(x + 6, y + 6, width - 12, 14, C.slate);
-    px(x + 8, y + 8, 4, 4, C.gold);
-    px(x + 14, y + 8, 4, 4, C.aqua);
-    px(x + 8, y + 14, 10, 3, C.milk);
-  } else {
-    px(x + 6, y + 6, width - 12, 14, C.glass);
-    const pulse = Math.floor(timeSec * 2) % 2 === 0;
-    px(x + 8, y + 8, 5, 5, C.mint);
-    px(x + 15, y + 8, 5, 5, pulse ? C.aqua : C.blue);
-    px(x + 8, y + 15, 12, 3, C.gold);
-  }
-  // Card reader slot & indicator LED
-  px(x + 6, y + 23, 8, 2, C.gold);
-  px(x + 18, y + 23, 3, 2, C.aqua);
+  px(x - 2, y + h, w + 4, 1, "#b08085");
+  px(x + 4, y + h + 1, w - 8, 1, C.plum);
 }
 
 // ---------- Doors (threshold + sliding leaf + foreground lintel occlusion) ----------
@@ -305,6 +231,10 @@ function drawDoorFloorAndLeaves(door) {
   const leafH = leafBottom - leafTop;
   framedRect(fr.x, leafTop, 5, leafH, C.darkWood, C.ink);
   framedRect(fr.x + fr.width - 5, leafTop, 5, leafH, C.darkWood, C.ink);
+  px(fr.x + 1, leafTop, 1, leafH - 2, C.lightWood);
+  px(fr.x + fr.width - 3, leafTop, 1, leafH - 2, "#a77674");
+  px(th.x, leafBottom - 2, door.clearWidth, 1, C.shade);
+  px(th.x, leafBottom - 1, door.clearWidth, 1, "#a38c95");
 
   // Sliding glass panels
   const halfSpan = Math.floor(door.clearWidth / 2);
@@ -327,6 +257,13 @@ function drawDoorFloorAndLeaves(door) {
   framedRect(rightX, leafTop, panelW, leafH, C.glass, C.ink);
   px(rightX + 2, leafTop + 2, panelW - 4, leafH - 6, "#4d6d89");
   px(rightX + 2, leafTop + Math.floor(leafH / 2), 2, 5, C.gold);
+  for (const panelX of [leftX, rightX]) {
+    px(panelX + 2, leafTop + 2, panelW - 4, 1, "#7d9bac");
+    px(panelX + 2, leafBottom - 5, panelW - 4, 1, C.slate);
+    for (let step = 0; step < 6; step++) {
+      px(panelX + 3 + step, leafTop + 12 - step, 2, 1, "#678ba1");
+    }
+  }
   ctx.restore();
 }
 
@@ -335,7 +272,9 @@ function drawDoorLintelOcclusion(door) {
   const lh = door.lintelOcclusionHeight;
   // Upper jamb caps + overhead lintel beam that passes over player head when crossing threshold
   framedRect(fr.x, fr.y, fr.width, lh, C.wood, C.ink);
-  px(fr.x + 2, fr.y + 2, fr.width - 4, 3, C.lightWood);
+  px(fr.x + 2, fr.y + 2, fr.width - 4, 1, C.lightWood);
+  px(fr.x + 2, fr.y + 3, 2, lh - 6, C.lightWood);
+  px(fr.x + fr.width - 4, fr.y + 3, 2, lh - 6, C.darkWood);
   px(fr.x + 2, fr.y + lh - 4, fr.width - 4, 2, C.darkWood);
   // Warm transom glow / sign accent on entrance door
   if (door.id === "entrance") {
@@ -345,301 +284,6 @@ function drawDoorLintelOcclusion(door) {
   } else {
     framedRect(fr.x + 11, fr.y + 5, fr.width - 22, 5, C.slate, C.ink);
     px(fr.x + 13, fr.y + 7, fr.width - 26, 2, C.milk);
-  }
-}
-
-// ---------- Seats: Desk, Monitor, Chair Base, Foreground Chair Backrest, Delivery Tray ----------
-function drawMonitorScreen(sx, sy, sw, sh, runtime, timeSec) {
-  if (runtime.bootStage === "off") {
-    px(sx, sy, sw, sh, "#1e2736");
-    px(sx + sw - 3, sy + sh - 2, 2, 1, C.rust);
-  } else if (runtime.bootStage === "booting") {
-    px(sx, sy, sw, sh, "#263849");
-    px(sx + 2, sy + 2, Math.max(4, sw - 5), 2, C.aqua);
-    const bar = Math.max(2, Math.floor((sw - 4) * Math.min(1, runtime.bootTimer / 1.0)));
-    px(sx + 2, sy + Math.floor(sh / 2), bar, 2, C.milk);
-    px(sx + sw - 3, sy + sh - 2, 2, 1, C.mint);
-  } else {
-    px(sx, sy, sw, sh, "#35536b");
-    px(sx + 1, sy + 1, sw - 2, Math.max(2, sh - 4), C.aqua);
-    const wave = Math.floor(timeSec * 4) % 2;
-    px(sx + 2, sy + 3, Math.max(3, Math.floor(sw * 0.45)), 2, C.milk);
-    px(sx + 2 + wave, sy + 6, Math.max(2, Math.floor(sw * 0.35)), 2, C.gold);
-    px(sx + sw - 3, sy + sh - 2, 2, 1, C.mint);
-  }
-}
-
-function drawSeatDeskAndChairBase(seat, runtime, timeSec) {
-  const d = seat.deskRect;
-  const m = seat.monitorRect;
-  const ch = seat.chairRect;
-  const kb = seat.keyboardAnchor;
-
-  // Floor shadows
-  px(d.x + 2, d.y + d.height - 1, d.width, 4, "rgba(41, 36, 53, 0.35)");
-  px(ch.x + 2, ch.y + ch.height - 2, ch.width - 2, 4, "rgba(41, 36, 53, 0.35)");
-
-  // Chair star base + cushion (Layer behind seated character)
-  px(ch.x + Math.floor(ch.width / 2) - 4, ch.y + ch.height - 3, 8, 3, C.ink);
-  framedRect(ch.x + 2, ch.y + 3, ch.width - 4, ch.height - 6, C.slate, C.ink);
-  px(ch.x + 4, ch.y + 5, ch.width - 8, ch.height - 10, C.blue);
-
-  // Desk tabletop & beveled front lip
-  framedRect(d.x, d.y, d.width, d.height, C.wood, C.ink);
-  px(d.x + 2, d.y + 2, d.width - 4, 2, C.lightWood);
-  px(d.x + 1, d.y + d.height - 4, d.width - 2, 3, C.darkWood);
-
-  if (seat.facing === "up") {
-    // Solo room front-facing setup
-    // Tower PC on desk right-back corner
-    framedRect(d.x + d.width - 13, d.y + 2, 9, 13, C.shade, C.ink);
-    px(d.x + d.width - 10, d.y + 4, 3, 1, runtime.bootStage === "on" ? C.aqua : C.gold);
-    // Monitor stand + wide frame (26x19)
-    px(m.x + 9, m.y + m.height - 2, 8, 5, C.ink);
-    px(m.x + 6, d.y + 4, 14, 2, C.shade);
-    framedRect(m.x, m.y, m.width, m.height - 3, C.shade, C.ink);
-    drawMonitorScreen(m.x + 2, m.y + 2, m.width - 4, m.height - 7, runtime, timeSec);
-    // Keyboard & mouse pad aligned to keyboardAnchor
-    framedRect(kb.x - 9, kb.y - 3, 18, 6, C.shade, C.ink);
-    px(kb.x - 7, kb.y - 1, 14, 1, C.paper);
-    px(kb.x - 7, kb.y + 1, 11, 1, C.blue);
-    // Mouse + pad
-    px(kb.x + 11, kb.y - 4, 8, 8, C.plum);
-    framedRect(kb.x + 13, kb.y - 2, 5, 5, C.milk, C.ink);
-    // Soft monitor light spill on desk
-    if (runtime.bootStage === "on") {
-      ctx.fillStyle = "rgba(131, 201, 197, 0.22)";
-      ctx.fillRect(kb.x - 10, kb.y - 7, 24, 10);
-    }
-  } else {
-    // Hall side-facing setup (hall:0 faces right, hall:1 faces left)
-    const dir = seat.facing === "right" ? 1 : -1;
-    // Tower PC tucked at outer top corner of desk
-    const pcX = dir === 1 ? d.x + d.width - 10 : d.x + 2;
-    framedRect(pcX, d.y + 3, 8, 12, C.shade, C.ink);
-    px(pcX + 2, d.y + 5, 3, 2, runtime.bootStage === "on" ? C.aqua : C.gold);
-
-    // Angled 3/4 side monitor profile matching chassis
-    framedRect(m.x, m.y, m.width, m.height, C.shade, C.ink);
-    const screenX = dir === 1 ? m.x + 2 : m.x + m.width - 6;
-    drawMonitorScreen(screenX, m.y + 3, 4, m.height - 6, runtime, timeSec);
-
-    // Keyboard & mouse aligned cleanly to keyboardAnchor
-    framedRect(kb.x - 2, kb.y - 7, 6, 14, C.shade, C.ink);
-    px(kb.x, kb.y - 5, 2, 10, C.paper);
-    framedRect(kb.x - 2, kb.y + 9, 5, 4, C.milk, C.ink);
-
-    if (runtime.bootStage === "on") {
-      ctx.fillStyle = "rgba(131, 201, 197, 0.2)";
-      ctx.fillRect(d.x + 2, m.y, d.width - 4, m.height);
-    }
-  }
-}
-
-function drawSeatBackrestOcclusion(seat) {
-  const ch = seat.chairRect;
-  if (seat.facing === "up") {
-    // Backrest wraps up over seated character's lower back & hips
-    framedRect(ch.x + 2, ch.y + 6, ch.width - 4, 11, C.plum, C.ink);
-    px(ch.x + 4, ch.y + 8, ch.width - 8, 4, C.violet);
-    // Side armrests
-    framedRect(ch.x, ch.y + 5, 3, 8, C.shade, C.ink);
-    framedRect(ch.x + ch.width - 3, ch.y + 5, 3, 8, C.shade, C.ink);
-  } else if (seat.facing === "right") {
-    // Left-edge outer backrest wing occludes seated character's back
-    framedRect(ch.x, ch.y + 2, 6, ch.height - 4, C.plum, C.ink);
-    px(ch.x + 1, ch.y + 4, 3, ch.height - 8, C.violet);
-    px(ch.x + 5, ch.y + ch.height - 6, 8, 3, C.ink);
-  } else {
-    // Right-edge outer backrest wing occludes hall:1 character's back
-    framedRect(ch.x + ch.width - 6, ch.y + 2, 6, ch.height - 4, C.plum, C.ink);
-    px(ch.x + ch.width - 4, ch.y + 4, 3, ch.height - 8, C.violet);
-    px(ch.x + ch.width - 13, ch.y + ch.height - 6, 8, 3, C.ink);
-  }
-}
-
-function drawDeliveryTray(seat) {
-  const t = seat.trayAnchor;
-  framedRect(t.x, t.y, t.width, t.height, C.lightWood, C.ink);
-  px(t.x + 1, t.y + 1, t.width - 2, t.height - 2, C.wood);
-  // Ramen bowl + iced coffee cup inside tray
-  framedRect(t.x + 2, t.y + 2, 5, 5, C.milk, C.ink);
-  px(t.x + 3, t.y + 3, 3, 3, C.peach);
-  framedRect(t.x + t.width - 5, t.y + 2, 3, 5, C.aqua, C.ink);
-}
-
-// ---------- High-Craft Chibi Character (32x40 frame, 32px standing height, 16px head) ----------
-function drawCharacter(p) {
-  const seat = p.seatKey ? SEATS[p.seatKey] : null;
-  const isSeated = p.mode === "typing" || p.mode === "sit-down" || p.mode === "stand-up";
-
-  // Anchor smoothly between standPoint/approachPoint and cushionAnchor during sit-down / stand-up
-  let drawX = p.x;
-  let drawY = p.y;
-  if (seat && isSeated) {
-    drawX = seat.cushionAnchor.x;
-    drawY = seat.cushionAnchor.y + Math.round(p.sitProgress * 2);
-  }
-
-  const footX = Math.round(drawX);
-  const footY = Math.round(drawY);
-
-  // Subtle floor shadow when standing/walking
-  if (!isSeated || p.sitProgress < 0.5) {
-    px(footX - 6, footY - 2, 12, 4, "rgba(41, 36, 53, 0.36)");
-  }
-
-  const walkPhase = Math.floor(p.walkDistance / 5) % 6;
-  const bob = p.mode === "walk" ? (walkPhase % 3 === 1 ? -1 : 0) : 0;
-  const sitDrop = Math.round(p.sitProgress * 4);
-  const topY = footY - 30 + bob + sitDrop; // Standing silhouette ~32px high (topY to footY+2)
-
-  // --- Seated Back View (solo:0 facing "up") ---
-  if (isSeated && p.facing === "up") {
-    const kb = seat.keyboardAnchor;
-    const typeStep = Math.floor(p.typingClock * 7) % 4;
-    // Left/Right sleeves + hands extending forward onto keyboardAnchor
-    const lhY = Math.round(kb.y + (typeStep === 0 ? -1 : 1));
-    const rhY = Math.round(kb.y + (typeStep === 2 ? -1 : 1));
-    framedRect(footX - 7, lhY, 4, 9, C.green, C.ink);
-    px(footX - 6, lhY - 1, 3, 3, "#fbe3d3");
-    framedRect(footX + 3, rhY, 4, 9, C.green, C.ink);
-    px(footX + 4, rhY - 1, 3, 3, "#fbe3d3");
-
-    // Torso (hoodie + hood fold from back)
-    framedRect(footX - 6, topY + 14, 12, 11, C.green, C.ink);
-    px(footX - 4, topY + 15, 8, 5, C.mint);
-    // Head & Hair (16px wide)
-    framedRect(footX - 8, topY, 16, 15, "#6b473d", C.ink);
-    px(footX - 6, topY + 2, 12, 5, "#8e6255");
-    px(footX - 7, topY + 7, 14, 6, "#54362e");
-    // Mint gaming headset visible cleanly on crown
-    px(footX - 8, topY + 2, 16, 2, C.aqua);
-    framedRect(footX - 9, topY + 5, 3, 6, C.aqua, C.ink);
-    framedRect(footX + 6, topY + 5, 3, 6, C.aqua, C.ink);
-    return;
-  }
-
-  // --- Seated Side Profile View (hall:0 facing "right", hall:1 facing "left") ---
-  if (isSeated && (p.facing === "right" || p.facing === "left")) {
-    const dir = p.facing === "right" ? 1 : -1;
-    const typeStep = Math.floor(p.typingClock * 7) % 4;
-    const handShift = typeStep % 2 === 0 ? 1 : 0;
-
-    // Legs bent forward on cushion toward desk underside
-    framedRect(footX + (dir === 1 ? 0 : -8), footY - 8, 8, 5, C.slate, C.ink);
-    framedRect(footX + (dir === 1 ? 5 : -9), footY - 5, 4, 6, C.milk, C.ink);
-
-    // Torso
-    framedRect(footX - 5, topY + 14, 10, 11, C.green, C.ink);
-    px(footX - 3, topY + 15, 6, 6, C.mint);
-
-    // Head (16px wide side/3-quarter silhouette)
-    framedRect(footX - 8, topY, 16, 15, "#fbe3d3", C.ink);
-    // Hair back + bangs
-    if (dir === 1) {
-      px(footX - 7, topY + 1, 9, 12, "#6b473d");
-      px(footX - 6, topY + 1, 11, 4, "#8e6255");
-      px(footX + 4, topY + 7, 2, 3, C.ink); // eye facing monitor
-      px(footX + 3, topY + 10, 2, 2, C.peach); // cheek
-    } else {
-      px(footX - 2, topY + 1, 9, 12, "#6b473d");
-      px(footX - 5, topY + 1, 11, 4, "#8e6255");
-      px(footX - 6, topY + 7, 2, 3, C.ink);
-      px(footX - 5, topY + 10, 2, 2, C.peach);
-    }
-    // Headset band & earcup
-    px(footX - 6, topY, 12, 2, C.aqua);
-    framedRect(footX - 2, topY + 5, 4, 6, C.aqua, C.ink);
-
-    // Forearm + typing hand reaching cleanly to keyboardAnchor
-    const kbX = seat.keyboardAnchor.x;
-    const reachX = dir === 1 ? Math.max(footX + 3, kbX - 8 + handShift) : Math.min(footX - 3, kbX + 8 - handShift);
-    const armStartX = dir === 1 ? footX + 1 : reachX;
-    const armW = Math.max(6, Math.abs(reachX - footX) + 3);
-    framedRect(armStartX, topY + 17, armW, 4, C.mint, C.ink);
-    px(dir === 1 ? reachX : reachX - 2, topY + 17, 3, 3, "#fbe3d3");
-    return;
-  }
-
-  // --- Standing / Walking Character (Down, Up, Left, Right; 6-frame leg/arm stride) ---
-  const strideTable = [
-    [-1, 1],
-    [-2, 2],
-    [-1, 1],
-    [1, -1],
-    [2, -2],
-    [1, -1],
-  ];
-  const [lSwing, rSwing] = p.mode === "walk" ? strideTable[walkPhase] : [0, 0];
-
-  if (p.facing === "down" || p.facing === "up") {
-    // Legs + Sneakers
-    framedRect(footX - 5, footY - 8 + lSwing, 4, 7, C.slate, C.ink);
-    px(footX - 5, footY - 3 + lSwing, 4, 2, C.milk);
-    framedRect(footX + 1, footY - 8 + rSwing, 4, 7, C.slate, C.ink);
-    px(footX + 1, footY - 3 + rSwing, 4, 2, C.milk);
-
-    // Arms
-    framedRect(footX - 8, topY + 15 + Math.round(rSwing * 0.5), 3, 8, C.green, C.ink);
-    framedRect(footX + 5, topY + 15 + Math.round(lSwing * 0.5), 3, 8, C.green, C.ink);
-
-    // Torso (Sage hoodie + cream collar)
-    framedRect(footX - 5, topY + 14, 10, 11, C.green, C.ink);
-    px(footX - 3, topY + 16, 6, 7, C.mint);
-    if (p.facing === "down") px(footX - 2, topY + 15, 4, 2, C.milk);
-
-    // Head (16px wide, warm plum ink)
-    framedRect(footX - 8, topY, 16, 15, "#fbe3d3", C.ink);
-    if (p.facing === "down") {
-      // Hair crown + bangs
-      px(footX - 7, topY + 1, 14, 5, "#6b473d");
-      px(footX - 6, topY + 1, 12, 2, "#8e6255");
-      px(footX - 7, topY + 5, 3, 3, "#6b473d");
-      px(footX + 4, topY + 5, 3, 3, "#6b473d");
-      // Eyes & rosy cheeks
-      px(footX - 4, topY + 8, 2, 3, C.ink);
-      px(footX + 2, topY + 8, 2, 3, C.ink);
-      px(footX - 6, topY + 10, 2, 2, C.peach);
-      px(footX + 4, topY + 10, 2, 2, C.peach);
-    } else {
-      // Hair full back
-      px(footX - 7, topY + 1, 14, 13, "#6b473d");
-      px(footX - 5, topY + 2, 10, 4, "#8e6255");
-    }
-    // Headset band stays inside 16px silhouette
-    px(footX - 7, topY + 1, 14, 2, C.aqua);
-    px(footX - 8, topY + 5, 2, 5, C.aqua);
-    px(footX + 6, topY + 5, 2, 5, C.aqua);
-  } else {
-    // Side walking (left/right)
-    const dir = p.facing === "right" ? 1 : -1;
-    // Back leg
-    framedRect(footX - 2 - lSwing, footY - 8, 4, 7, "#39465e", C.ink);
-    // Front leg
-    framedRect(footX - 2 + rSwing, footY - 8, 4, 7, C.slate, C.ink);
-    px(footX - 2 + rSwing, footY - 3, 4, 2, C.milk);
-    // Torso
-    framedRect(footX - 5, topY + 14, 10, 11, C.green, C.ink);
-    px(footX - 3, topY + 15, 6, 6, C.mint);
-    // Swinging arm
-    framedRect(footX - 2 - lSwing, topY + 15, 4, 8, C.mint, C.ink);
-    px(footX - 1 - lSwing, topY + 21, 3, 2, "#fbe3d3");
-    // Head (16px wide)
-    framedRect(footX - 8, topY, 16, 15, "#fbe3d3", C.ink);
-    if (dir === 1) {
-      px(footX - 7, topY + 1, 9, 12, "#6b473d");
-      px(footX - 6, topY + 1, 11, 4, "#8e6255");
-      px(footX + 4, topY + 8, 2, 3, C.ink);
-      px(footX + 3, topY + 11, 2, 1, C.peach);
-    } else {
-      px(footX - 2, topY + 1, 9, 12, "#6b473d");
-      px(footX - 5, topY + 1, 11, 4, "#8e6255");
-      px(footX - 6, topY + 8, 2, 3, C.ink);
-      px(footX - 5, topY + 11, 2, 1, C.peach);
-    }
-    px(footX - 6, topY + 1, 12, 2, C.aqua);
-    framedRect(footX - 2, topY + 5, 4, 6, C.aqua, C.ink);
   }
 }
 
@@ -714,7 +358,15 @@ function renderScene(timeSec) {
   px(0, 0, W, H, C.ink);
 
   // Exterior corridor floor & street curb
-  drawSlateTiles(ZONES.exterior.bounds.x, ZONES.exterior.bounds.y, ZONES.exterior.bounds.width, ZONES.exterior.bounds.height);
+  const exterior = ZONES.exterior.bounds;
+  const [entryWalk] = ZONES.exterior.walkableRects;
+  drawSlateTiles(exterior.x, exterior.y, exterior.width, exterior.height);
+  const rightEdge = entryWalk.x + entryWalk.width;
+  px(exterior.x, exterior.y, entryWalk.x - exterior.x, exterior.height, "rgba(37,40,63,0.24)");
+  px(rightEdge, exterior.y, exterior.x + exterior.width - rightEdge, exterior.height, "rgba(37,40,63,0.24)");
+  for (const edge of [entryWalk.x, rightEdge]) {
+    px(edge - 1, entryWalk.y, 1, entryWalk.height, "#72819b");
+  }
   // Sidewalk curb accent
   px(ZONES.exterior.bounds.x, ZONES.exterior.bounds.y + 42, ZONES.exterior.bounds.width, 3, C.glass);
   // Warm interior light spill out the open entrance onto sidewalk
@@ -723,7 +375,7 @@ function renderScene(timeSec) {
   ctx.fillRect(256, 308, 40, 26);
 
   // Hall & Solo wood floor
-  const woodSwatches = [C.wood, "#a16b66", "#ae7468", "#9f6865"];
+  const woodSwatches = ["#a3726a", "#a16e68", "#a7766d", "#9e6d66"];
   drawFloorPlanks(36, 48, 568, 248, woodSwatches);
   drawFloorPlanks(48, 56, 152, 140, [C.wood, "#ab7368", "#9c6763"]);
 
@@ -736,6 +388,14 @@ function renderScene(timeSec) {
   framedRect(24, 12, 592, 38, C.plum, C.ink);
   px(26, 14, 588, 20, C.violet);
   px(26, 34, 588, 14, C.darkWood);
+  px(26, 14, 588, 1, "#a28394");
+  px(26, 32, 588, 2, "#604658");
+  for (let x = 34; x < 612; x += 16) {
+    px(x, 35, 1, 11, "#704859");
+    px(x + 1, 35, 1, 10, "#976166");
+  }
+  px(26, 46, 588, 1, "#b27c71");
+  px(26, 49, 588, 2, "rgba(49,33,53,0.29)");
   // Solo room north window looking at rainy city skyline
   drawWindowScene(56, 18, 64, 24, timeSec);
   // Hall north cozy windows
@@ -743,10 +403,13 @@ function renderScene(timeSec) {
   drawWindowScene(398, 18, 68, 24, timeSec);
   // Warm wall sconces (apricot lighting)
   for (const sx of [164, 348, 520]) {
-    framedRect(sx - 5, 22, 10, 12, C.gold, C.ink);
-    px(sx - 3, 24, 6, 8, C.milk);
-    ctx.fillStyle = "rgba(236, 183, 121, 0.14)";
-    ctx.fillRect(sx - 20, 34, 40, 28);
+    px(sx - 12, 23, 24, 28, "rgba(242,179,122,0.07)");
+    px(sx - 16, 38, 32, 16, "rgba(242,179,122,0.07)");
+    px(sx - 19, 47, 38, 10, "rgba(242,179,122,0.05)");
+    framedRect(sx - 5, 22, 10, 12, "#a77478", C.shade);
+    px(sx - 3, 24, 6, 7, C.gold);
+    px(sx - 2, 24, 4, 6, C.milk);
+    px(sx - 2, 34, 4, 2, C.shade);
   }
 
   // West & East outer store walls
@@ -794,50 +457,60 @@ function renderScene(timeSec) {
     drawDoorFloorAndLeaves(door);
   }
 
-  // Draw furniture, seats (with depth-sorted seated/standing character) and plants
   const player = state.player;
-  const isPlayerSeated = player.mode === "typing" || player.mode === "sit-down" || player.mode === "stand-up";
+  const activeSeat = player.seatKey ? SEATS[player.seatKey] : null;
+  const reduced = reducedMotionQuery.matches;
+  const drawSeatTray = (seat) => {
+    if (state.showTray) art.drawTray(seat);
+  };
 
-  // Static seat desks + chair cushions
+  const depthList = FURNITURE.filter((item) => item.kind === "plant" || item.kind === "kiosk")
+    .map((item) => ({
+      y: item.anchor.y,
+      draw: () => item.kind === "plant"
+        ? art.drawPlant(item, timeSec, reduced)
+        : art.drawKiosk(item, state.kioskMode, timeSec, reduced),
+    }));
+
   for (const seat of SEAT_LIST) {
-    drawSeatDeskAndChairBase(seat, state.seatsRuntime[seat.key], timeSec);
+    depthList.push({
+      y: seat.deskRect.y + seat.deskRect.height,
+      draw: () => {
+        art.drawDesk(seat, state.seatsRuntime[seat.key], timeSec, reduced);
+        if (seat !== activeSeat) drawSeatTray(seat);
+      },
+    });
+    depthList.push({
+      y: seat.chairRect.y + seat.chairRect.height,
+      draw: () => {
+        art.drawChairBase(seat);
+        if (seat !== activeSeat) art.drawBackrest(seat);
+      },
+    });
   }
 
-  // Kiosk & Plants (behind or depth sorted cleanly with standing character)
-  const kioskItem = FURNITURE.find((f) => f.id === "kiosk");
-  const plantItems = FURNITURE.filter((f) => f.kind === "plant");
+  for (const door of DOORS) {
+    depthList.push({ y: door.threshold.cy, draw: () => drawDoorLintelOcclusion(door) });
+  }
 
-  const depthList = [
-    { y: kioskItem.anchor.y, draw: () => drawKiosk(kioskItem, timeSec) },
-    ...plantItems.map((pl) => ({ y: pl.anchor.y, draw: () => drawPlant(pl, timeSec) })),
-  ];
-  if (!isPlayerSeated) {
-    depthList.push({ y: player.y, draw: () => drawCharacter(player) });
+  if (activeSeat) {
+    // Keep the chair behind the approaching character until the last two poses.
+    depthList.push({
+      y: Math.max(activeSeat.deskRect.y + activeSeat.deskRect.height, activeSeat.chairRect.y + activeSeat.chairRect.height),
+      draw: () => {
+        const pose = Math.round(player.sitProgress * (CHARACTER_SPEC.sitFrames - 1));
+        const hipIsAtChair = pose >= CHARACTER_SPEC.sitFrames - 2;
+        if (!hipIsAtChair) art.drawBackrest(activeSeat);
+        art.drawCharacter(player, activeSeat);
+        if (hipIsAtChair) art.drawBackrest(activeSeat);
+        drawSeatTray(activeSeat);
+      },
+    });
+  } else {
+    depthList.push({ y: player.y, draw: () => art.drawCharacter(player, null) });
   }
   depthList.sort((a, b) => a.y - b.y);
   for (const entry of depthList) entry.draw();
-
-  // Seated character layered neatly between chair cushion and foreground backrest occlusion
-  if (isPlayerSeated && player.seatKey && SEATS[player.seatKey]) {
-    drawCharacter(player);
-  }
-
-  // Foreground chair backrests (always occlude seated player's back/hip)
-  for (const seat of SEAT_LIST) {
-    drawSeatBackrestOcclusion(seat);
-  }
-
-  // Optional delivery trays on desks
-  if (state.showTray) {
-    for (const seat of SEAT_LIST) {
-      drawDeliveryTray(seat);
-    }
-  }
-
-  // Foreground door lintels (always span over character's head when passing doorway)
-  for (const door of DOORS) {
-    drawDoorLintelOcclusion(door);
-  }
 
   // Click destination / unreachable visual feedback
   if (state.clickFeedback) {
