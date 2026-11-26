@@ -1,4 +1,4 @@
-import { makeSudoku, sudokuPeers } from "./sudoku-board.js";
+import { clearSudokuPeerNotes, makeSudoku, restoreSudokuPeerNotes, sudokuPeers } from "./sudoku-board.js";
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
 
 export function initSudoku() {
@@ -13,6 +13,8 @@ export function initSudoku() {
   const arrows = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] };
   let givens, values, notes, active, pencil = false, finished = false, startedAt = 0;
   let history = [];
+  // 칸 번호 -> 그 칸에 숫자를 넣으면서 메모가 정리된 주변 칸 목록 (지우면 되살리기 위함)
+  let clearedByEntry = new Map();
 
   mountLeaderboardBox(dialog, "sudoku", () => level.value, (s, m) => m || `${s}점`);
 
@@ -125,6 +127,7 @@ export function initSudoku() {
     values = givens.slice();
     notes = cells.map(() => new Set());
     history = [];
+    clearedByEntry = new Map();
     active = values.indexOf(0);
     pencil = finished = false;
     startedAt = performance.now();
@@ -144,22 +147,32 @@ export function initSudoku() {
     window.cafeAudioPlay?.("tick");
     const memo = notes[active];
     const snapNotes = notes.map((s) => new Set(s));
+    const snapCleared = new Map(clearedByEntry);
 
     if (digit && pencil) {
       if (values[active]) {
         status.textContent = "숫자를 지운 뒤 메모를 적어 주세요.";
         return;
       }
-      history.push({ index: active, prevVal: values[active], prevNotes: snapNotes });
+      history.push({ index: active, prevVal: values[active], prevNotes: snapNotes, prevCleared: snapCleared });
       if (memo.has(digit)) memo.delete(digit);
       else memo.add(digit);
     } else {
       if (values[active] === digit && memo.size === 0) return;
-      history.push({ index: active, prevVal: values[active], prevNotes: snapNotes });
+      history.push({ index: active, prevVal: values[active], prevNotes: snapNotes, prevCleared: snapCleared });
+      const previous = values[active];
+      values[active] = 0;
+      // 이전에 넣었던 숫자를 지우거나 바꾸면, 그 숫자 때문에 정리됐던 주변 메모를 되살린다.
+      if (previous && previous !== digit) {
+        restoreSudokuPeerNotes(values, notes, clearedByEntry.get(active), previous);
+        clearedByEntry.delete(active);
+      }
       values[active] = digit;
       memo.clear();
-      if (digit) {
-        for (const peer of sudokuPeers[active]) notes[peer].delete(digit);
+      if (digit && previous !== digit) {
+        // 중복(오입력)일 때는 주변 메모를 건드리지 않는다.
+        const cleared = clearSudokuPeerNotes(values, notes, active, digit);
+        if (cleared.length) clearedByEntry.set(active, cleared);
       }
     }
     render();
@@ -170,6 +183,7 @@ export function initSudoku() {
     const prev = history.pop();
     values[prev.index] = prev.prevVal;
     notes = prev.prevNotes;
+    clearedByEntry = prev.prevCleared ?? new Map();
     active = prev.index;
     window.cafeAudioPlay?.("tick");
     render();

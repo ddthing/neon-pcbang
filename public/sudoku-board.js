@@ -8,6 +8,27 @@ const box = (index) => Math.floor(row(index) / 3) * 3 + Math.floor(col(index) / 
 export const sudokuPeers = positions.map((index) => positions.filter((other) => other !== index &&
   (row(other) === row(index) || col(other) === col(index) || box(other) === box(index))));
 
+// 숫자를 실제로 입력했을 때 같은 줄·칸·구역(피어)의 메모에서 그 숫자를 정리한다.
+// 이미 피어에 같은 숫자가 있는 "중복 입력"이면 메모를 건드리지 않는다(오입력 한 번에 메모가 사라지지 않게).
+// 지워진 칸 목록을 돌려주므로, 그 숫자를 지우거나 바꿀 때 restoreSudokuPeerNotes로 되살릴 수 있다.
+export function clearSudokuPeerNotes(values, notes, index, digit) {
+  if (!digit || sudokuPeers[index].some((peer) => values[peer] === digit)) return [];
+  const cleared = [];
+  for (const peer of sudokuPeers[index]) {
+    if (notes[peer].delete(digit)) cleared.push(peer);
+  }
+  return cleared;
+}
+
+export function restoreSudokuPeerNotes(values, notes, cleared, digit) {
+  if (!digit || !cleared) return;
+  for (const peer of cleared) {
+    // 그 사이 숫자가 채워졌거나, 다른 확정 숫자 때문에 더는 후보가 아닌 칸은 되살리지 않는다.
+    if (values[peer] || sudokuPeers[peer].some((other) => values[other] === digit)) continue;
+    notes[peer].add(digit);
+  }
+}
+
 function shuffle(values) {
   const copy = [...values];
   for (let i = copy.length - 1; i > 0; i--) {
