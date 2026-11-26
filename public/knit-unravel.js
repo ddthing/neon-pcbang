@@ -63,13 +63,13 @@ export function initKnitUnravel() {
     const W = loomCanvas.width;
     const H = loomCanvas.height;
     const frameX = 16;
-    const frameY = 10;
+    const frameY = 14;
     const frameW = W - 32;
-    const frameH = H - 28;
+    const frameH = H - 30;
     const cellW = Math.floor((frameW - 8) / game.cols);
     const cellH = Math.floor((frameH - 6) / game.rows);
     const padX = frameX + Math.floor((frameW - cellW * game.cols) / 2);
-    const padY = frameY + 3;
+    const padY = frameY + Math.floor((frameH - cellH * game.rows) / 2);
     return { W, H, frameX, frameY, frameW, frameH, cellW, cellH, padX, padY };
   }
 
@@ -85,18 +85,22 @@ export function initKnitUnravel() {
 
     for (const wx of [frameX - 7, frameX + frameW]) {
       lctx.fillStyle = "#261c29";
-      lctx.fillRect(wx, frameY - 2, 7, frameH + 8);
+      lctx.fillRect(wx, frameY - 7, 7, frameH + 14);
       lctx.fillStyle = "#a86c5e";
-      lctx.fillRect(wx + 1, frameY, 5, frameH + 5);
+      lctx.fillRect(wx + 1, frameY - 6, 5, frameH + 12);
       lctx.fillStyle = "#dfb08f";
-      lctx.fillRect(wx + 1, frameY, 2, frameH + 4);
+      lctx.fillRect(wx + 1, frameY - 6, 2, frameH + 11);
     }
-    lctx.fillStyle = "#261c29";
-    lctx.fillRect(frameX - 7, frameY + frameH, frameW + 14, 8);
-    lctx.fillStyle = "#85524f";
-    lctx.fillRect(frameX - 6, frameY + frameH + 1, frameW + 12, 6);
-    lctx.fillStyle = "#c48870";
-    lctx.fillRect(frameX - 5, frameY + frameH + 1, frameW + 10, 2);
+    // Top & bottom horizontal wooden bars
+    for (const wy of [frameY - 7, frameY + frameH]) {
+      const h = wy < frameY ? 7 : 8;
+      lctx.fillStyle = "#261c29";
+      lctx.fillRect(frameX - 7, wy, frameW + 14, h);
+      lctx.fillStyle = "#85524f";
+      lctx.fillRect(frameX - 6, wy + 1, frameW + 12, h - 2);
+      lctx.fillStyle = "#c48870";
+      lctx.fillRect(frameX - 5, wy + 1, frameW + 10, 2);
+    }
 
     lctx.fillStyle = "#1c1722";
     lctx.fillRect(frameX, frameY, frameW, frameH);
