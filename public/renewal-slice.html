@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#292435">
   <title>길모퉁이PC방 · 2차 리뉴얼 1차 시안 (Vertical Slice 1)</title>
   <link rel="stylesheet" href="./renewal-slice.css">
+  <link rel="stylesheet" href="./renewal-seat-picker.css">
 </head>
 <body>
   <main class="slice-stage" id="slice-stage" aria-label="길모퉁이PC방 2차 리뉴얼 1차 플레이 시안">
@@ -39,34 +40,42 @@
     <div class="toast" id="slice-toast" role="status" aria-live="polite" hidden></div>
   </main>
 
-  <div class="modal-backdrop" id="seatmap-backdrop" hidden>
-    <section class="seatmap-modal" role="dialog" aria-modal="true" aria-labelledby="seatmap-title">
-      <header class="seatmap-header">
-        <div>
-          <p class="eyebrow">SHARED LAYOUT DATA · 640×360</p>
-          <h1 id="seatmap-title">키오스크 · 공용 좌석도</h1>
-        </div>
-        <button type="button" class="close-btn" id="seatmap-close" aria-label="좌석도 닫기">닫기 (Esc)</button>
+  <dialog class="seat-picker" id="seatmap-backdrop" aria-labelledby="seatmap-title">
+    <div class="seat-picker-panel">
+      <header class="seat-picker-header">
+        <h1 id="seatmap-title" tabindex="-1">좌석 선택</h1>
+        <button type="button" class="close-btn" id="seatmap-close" aria-label="좌석도 닫기">닫기</button>
       </header>
-
-      <div class="seatmap-legend" aria-label="좌석 상태 안내">
-        <span class="leg"><i class="dot avail"></i>이용 가능</span>
-        <span class="leg"><i class="dot sel"></i>선택됨</span>
-        <span class="leg"><i class="dot mine"></i>내 자리</span>
-        <span class="leg"><i class="dot occ"></i>이용 중</span>
+      <div class="seat-picker-scroll">
+        <section class="seat-picker-overview" id="seatmap-overview" aria-labelledby="seatmap-overview-title">
+          <div class="seat-picker-overview-header">
+            <h2 id="seatmap-overview-title">매장 전체</h2>
+            <span>점선은 통로</span>
+          </div>
+          <div class="seat-plan seat-plan-overview" id="seatmap-board" aria-hidden="true"></div>
+          <nav class="seat-picker-groups" id="seatmap-groups" aria-label="좌석 줄과 룸"></nav>
+        </section>
+        <section id="seatmap-detail" hidden aria-labelledby="seatmap-detail-title">
+          <div class="seat-picker-detail-header">
+            <button type="button" class="close-btn" id="seatmap-back">← 매장 전체</button>
+            <h2 id="seatmap-detail-title"></h2>
+          </div>
+          <div class="seat-plan seat-plan-detail" id="seatmap-seat-board" role="group" aria-describedby="seatmap-instructions"></div>
+          <p class="seat-picker-instructions" id="seatmap-instructions">화살표로 자리 탐색 · Enter로 선택</p>
+        </section>
       </div>
-
-      <div class="seatmap-board" id="seatmap-board" role="grid" aria-label="PC방 시안 좌석 배치"></div>
-
-      <footer class="seatmap-footer">
-        <div class="seatmap-selection" id="seatmap-selection">자리를 선택하세요 (화살표 이동 · Enter 선택)</div>
-        <div class="seatmap-actions">
-          <button type="button" class="qa-btn" id="seatmap-sim-conflict">동시선택 충돌 테스트</button>
-          <button type="button" class="primary-btn" id="seatmap-confirm" disabled>이 자리로 이동 · 착석</button>
+      <footer class="seat-picker-footer">
+        <div>
+          <p class="seat-picker-notice" id="seatmap-notice" role="alert"></p>
+          <p class="seat-picker-selection" id="seatmap-selection" role="status">좌석 줄이나 룸을 고르세요.</p>
+        </div>
+        <div class="seat-picker-actions">
+          <button type="button" class="qa-btn" id="seatmap-sim-conflict" aria-pressed="false" hidden>다음 예약 충돌 재현</button>
+          <button type="button" class="primary-btn" id="seatmap-confirm" disabled>이 자리로 이동</button>
         </div>
       </footer>
-    </section>
-  </div>
+    </div>
+  </dialog>
 
   <script type="module" src="./renewal-slice.js"></script>
 </body>

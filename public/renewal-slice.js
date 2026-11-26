@@ -16,6 +16,7 @@ import {
   isSegmentWalkable,
   planSeatApproach,
 } from "./renewal-layout.mjs";
+import { createSeatPicker } from "./renewal-seat-picker.mjs";
 
 const { width: W, height: H, palette: C } = WORLD_SPEC;
 
@@ -34,11 +35,6 @@ const btnTray = document.getElementById("btn-toggle-tray");
 const btnOverlay = document.getElementById("btn-toggle-overlay");
 const toastEl = document.getElementById("slice-toast");
 
-const seatmapBackdrop = document.getElementById("seatmap-backdrop");
-const seatmapBoard = document.getElementById("seatmap-board");
-const seatmapSelection = document.getElementById("seatmap-selection");
-const seatmapConfirm = document.getElementById("seatmap-confirm");
-const seatmapClose = document.getElementById("seatmap-close");
 const seatmapSimConflict = document.getElementById("seatmap-sim-conflict");
 
 const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -69,11 +65,6 @@ const state = {
   showTray: false,
   hudCollapsed: false,
   clickFeedback: null, // { x, y, ok, timer }
-  modal: {
-    open: false,
-    selectedSeatKey: null,
-    lastFocusedEl: null,
-  },
   keysDown: new Set(),
   lastScale: 1,
 };
@@ -634,7 +625,7 @@ function updateSimulation(dt) {
   // Manual keyboard movement
   let dx = 0;
   let dy = 0;
-  if (!state.modal.open) {
+  if (!seatPicker.isOpen) {
     if (state.keysDown.has("ArrowLeft") || state.keysDown.has("KeyA")) dx -= 1;
     if (state.keysDown.has("ArrowRight") || state.keysDown.has("KeyD")) dx += 1;
     if (state.keysDown.has("ArrowUp") || state.keysDown.has("KeyW")) dy -= 1;
@@ -746,135 +737,34 @@ function updateSimulation(dt) {
   }
 }
 
-// ---------- Shared-Data Seat Map Modal ----------
-function renderSeatMap() {
-  const occupancy = Object.fromEntries(
-    SEAT_LIST.map((s) => [s.key, state.seatsRuntime[s.key].occupiedBy]),
-  );
-  const model = buildSeatMapModel(occupancy, state.player.seatKey);
-  const toPct = (v, max) => `${(v / max) * 100}%`;
+// ---------- Shared-layout seat picker ----------
+const seatPicker = createSeatPicker({
+  readModel() {
+    const occupancy = Object.fromEntries(SEAT_LIST.map((seat) => [seat.key, state.seatsRuntime[seat.key].occupiedBy]));
+    return buildSeatMapModel(occupancy, state.player.seatKey);
+  },
+  async requestSeat(key) {
+    const simulateConflict = seatmapSimConflict.getAttribute("aria-pressed") === "true";
+    await new Promise((resolve) => setTimeout(resolve, 180));
+    if (simulateConflict) {
+      seatmapSimConflict.setAttribute("aria-pressed", "false");
+      state.seatsRuntime[key].occupiedBy = { name: "먼저 도착한 손님" };
+    }
+    if (state.seatsRuntime[key].occupiedBy) return "occupied";
+    return selectSeat(key) ? "accepted" : "unavailable";
+  },
+  onOpen() {
+    state.keysDown.clear();
+    state.kioskMode = "selecting";
+  },
+  onClose() {
+    if (state.kioskMode === "selecting") state.kioskMode = "idle";
+  },
+  fallbackFocus: canvas,
+});
 
-  seatmapBoard.innerHTML = "";
-
-  for (const z of model.zones) {
-    const el = document.createElement("div");
-    el.className = "map-zone";
-    el.dataset.zone = z.id;
-    el.style.left = toPct(z.rect.x, model.world.width);
-    el.style.top = toPct(z.rect.y, model.world.height);
-    el.style.width = toPct(z.rect.width, model.world.width);
-    el.style.height = toPct(z.rect.height, model.world.height);
-    const label = document.createElement("span");
-    label.className = "map-zone-label";
-    label.textContent = z.name;
-    el.appendChild(label);
-    seatmapBoard.appendChild(el);
-  }
-
-  for (const a of model.aisles) {
-    const el = document.createElement("div");
-    el.className = "map-aisle";
-    el.title = `${a.label} (${a.clearWidth}px)`;
-    el.style.left = toPct(a.rect.x, model.world.width);
-    el.style.top = toPct(a.rect.y, model.world.height);
-    el.style.width = toPct(a.rect.width, model.world.width);
-    el.style.height = toPct(a.rect.height, model.world.height);
-    seatmapBoard.appendChild(el);
-  }
-
-  for (const d of model.doors) {
-    const bar = document.createElement("div");
-    bar.className = "map-door";
-    bar.style.left = toPct(d.threshold.x, model.world.width);
-    bar.style.top = toPct(d.threshold.y + 4, model.world.height);
-    bar.style.width = toPct(d.threshold.width, model.world.width);
-    bar.style.height = "6px";
-    seatmapBoard.appendChild(bar);
-
-    const tag = document.createElement("span");
-    tag.className = "map-door-tag";
-    tag.textContent = d.label;
-    tag.style.left = toPct(d.threshold.cx, model.world.width);
-    tag.style.top = toPct(d.threshold.y + 3, model.world.height);
-    seatmapBoard.appendChild(tag);
-  }
-
-  const kioskEl = document.createElement("div");
-  kioskEl.className = "map-kiosk";
-  kioskEl.style.left = toPct(model.kiosk.rect.x, model.world.width);
-  kioskEl.style.top = toPct(model.kiosk.rect.y, model.world.height);
-  kioskEl.style.width = toPct(model.kiosk.rect.width, model.world.width);
-  kioskEl.style.height = toPct(model.kiosk.rect.height, model.world.height);
-  seatmapBoard.appendChild(kioskEl);
-
-  const kioskTag = document.createElement("span");
-  kioskTag.className = "map-kiosk-tag";
-  kioskTag.textContent = "키오스크";
-  kioskTag.style.left = toPct(model.kiosk.rect.x + model.kiosk.rect.width / 2, model.world.width);
-  kioskTag.style.top = toPct(model.kiosk.rect.y - 2, model.world.height);
-  seatmapBoard.appendChild(kioskTag);
-
-  const dirArrow = { up: "▲ 정면", right: "▶ 우측", left: "◀ 좌측" };
-  for (const s of model.seats) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "seat-btn";
-    btn.dataset.seatKey = s.key;
-    btn.dataset.status = s.status;
-    btn.dataset.selected = String(state.modal.selectedSeatKey === s.key);
-    btn.style.left = toPct(s.cushionAnchor.x, model.world.width);
-    btn.style.top = toPct(s.cushionAnchor.y, model.world.height);
-    const statusText = s.status === "occupied" ? "이용 중" : s.status === "mine" ? "내 자리" : dirArrow[s.facing];
-    btn.innerHTML = `<span>${s.displayNumber}</span><small>${statusText}</small>`;
-    btn.addEventListener("click", () => {
-      if (s.status === "occupied") {
-        showToast(`${s.label}은(는) 다른 손님이 이용 중입니다.`, "error");
-        return;
-      }
-      state.modal.selectedSeatKey = s.key;
-      updateSeatMapSelection();
-    });
-    seatmapBoard.appendChild(btn);
-  }
-  updateSeatMapSelection();
-}
-
-function updateSeatMapSelection() {
-  const buttons = seatmapBoard.querySelectorAll(".seat-btn");
-  for (const btn of buttons) {
-    btn.dataset.selected = String(btn.dataset.seatKey === state.modal.selectedSeatKey);
-  }
-  const picked = state.modal.selectedSeatKey ? SEATS[state.modal.selectedSeatKey] : null;
-  if (!picked) {
-    seatmapSelection.textContent = "자리를 선택하세요 (화살표 이동 · Enter 선택)";
-    seatmapConfirm.disabled = true;
-  } else {
-    seatmapSelection.textContent = `선택: ${picked.label} (${ZONES[picked.zone].name})`;
-    seatmapConfirm.disabled = false;
-  }
-}
-
-function openSeatMap(triggerEl = null) {
-  state.modal.open = true;
-  state.modal.lastFocusedEl = triggerEl || document.activeElement;
-  state.kioskMode = "selecting";
-  if (!state.modal.selectedSeatKey) {
-    const firstAvail = SEAT_LIST.find((s) => !state.seatsRuntime[s.key].occupiedBy);
-    state.modal.selectedSeatKey = firstAvail?.key ?? "hall:0";
-  }
-  renderSeatMap();
-  seatmapBackdrop.hidden = false;
-  const firstBtn = seatmapBoard.querySelector(`.seat-btn[data-seat-key="${state.modal.selectedSeatKey}"]`);
-  firstBtn?.focus();
-}
-
-function closeSeatMap() {
-  if (!state.modal.open) return;
-  state.modal.open = false;
-  seatmapBackdrop.hidden = true;
-  if (state.kioskMode === "selecting") state.kioskMode = "idle";
-  state.modal.lastFocusedEl?.focus?.();
-}
+const openSeatMap = seatPicker.open;
+const closeSeatMap = seatPicker.close;
 
 // ---------- Input Handlers ----------
 canvas.addEventListener("click", (ev) => {
@@ -929,24 +819,7 @@ canvas.addEventListener("click", (ev) => {
 });
 
 window.addEventListener("keydown", (ev) => {
-  if (ev.code === "Escape" && state.modal.open) {
-    ev.preventDefault();
-    closeSeatMap();
-    return;
-  }
-  if (state.modal.open) {
-    if (ev.code === "ArrowRight" || ev.code === "ArrowDown" || ev.code === "ArrowLeft" || ev.code === "ArrowUp") {
-      ev.preventDefault();
-      const order = SEAT_LIST.map((s) => s.key);
-      const curIdx = Math.max(0, order.indexOf(state.modal.selectedSeatKey));
-      const delta = ev.code === "ArrowRight" || ev.code === "ArrowDown" ? 1 : -1;
-      const nextKey = order[(curIdx + delta + order.length) % order.length];
-      state.modal.selectedSeatKey = nextKey;
-      updateSeatMapSelection();
-      seatmapBoard.querySelector(`.seat-btn[data-seat-key="${nextKey}"]`)?.focus();
-    }
-    return;
-  }
+  if (seatPicker.isOpen) return;
   if (ev.code === "KeyM") {
     ev.preventDefault();
     openSeatMap();
@@ -1010,27 +883,9 @@ btnTray.addEventListener("click", () => setTrayVisible(!state.showTray));
 btnOverlay.addEventListener("click", () => setOverlay(!state.showOverlay));
 btnCollapse.addEventListener("click", () => setHudCollapsed(!state.hudCollapsed));
 
-seatmapClose.addEventListener("click", closeSeatMap);
-seatmapBackdrop.addEventListener("click", (ev) => {
-  if (ev.target === seatmapBackdrop) closeSeatMap();
-});
-seatmapConfirm.addEventListener("click", () => {
-  const key = state.modal.selectedSeatKey;
-  if (!key) return;
-  if (state.seatsRuntime[key].occupiedBy) {
-    showToast("다른 손님이 먼저 선택한 좌석입니다. 목록만 갱신했습니다.", "error");
-    renderSeatMap();
-    return;
-  }
-  closeSeatMap();
-  selectSeat(key);
-});
+seatmapSimConflict.hidden = !new URLSearchParams(window.location.search).has("qa");
 seatmapSimConflict.addEventListener("click", () => {
-  const targetKey = state.modal.selectedSeatKey || "hall:1";
-  const rt = state.seatsRuntime[targetKey];
-  rt.occupiedBy = rt.occupiedBy ? null : { name: "먼저 도착한 손님" };
-  renderSeatMap();
-  showToast(rt.occupiedBy ? `${SEATS[targetKey].label} 동시 예약 충돌 재현 (해당 자리만 갱신)` : "점유 해제 완료");
+  seatmapSimConflict.setAttribute("aria-pressed", String(seatmapSimConflict.getAttribute("aria-pressed") !== "true"));
 });
 
 // Expose deterministic QA/verification API for FHD & 4K automated testing
@@ -1050,7 +905,7 @@ window.__renewalSlice = {
     showOverlay: state.showOverlay,
     showTray: state.showTray,
     hudCollapsed: state.hudCollapsed,
-    modalOpen: state.modal.open,
+    modalOpen: seatPicker.isOpen,
     doors: { ...state.doorOpen },
     seats: Object.fromEntries(
       SEAT_LIST.map((s) => [s.key, { ...state.seatsRuntime[s.key] }]),
