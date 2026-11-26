@@ -13,6 +13,7 @@ import {
   getFootBox,
   getZoneAt,
   isFootWalkable,
+  isSegmentWalkable,
   planSeatApproach,
 } from "./renewal-layout.mjs";
 
@@ -518,7 +519,7 @@ function renderScene(timeSec) {
     ctx.save();
     ctx.strokeStyle = cf.ok ? C.aqua : "#ff8585";
     ctx.lineWidth = 1;
-    const r = 4 + Math.round((1 - cf.timer / 0.6) * 4);
+    const r = reducedMotionQuery.matches ? 5 : 4 + Math.round((1 - cf.timer / 0.6) * 4);
     ctx.strokeRect(Math.round(cf.x - r) + 0.5, Math.round(cf.y - r) + 0.5, r * 2, r * 2);
     if (!cf.ok) {
       ctx.font = "bold 8px sans-serif";
@@ -640,7 +641,9 @@ function updateSimulation(dt) {
     if (state.keysDown.has("ArrowDown") || state.keysDown.has("KeyS")) dy += 1;
   }
 
-  if ((dx !== 0 || dy !== 0) && (p.mode === "idle" || p.mode === "walk")) {
+  if ((dx !== 0 || dy !== 0) && p.mode === "typing") {
+    standUp();
+  } else if ((dx !== 0 || dy !== 0) && (p.mode === "idle" || p.mode === "walk")) {
     p.path = [];
     p.targetSeatKey = null;
     p.mode = "walk";
@@ -649,11 +652,11 @@ function updateSimulation(dt) {
     const vx = (dx / len) * step;
     const vy = (dy / len) * step;
     let moved = false;
-    if (vx !== 0 && isFootWalkable(p.x + vx, p.y)) {
+    if (vx !== 0 && isSegmentWalkable({ x: p.x, y: p.y }, { x: p.x + vx, y: p.y })) {
       p.x += vx;
       moved = true;
     }
-    if (vy !== 0 && isFootWalkable(p.x, p.y + vy)) {
+    if (vy !== 0 && isSegmentWalkable({ x: p.x, y: p.y }, { x: p.x, y: p.y + vy })) {
       p.y += vy;
       moved = true;
     }
