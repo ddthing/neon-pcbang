@@ -1,53 +1,57 @@
-// 100% Pure Pixel-Matrix Chibi Avatar Engine (48x48 Cells, 4x11 Sprite Sheet)
-// Authored with explicit coordinate pixel matrices, 4-tone hue-shifted palettes, and zero math ellipses.
+// 100% Pure Pixel-Matrix Cute Animal & Human Avatar Engine (48x48 Cells, 7x11 Sprite Sheet)
+// Species: 사람, 고양이, 곰, 토끼, 쥐, 기린, 호랑이 with 4-tone palettes & cute pixel fashion
 
 export const AVATAR_WARDROBE = {
   skins: [
-    { id: 0, name: "치비 손님", species: "human", base: "#f9cfb4", hi: "#ffe8d6", shade: "#d99d82", muzzle: "#f9cfb4" },
-    { id: 1, name: "삼색 고양이", species: "cat", base: "#fff2e6", hi: "#ffffff", shade: "#dec8c8", muzzle: "#ffffff" },
-    { id: 2, name: "코지 곰돌이", species: "bear", base: "#e3b278", hi: "#f5cfa0", shade: "#bd8353", muzzle: "#fff0dc" },
-    { id: 3, name: "말랑 토끼", species: "bunny", base: "#fff5f0", hi: "#ffffff", shade: "#e6c7ce", muzzle: "#ffffff" },
-    { id: 4, name: "카페 여우", species: "fox", base: "#e67c45", hi: "#f79f68", shade: "#b3532c", muzzle: "#fff2e2" },
-    { id: 5, name: "아기 펭귄", species: "penguin", base: "#4d82b3", hi: "#6ea2cf", shade: "#345b85", muzzle: "#fff7f0" },
+    { id: 0, name: "사람", species: "human", base: "#ffd8be", hi: "#ffefe4", shade: "#e0a587", muzzle: "#ffd8be", iris: "#593b33" },
+    { id: 1, name: "고양이", species: "cat", base: "#fff4e8", hi: "#ffffff", shade: "#dec8c2", muzzle: "#ffffff", iris: "#4f7c6b" },
+    { id: 2, name: "곰", species: "bear", base: "#d99d6a", hi: "#f0be90", shade: "#a86f44", muzzle: "#fff1de", iris: "#3d2824" },
+    { id: 3, name: "토끼", species: "bunny", base: "#fff6f6", hi: "#ffffff", shade: "#ebd0d8", muzzle: "#ffffff", iris: "#b5526c" },
+    { id: 4, name: "쥐", species: "mouse", base: "#e2dde6", hi: "#f7f5fa", shade: "#b3abbf", muzzle: "#fff7fc", iris: "#47374f" },
+    { id: 5, name: "기린", species: "giraffe", base: "#f5cc62", hi: "#ffe699", shade: "#c9963a", muzzle: "#fff3d6", iris: "#593b29" },
+    { id: 6, name: "호랑이", species: "tiger", base: "#f2914b", hi: "#ffb87a", shade: "#bd5d28", muzzle: "#fff4e6", iris: "#8f4722" },
   ],
   hairs: [
     { id: 0, name: "내추럴 숏컷" },
     { id: 1, name: "포근 단발뱅" },
     { id: 2, name: "롱 웨이브" },
-    { id: 3, name: "코지 비니" },
-    { id: 4, name: "동글 만두머리" },
-    { id: 5, name: "별빛 핀 포인트" },
+    { id: 3, name: "트윈 만두머리" },
+    { id: 4, name: "삐죽 숏컷" },
+    { id: 5, name: "코지 비니" },
+    { id: 6, name: "리본 반묶음" },
   ],
   hairColors: [
     { id: 0, name: "코코아 브라운", base: "#784f44", hi: "#a67563", sh: "#52322d" },
-    { id: 1, name: "플럼 에스프레소", base: "#473238", hi: "#6e5159", sh: "#2e1e23" },
-    { id: 2, name: "캐러멜 밀크", base: "#c97a49", hi: "#eba26e", sh: "#8f4e2b" },
-    { id: 3, name: "버터 블론드", base: "#f2c663", hi: "#ffebb3", sh: "#c4933b" },
-    { id: 4, name: "베리 로즈", base: "#d45d78", hi: "#f08ca6", sh: "#9c3851" },
-    { id: 5, name: "말차 세이지", base: "#549c79", hi: "#82c4a3", sh: "#376e53" },
+    { id: 1, name: "에스프레소 블랙", base: "#43323b", hi: "#6b525e", sh: "#291d24" },
+    { id: 2, name: "밀크 카라멜", base: "#c97a49", hi: "#eba26e", sh: "#8f4e2b" },
+    { id: 3, name: "허니 블론드", base: "#f2c663", hi: "#ffebb3", sh: "#c4933b" },
+    { id: 4, name: "딸기 로즈", base: "#db6580", hi: "#f79cb3", sh: "#a13b54" },
+    { id: 5, name: "말차 민트", base: "#549c79", hi: "#82c4a3", sh: "#376e53" },
   ],
   outfits: [
     { id: 0, name: "세이지 앞치마", body: "#549c79", hi: "#79bf9d", sub: "#376b51", accent: "#fff3e6", tie: "#f7dfc8" },
-    { id: 1, name: "코지 가디건", body: "#d98f5f", hi: "#ebb98a", sub: "#a86140", accent: "#fff3e6", tie: "#f2c663" },
-    { id: 2, name: "베리 스웨터", body: "#e36d86", hi: "#f59cb0", sub: "#ad475e", accent: "#fff3e6", tie: "#f7dfc8" },
-    { id: 3, name: "세이지 후드티", body: "#6e9965", hi: "#94ba88", sub: "#486b42", accent: "#f7dfc8", tie: "#fff3e6" },
-    { id: 4, name: "버터 멜빵바지", body: "#f0c360", hi: "#ffe39c", sub: "#bf8c34", accent: "#fff7ec", tie: "#a86140" },
-    { id: 5, name: "데님 자켓", body: "#5b7ea8", hi: "#80a3cc", sub: "#3c5778", accent: "#fff3e6", tie: "#e36d86" },
-    { id: 6, name: "크림 세일러", body: "#fff2e4", hi: "#ffffff", sub: "#dbc7ca", accent: "#549c79", tie: "#e36d86" },
-    { id: 7, name: "모브 맨투맨", body: "#96717b", hi: "#ba95a0", sub: "#6b4c54", accent: "#f7dfc8", tie: "#ffe39c" },
+    { id: 1, name: "오버핏 후드티", body: "#e36d86", hi: "#f59cb0", sub: "#ad475e", accent: "#fff3e6", tie: "#ffdf85" },
+    { id: 2, name: "체크 멜빵바지", body: "#5f85ad", hi: "#84a9cf", sub: "#3f5d7d", accent: "#fff5eb", tie: "#f2c663" },
+    { id: 3, name: "스트라이프 니트", body: "#f0c360", hi: "#ffe39c", sub: "#bf8c34", accent: "#fff7ec", tie: "#ad475e" },
+    { id: 4, name: "바시티 과잠", body: "#628c68", hi: "#86b38b", sub: "#3e5e44", accent: "#fff3e6", tie: "#e36d86" },
+    { id: 5, name: "크림 세일러", body: "#fff2e4", hi: "#ffffff", sub: "#d9c2c6", accent: "#5278a3", tie: "#e36d86" },
+    { id: 6, name: "데님 자켓", body: "#597aa1", hi: "#7c9fc7", sub: "#3a5473", accent: "#f7e0c8", tie: "#d98f5f" },
+    { id: 7, name: "곰돌이 파자마", body: "#f5b8c8", hi: "#ffd9e4", sub: "#cc8699", accent: "#fff5f7", tie: "#ffdf85" },
   ],
   headsets: [
     { id: 0, name: "착용 안 함", color: null },
-    { id: 1, name: "세이지 헤드셋", color: "#549c79", band: "#3f2e34" },
-    { id: 2, name: "베리 고양이귀", color: "#e36d86", band: "#52383e", ears: true },
-    { id: 3, name: "크림 헤드폰", color: "#f7dfc8", band: "#a86140" },
-    { id: 4, name: "미니 베레모", color: "#ad5e45", band: "#753c2c", cap: true },
+    { id: 1, name: "게이밍 헤드셋", color: "#549c79", band: "#3b2c33" },
+    { id: 2, name: "고양이귀 헤드폰", color: "#e86f8c", band: "#52383e", ears: true },
+    { id: 3, name: "딸기 베레모", color: "#d95b6e", band: "#873342", beret: true },
+    { id: 4, name: "코지 버킷햇", color: "#e6c9a5", band: "#9c7054", bucket: true },
+    { id: 5, name: "미니 왕관", color: "#f5c542", band: "#bd8320", crown: true },
   ],
   accessories: [
     { id: 0, name: "없음" },
-    { id: 1, name: "동글이 안경" },
-    { id: 2, name: "호박색 틴트안경" },
-    { id: 3, name: "코지 목도리" },
+    { id: 1, name: "동글 안경" },
+    { id: 2, name: "하트 선글라스" },
+    { id: 3, name: "포근 목도리" },
+    { id: 4, name: "나비넥타이" },
   ],
 };
 
@@ -86,18 +90,18 @@ export function encodeAvatarCode(cfg) {
 
 const spriteCache = new Map();
 const OUTLINE = "#2d1f2a";
-const CHEEK = "#f28da8";
+const CHEEK = "#f58ea8";
 
-// Hand-crafted 20x15 chibi cranium pixel matrices (s=shade, b=base, h=hi, m=muzzle, c=cheek, e=eye, w=shine)
+// Plump cute chibi rounded head matrices (20x15) with sparkling 2x3 eyes
 const HEAD_FRONT = [
   "......hhhhhhhh......",
   "....hhbbbbbbbbhh....",
   "...hbbbbbbbbbbbbh...",
   "..hbbbbbbbbbbbbbbh..",
   "..bbbbbbbbbbbbbbbb..",
-  ".sbbbbbbbbbbbbbbbbs.",
   ".sbbbebbbbbbbbebbbs.",
   ".sbbbebbbbbbbbebbbs.",
+  ".sbbbwbbbbbbbbwbbbs.",
   ".sbbbebbbbbbbbebbbs.",
   ".sbbccbbmmmmbbccbbs.",
   ".ssbbbbbmmmmbbbbbss.",
@@ -112,9 +116,9 @@ const HEAD_SIDE = [
   "...hbbbbbbbbbbbh....",
   "..hbbbbbbbbbbbbbh...",
   "..bbbbbbbbbbbbbbb...",
-  ".sbbbbbbbbbbbbbbb...",
   ".sbbbbbbbbbbebbbb...",
   ".sbbbbbbbbbbebbbb...",
+  ".sbbbbbbbbbbwbbbb...",
   ".sbbbbbbbbbbebbbb...",
   ".sbbbbbbbbccbbmmmb..",
   ".ssbbbbbbbbbbmmmb...",
@@ -125,7 +129,7 @@ const HEAD_SIDE = [
 
 // Hair matrices positioned relative to head top (origin cx-10, headY)
 const HAIR_FRONT = [
-  // 0: Natural short cut
+  // 0: Natural parted bangs
   [
     ".....HHHHHHHHhh.....",
     "...HHBBBBBBBBBBHH...",
@@ -133,9 +137,8 @@ const HAIR_FRONT = [
     "..BBBBBhHBBBBBBBBs..",
     "..BBbs..sBbh..sBBs..",
     ".sBB.....bs....BBs..",
-    ".sB.............Bs..",
   ],
-  // 1: Cozy bob with bangs
+  // 1: Fluffy cozy bob
   [
     ".....HHHHHHHHhh.....",
     "...HHBBBBBBBBBBHH...",
@@ -146,10 +149,9 @@ const HAIR_FRONT = [
     ".sBBs..........sBBs.",
     ".sBBs..........sBBs.",
     ".sBBs..........sBBs.",
-    ".sBBs..........sBBs.",
     "..ss............ss..",
   ],
-  // 2: Long wave
+  // 2: Long gentle waves
   [
     ".....HHHHHHHHhh.....",
     "...HHBBBBBBBBBBHH...",
@@ -157,24 +159,14 @@ const HAIR_FRONT = [
     "..BBBhhBBBBBBhhBBB..",
     "..BBBs........sBBB..",
     ".sBBs..........sBBs.",
-    ".sBBs..........sBBs.",
     ".sBbs..........sbBs.",
+    ".sBBs..........sBBs.",
     ".sBbs..........sbBs.",
     ".sBBs..........sBBs.",
     ".sBbs..........sbBs.",
     "..ss............ss..",
   ],
-  // 3: Cozy ribbed beanie (accent + hair)
-  [
-    "......ssssssss......",
-    "....ssAAAAAAAAss....",
-    "...sAAAAAAAAAAAAss..",
-    "..sAAAAHHHHHHAAAAss.",
-    "..AAAAAAAAAAAAAAAA..",
-    ".sKKKKKKKKKKKKKKKKs.",
-    ".sBB............BBs.",
-  ],
-  // 4: Double buns
+  // 3: Cute Twin Buns (Odango)
   [
     "..sHH..........HHs..",
     ".sHBBs.HHHHHH.sBBHs.",
@@ -184,16 +176,142 @@ const HAIR_FRONT = [
     ".sBBs..........sBBs.",
     ".sBBs..........sBBs.",
   ],
-  // 5: Star hairpin parting
+  // 4: Spiky playful boy cut
+  [
+    "...H..HHHHHHH..H....",
+    "..HBHHBBBBBBBBHBH...",
+    "..BBBBBBBBBBBBBBBs..",
+    "..BBbs.sBbh.sBs.BBs.",
+    ".sBB....b....b..BBs.",
+  ],
+  // 5: Cozy ribbed beanie
+  [
+    "......ssssssss......",
+    "....ssAAAAAAAAss....",
+    "...sAAAAAAAAAAAAss..",
+    "..sAAAAHHHHHHAAAAss.",
+    "..AAAAAAAAAAAAAAAA..",
+    ".sTTTTTTTTTTTTTTTTs.",
+    ".sBB............BBs.",
+  ],
+  // 6: Half-up with cute ribbon clip
   [
     ".....HHHHHHHHhh.....",
     "...HHBBBBBBBBBBHH...",
     "..HBBBBBBBBBBBBBBH..",
-    "..BBBhYYBBBBBBhBBB..",
-    "..BBb.YY.sBBb..BBs..",
-    ".sBB.....bs....BBs..",
+    "..BBBhRRBBBBBBhBBB..",
+    "..BBbsRR.sBBb..BBs..",
+    ".sBBs..........sBBs.",
+    ".sBBs..........sBBs.",
+    ".sBbs..........sbBs.",
   ],
 ];
+
+function drawSpeciesBackFeatures(skin, cx, torsoY, side, dir, frame, prect, p) {
+  const sway = frame % 2 ? 1 : -1;
+  if (skin.species === "cat") {
+    prect(cx - (side ? 8 : 2), torsoY + 6, 3, 4, skin.shade);
+    prect(cx - (side ? 10 : 3) + (dir === "up" ? sway : 0), torsoY + 2, 2, 5, "#e68553");
+  } else if (skin.species === "bear") {
+    prect(cx - (side ? 7 : 2), torsoY + 6, 4, 4, skin.base);
+    p(cx - (side ? 6 : 1), torsoY + 7, skin.hi);
+  } else if (skin.species === "bunny") {
+    prect(cx - (side ? 8 : 2), torsoY + 5, 4, 4, "#ffffff");
+    p(cx - (side ? 7 : 1), torsoY + 6, "#f7e6ea");
+  } else if (skin.species === "mouse") {
+    p(cx - (side ? 8 : 1), torsoY + 7, "#e89cb5");
+    p(cx - (side ? 10 : 2), torsoY + 6, "#e89cb5");
+    p(cx - (side ? 11 : 1) + sway, torsoY + 4, "#e89cb5");
+  } else if (skin.species === "giraffe") {
+    prect(cx - (side ? 8 : 1), torsoY + 5, 2, 5, skin.base);
+    prect(cx - (side ? 9 : 2), torsoY + 9, 3, 2, "#874e2c");
+  } else if (skin.species === "tiger") {
+    prect(cx - (side ? 9 : 2), torsoY + 6, 3, 5, skin.base);
+    p(cx - (side ? 8 : 1), torsoY + 7, "#36221e");
+    p(cx - (side ? 10 : 2) + sway, torsoY + 4, "#36221e");
+  }
+}
+
+function drawSpeciesHeadDetails(skin, cx, headY, side, dir, prect, p) {
+  if (skin.species === "cat") {
+    // Pointed kitty ears + coral pink inner + calico forehead spot + whiskers
+    prect(cx - 9, headY - 4, 4, 5, skin.base);
+    prect(cx - 8, headY - 3, 2, 3, "#f296b4");
+    prect(cx + 5, headY - 4, 4, 5, "#e68553");
+    prect(cx + 6, headY - 3, 2, 3, "#f296b4");
+    if (dir !== "up") {
+      prect(cx + 4, headY + 1, 4, 3, "#e68553");
+      p(cx, headY + 9, "#f07a94");
+      p(cx - 8, headY + 9, "#c49c95");
+      p(cx + 7, headY + 9, "#c49c95");
+    }
+  } else if (skin.species === "bear") {
+    prect(cx - 10, headY - 3, 5, 5, skin.base);
+    prect(cx - 9, headY - 2, 3, 3, "#ffd9b5");
+    prect(cx + 5, headY - 3, 5, 5, skin.base);
+    prect(cx + 6, headY - 2, 3, 3, "#ffd9b5");
+    if (dir !== "up") {
+      prect(cx - 3, headY + 8, 6, 4, "#fff1de");
+      prect(cx - 1, headY + 8, 2, 2, "#3d2824");
+    }
+  } else if (skin.species === "bunny") {
+    prect(cx - 8, headY - 8, 4, 9, skin.base);
+    prect(cx - 7, headY - 7, 2, 6, "#f296b4");
+    prect(cx + 4, headY - 8, 4, 9, skin.base);
+    prect(cx + 5, headY - 7, 2, 6, "#f296b4");
+    if (dir !== "up") p(cx, headY + 9, "#f27ca0");
+  } else if (skin.species === "mouse") {
+    // Huge adorable saucer mouse ears + tiny pink nose & whiskers
+    prect(cx - 11, headY - 5, 6, 6, skin.base);
+    prect(cx - 10, headY - 4, 4, 4, "#f7a8c2");
+    prect(cx + 5, headY - 5, 6, 6, skin.base);
+    prect(cx + 6, headY - 4, 4, 4, "#f7a8c2");
+    if (dir !== "up") {
+      prect(cx - 1, headY + 9, 2, 2, "#f07a9e");
+      p(cx - 8, headY + 8, "#8c7f99");
+      p(cx - 8, headY + 10, "#8c7f99");
+      p(cx + 7, headY + 8, "#8c7f99");
+      p(cx + 7, headY + 10, "#8c7f99");
+    }
+  } else if (skin.species === "giraffe") {
+    // 2 cute brown ossicone horns + small side ears + cocoa spots
+    prect(cx - 5, headY - 5, 2, 5, "#9c5e35");
+    prect(cx - 6, headY - 6, 4, 2, "#63381f");
+    prect(cx + 3, headY - 5, 2, 5, "#9c5e35");
+    prect(cx + 2, headY - 6, 4, 2, "#63381f");
+    prect(cx - 11, headY + 1, 3, 3, skin.base);
+    prect(cx + 8, headY + 1, 3, 3, skin.base);
+    if (dir !== "up") {
+      prect(cx - 6, headY + 1, 3, 3, "#a86135");
+      prect(cx + 4, headY + 3, 2, 2, "#a86135");
+      prect(cx - 3, headY + 9, 6, 3, "#fff3d6");
+      p(cx - 1, headY + 9, "#784528");
+      p(cx + 1, headY + 9, "#784528");
+    } else {
+      prect(cx - 4, headY + 3, 3, 3, "#a86135");
+      prect(cx + 2, headY + 6, 3, 3, "#a86135");
+    }
+  } else if (skin.species === "tiger") {
+    // Rounded tiger ears + iconic "王" forehead stripe + whisker stripes + cream muzzle
+    prect(cx - 9, headY - 3, 4, 4, skin.base);
+    prect(cx - 8, headY - 2, 2, 2, "#fff2db");
+    prect(cx + 5, headY - 3, 4, 4, skin.base);
+    prect(cx + 6, headY - 2, 2, 2, "#fff2db");
+    if (dir !== "up") {
+      // Forehead 王 stripes
+      prect(cx - 2, headY + 1, 5, 1, "#3d221c");
+      prect(cx - 1, headY + 2, 3, 1, "#3d221c");
+      prect(cx - 3, headY + 3, 6, 1, "#3d221c");
+      // Side cheek stripes
+      prect(cx - 8, headY + 5, 2, 1, "#3d221c");
+      prect(cx - 8, headY + 7, 2, 1, "#3d221c");
+      prect(cx + 6, headY + 5, 2, 1, "#3d221c");
+      prect(cx + 6, headY + 7, 2, 1, "#3d221c");
+      prect(cx - 3, headY + 8, 6, 4, "#fff4e6");
+      prect(cx - 1, headY + 8, 2, 2, "#2d1f2a");
+    }
+  }
+}
 
 function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
   const skin = AVATAR_WARDROBE.skins[cfg.skin];
@@ -206,7 +324,7 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
   const p = (x, y, col) => {
     x = Math.round(x);
     y = Math.round(y);
-    if (x >= 3 && x <= W - 4 && y >= 3 && y <= H - 4 && col) grid[y * W + x] = col;
+    if (x >= 2 && x <= W - 3 && y >= 2 && y <= H - 3 && col) grid[y * W + x] = col;
   };
 
   const side = dir === "left" || dir === "right";
@@ -234,9 +352,9 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
   const sitDrop = action === "sit" || action === "eat" ? 5 : action === "sit-transition" ? 2 + frame : 0;
 
   const cx = 24;
-  const headY = 10 + bob + sitDrop;
-  const torsoY = 24 + bob + sitDrop;
-  const legY = 34 + bob + (action === "sit-transition" ? frame : 0);
+  const headY = 11 + bob + sitDrop;
+  const torsoY = 25 + bob + sitDrop;
+  const legY = 35 + bob + (action === "sit-transition" ? frame : 0);
 
   const skinMap = {
     h: skin.hi,
@@ -245,61 +363,47 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
     m: skin.muzzle,
     c: CHEEK,
     e: dir === "up" ? skin.base : OUTLINE,
+    w: dir === "up" ? skin.base : skin.iris,
   };
 
-  // Penguin dark crown backing
-  const isPenguin = skin.species === "penguin";
-
-  // Tail behind torso for animal species
+  // Tail behind body for animal characters
   if (dir !== "down" || side) {
-    if (skin.species === "cat") {
-      const sway = (frame % 2) * (side ? 1 : -1);
-      prect(cx - (side ? 8 : 1), torsoY + 6, 2, 4, skin.shade);
-      prect(cx - (side ? 10 : 2) + sway, torsoY + 3, 2, 4, "#e37e49");
-    } else if (skin.species === "fox") {
-      prect(cx - (side ? 10 : 3), torsoY + 5, 5, 5, skin.base);
-      prect(cx - (side ? 11 : 2), torsoY + 5, 3, 2, "#fff5eb");
-    } else if (skin.species === "bunny") {
-      prect(cx - (side ? 7 : 2), torsoY + 6, 3, 3, "#ffffff");
-    } else if (skin.species === "bear") {
-      prect(cx - (side ? 7 : 2), torsoY + 7, 3, 3, skin.shade);
-    }
+    drawSpeciesBackFeatures(skin, cx, torsoY, side, dir, frame, prect, p);
   }
 
-  // Legs & Sneakers
+  // Legs & Cozy Sneakers
   if (!isSeated || action === "sit-transition") {
     const legOffsets = walking ? [-2, -1, 1, 2, 1, -1] : [0, 0, 0, 0, 0, 0];
     const lShift = legOffsets[stridePhase];
     const rShift = -lShift;
-    const pants = outfit.id === 4 ? outfit.sub : "#3f4f6b";
-    const pantsHi = outfit.id === 4 ? outfit.body : "#5b7191";
+    const pants = outfit.id === 7 ? outfit.sub : outfit.id === 2 ? outfit.body : "#3f506b";
+    const pantsHi = outfit.id === 7 ? outfit.body : outfit.id === 2 ? outfit.hi : "#5c7496";
     if (side) {
-      prect(cx - 3 + lShift, legY, 4, 5, pants);
-      prect(cx - 3 + lShift, legY, 2, 4, pantsHi);
-      prect(cx - 3 + lShift, legY + 5, 5, 2, "#4a3330");
-      prect(cx - 3 + lShift, legY + 7, 5, 1, "#f7e8d8");
+      prect(cx - 3 + lShift, legY, 4, 4, pants);
+      prect(cx - 3 + lShift, legY, 2, 3, pantsHi);
+      prect(cx - 3 + lShift, legY + 4, 5, 2, "#4a3330");
+      prect(cx - 3 + lShift, legY + 6, 5, 1, "#f7e8d8");
 
-      prect(cx - 1 + rShift, legY, 4, 5, pants);
-      prect(cx - 1 + rShift, legY + 5, 5, 2, "#322325");
-      prect(cx - 1 + rShift, legY + 7, 5, 1, "#e6d5c5");
+      prect(cx - 1 + rShift, legY, 4, 4, pants);
+      prect(cx - 1 + rShift, legY + 4, 5, 2, "#322325");
+      prect(cx - 1 + rShift, legY + 6, 5, 1, "#e6d5c5");
     } else {
-      prect(cx - 5, legY + Math.max(0, -lShift), 4, 5, pants);
-      prect(cx - 5, legY + Math.max(0, -lShift), 2, 4, pantsHi);
-      prect(cx - 5, legY + 5 + Math.max(0, -lShift), 4, 2, "#4a3330");
-      prect(cx - 5, legY + 7 + Math.max(0, -lShift), 4, 1, "#f7e8d8");
+      prect(cx - 5, legY + Math.max(0, -lShift), 4, 4, pants);
+      prect(cx - 5, legY + Math.max(0, -lShift), 2, 3, pantsHi);
+      prect(cx - 5, legY + 4 + Math.max(0, -lShift), 4, 2, "#4a3330");
+      prect(cx - 5, legY + 6 + Math.max(0, -lShift), 4, 1, "#f7e8d8");
 
-      prect(cx + 1, legY + Math.max(0, -rShift), 4, 5, pants);
-      prect(cx + 1, legY + Math.max(0, -rShift), 2, 4, pantsHi);
-      prect(cx + 1, legY + 5 + Math.max(0, -rShift), 4, 2, "#4a3330");
-      prect(cx + 1, legY + 7 + Math.max(0, -rShift), 4, 1, "#f7e8d8");
+      prect(cx + 1, legY + Math.max(0, -rShift), 4, 4, pants);
+      prect(cx + 1, legY + Math.max(0, -rShift), 2, 3, pantsHi);
+      prect(cx + 1, legY + 4 + Math.max(0, -rShift), 4, 2, "#4a3330");
+      prect(cx + 1, legY + 6 + Math.max(0, -rShift), 4, 1, "#f7e8d8");
     }
   } else {
-    // Tucked seated lap & knees
-    prect(cx - 5, torsoY + 8, 10, 4, "#3f4f6b");
-    prect(cx - 4, torsoY + 8, 8, 2, "#5b7191");
+    prect(cx - 5, torsoY + 8, 10, 4, "#3f506b");
+    prect(cx - 4, torsoY + 8, 8, 2, "#5c7496");
   }
 
-  // Sculpted Chibi Torso + Outfit shading
+  // Fashion Outfits
   const torW = side ? 10 : 14;
   const torLeft = cx - Math.floor(torW / 2);
   prect(torLeft, torsoY, torW, 10, outfit.body);
@@ -309,43 +413,69 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
 
   if (dir !== "up") {
     if (outfit.id === 0) {
-      // Cafe Sage Apron with crisp straps & pocket
+      // Cafe Apron
       prect(torLeft + 2, torsoY + 2, torW - 4, 7, outfit.accent);
       prect(cx - 2, torsoY + 5, 4, 3, outfit.tie);
-    } else if (outfit.id === 1 || outfit.id === 5) {
-      // Cardigan / Denim inner tee & V-neck placket
-      prect(cx - 2, torsoY, 4, 9, outfit.accent);
-      p(cx, torsoY + 3, outfit.tie);
-      p(cx, torsoY + 6, outfit.tie);
-    } else if (outfit.id === 6) {
-      // Sailor collar + ribbon bow
-      prect(torLeft + 1, torsoY, torW - 2, 3, outfit.accent);
-      prect(cx - 1, torsoY + 2, 3, 2, outfit.tie);
-    } else {
-      // Hoodie strings or overalls badge
+    } else if (outfit.id === 1) {
+      // Oversized Hoodie + Kangaroo Pocket + Drawstrings
+      prect(cx - 4, torsoY + 5, 8, 3, outfit.sub);
       prect(cx - 2, torsoY + 1, 1, 3, outfit.accent);
       prect(cx + 1, torsoY + 1, 1, 3, outfit.accent);
-      prect(cx - 2, torsoY + 4, 4, 2, outfit.tie);
+      p(cx, torsoY + 6, outfit.tie);
+    } else if (outfit.id === 2) {
+      // Plaid Overall straps + undershirt
+      prect(torLeft + 1, torsoY, torW - 2, 3, outfit.accent);
+      prect(cx - 3, torsoY, 2, 5, outfit.body);
+      prect(cx + 1, torsoY, 2, 5, outfit.body);
+      p(cx - 3, torsoY + 3, outfit.tie);
+      p(cx + 1, torsoY + 3, outfit.tie);
+    } else if (outfit.id === 3) {
+      // Pastel Striped Knit Sweater
+      prect(torLeft + 1, torsoY + 3, torW - 2, 2, outfit.accent);
+      prect(torLeft + 1, torsoY + 6, torW - 2, 2, outfit.tie);
+    } else if (outfit.id === 4) {
+      // Varsity Jacket with contrasting cream collar/center snaps
+      prect(torLeft, torsoY, 3, 8, outfit.accent);
+      prect(torLeft + torW - 3, torsoY, 3, 8, outfit.accent);
+      p(cx, torsoY + 2, outfit.accent);
+      p(cx, torsoY + 5, outfit.accent);
+      prect(cx + 2, torsoY + 2, 2, 2, outfit.tie);
+    } else if (outfit.id === 5) {
+      // Cream Sailor Collar + Cute Ribbon
+      prect(torLeft + 1, torsoY, torW - 2, 3, outfit.accent);
+      prect(cx - 1, torsoY + 2, 3, 3, outfit.tie);
+    } else if (outfit.id === 6) {
+      // Denim Jacket + pocket flaps + copper buttons
+      prect(cx - 2, torsoY + 1, 4, 8, outfit.accent);
+      p(cx - 4, torsoY + 4, outfit.tie);
+      p(cx + 3, torsoY + 4, outfit.tie);
+    } else if (outfit.id === 7) {
+      // Teddy Pajama with lapel piping & golden buttons
+      prect(torLeft + 1, torsoY, torW - 2, 2, outfit.accent);
+      prect(cx - 1, torsoY + 2, 2, 7, outfit.accent);
+      p(cx, torsoY + 3, outfit.tie);
+      p(cx, torsoY + 6, outfit.tie);
     }
   }
 
-  // Arms & Action Hands
+  // Arms & Action Poses
   const armSwing = walking ? [2, 1, -1, -2, -1, 1][stridePhase] : 0;
+  const sleeveColor = outfit.id === 4 ? outfit.accent : outfit.body;
   if (action === "sit" || action === "eat") {
     const keyTap = frame % 2;
     if (side) {
-      prect(cx + 4, torsoY + 2 + keyTap, 4, 3, outfit.body);
+      prect(cx + 4, torsoY + 2 + keyTap, 4, 3, sleeveColor);
       prect(cx + 7, torsoY + 3 - keyTap, 2, 2, skin.base);
     } else {
-      prect(cx - 7, torsoY - 2 + keyTap, 3, 4, outfit.body);
-      prect(cx + 4, torsoY - 2 + (1 - keyTap), 3, 4, outfit.body);
+      prect(cx - 7, torsoY - 2 + keyTap, 3, 4, sleeveColor);
+      prect(cx + 4, torsoY - 2 + (1 - keyTap), 3, 4, sleeveColor);
       p(cx - 6, torsoY - 3 + keyTap, skin.base);
       p(cx + 5, torsoY - 3 + (1 - keyTap), skin.base);
     }
   } else if (dir === "down" && (action === "coffee" || action === "candy" || action === "smoke")) {
-    prect(torLeft - 2, torsoY + 1, 2, 6, outfit.body);
+    prect(torLeft - 2, torsoY + 1, 2, 6, sleeveColor);
     prect(torLeft - 2, torsoY + 7, 2, 2, skin.base);
-    prect(torLeft + torW, torsoY + 1, 2, 5, outfit.body);
+    prect(torLeft + torW, torsoY + 1, 2, 5, sleeveColor);
     prect(torLeft + torW, torsoY + 5, 3, 2, skin.base);
     if (action === "coffee") {
       prect(torLeft + torW + 2, torsoY + 3, 4, 4, "#fff5eb");
@@ -362,62 +492,31 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
     }
   } else {
     if (side) {
-      prect(cx - 1 + armSwing, torsoY + 1, 3, 6, outfit.hi);
+      prect(cx - 1 + armSwing, torsoY + 1, 3, 6, outfit.id === 4 ? outfit.accent : outfit.hi);
       prect(cx - 1 + armSwing, torsoY + 7, 3, 2, skin.base);
     } else {
-      prect(torLeft - 3, torsoY + 1 + Math.max(0, armSwing), 3, 6, outfit.body);
+      prect(torLeft - 3, torsoY + 1 + Math.max(0, armSwing), 3, 6, sleeveColor);
       prect(torLeft - 3, torsoY + 7 + Math.max(0, armSwing), 2, 2, skin.base);
-      prect(torLeft + torW, torsoY + 1 + Math.max(0, -armSwing), 3, 6, outfit.sub);
+      prect(torLeft + torW, torsoY + 1 + Math.max(0, -armSwing), 3, 6, outfit.id === 4 ? outfit.accent : outfit.sub);
       prect(torLeft + torW + 1, torsoY + 7 + Math.max(0, -armSwing), 2, 2, skin.shade);
     }
   }
 
-  // Head Stamp (20x14 pixel matrix)
+  // Head Stamp + Cute Shiny Eyes
   stamp(cx - 10, headY, side ? HEAD_SIDE : HEAD_FRONT, skinMap);
   if (dir !== "up") {
-    // Crisp eye catchlights + rosy cheek tint
     if (side) {
-      p(px(cx + 2), headY + 6, "#ffffff");
+      p(px(cx + 2), headY + 5, "#ffffff");
     } else {
-      p(px(cx - 6), headY + 6, "#ffffff");
-      p(px(cx + 4), headY + 6, "#ffffff");
+      p(px(cx - 6), headY + 5, "#ffffff");
+      p(px(cx + 4), headY + 5, "#ffffff");
       if (frame % 2 === 1 && action === "eat") {
-        prect(px(cx - 1), headY + 10, 2, 2, "#d95f76");
+        prect(px(cx - 1), headY + 10, 2, 2, "#e0607a");
       }
     }
   }
 
-  // Penguin blue cap forehead
-  if (isPenguin && dir !== "up") {
-    prect(cx - 5, headY + 4, 10, 4, "#fff7f0");
-    prect(cx - 2, headY + 9, 4, 2, "#f0993e");
-  }
-
-  // Species Ears / Patches
-  if (skin.species === "cat") {
-    prect(cx - 8, headY - 3, 4, 4, skin.base);
-    prect(cx - 7, headY - 2, 2, 2, "#f29cb8");
-    prect(cx + 4, headY - 3, 4, 4, "#e37e49");
-    prect(cx + 5, headY - 2, 2, 2, "#f29cb8");
-    prect(cx + 5, headY + 2, 3, 3, "#e37e49");
-  } else if (skin.species === "bear") {
-    prect(cx - 9, headY - 2, 4, 4, skin.base);
-    prect(cx - 8, headY - 1, 2, 2, "#ffd1a8");
-    prect(cx + 5, headY - 2, 4, 4, skin.base);
-    prect(cx + 6, headY - 1, 2, 2, "#ffd1a8");
-  } else if (skin.species === "bunny") {
-    prect(cx - 7, headY - 6, 3, 7, skin.base);
-    prect(cx - 6, headY - 5, 1, 5, "#f29cb8");
-    prect(cx + 4, headY - 6, 3, 7, skin.base);
-    prect(cx + 5, headY - 5, 1, 5, "#f29cb8");
-  } else if (skin.species === "fox") {
-    prect(cx - 9, headY - 4, 4, 5, skin.base);
-    prect(cx - 8, headY - 2, 2, 3, "#362529");
-    prect(cx + 5, headY - 4, 4, 5, skin.base);
-    prect(cx + 6, headY - 2, 2, 3, "#362529");
-  }
-
-  // Crisp Pixel-Matrix Hairstyle Overlay
+  // Hair Layer (human gets full hair; animals show subtle cute tuft/bangs on human/bunny/cat or beanie if chosen so animal ears shine!)
   const hMap = {
     H: hairCol.hi,
     h: hairCol.hi,
@@ -425,32 +524,52 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
     b: hairCol.base,
     s: hairCol.sh,
     A: outfit.body,
-    K: outfit.sub,
-    Y: "#ffdf6b",
+    T: outfit.accent,
+    R: "#eb5e7c",
   };
-  if (dir === "up") {
-    prect(cx - 8, headY, 16, 12, hairCol.base);
-    prect(cx - 7, headY + 1, 14, 2, hairCol.hi);
-    prect(cx - 8, headY + 9, 16, 3, hairCol.sh);
-    if (cfg.hair === 2) prect(cx - 8, headY + 11, 16, 5, hairCol.base);
-    if (cfg.hair === 3) prect(cx - 8, headY - 1, 16, 5, outfit.body);
-  } else if (side) {
-    prect(cx - 8, headY, 13, 4, hairCol.base);
-    prect(cx - 8, headY + 3, 7, 8, hairCol.sh);
-    prect(cx - 6, headY + 1, 8, 2, hairCol.hi);
-    if (cfg.hair === 2 || cfg.hair === 1) prect(cx - 9, headY + 7, 5, cfg.hair === 2 ? 9 : 5, hairCol.base);
-    if (cfg.hair === 3) prect(cx - 8, headY - 1, 14, 5, outfit.body);
-  } else {
-    stamp(cx - 10, headY - 1, HAIR_FRONT[cfg.hair] || HAIR_FRONT[0], hMap);
+  const showFullHair = skin.species === "human" || cfg.hair === 5 || cfg.hair === 6;
+  if (showFullHair) {
+    if (dir === "up") {
+      prect(cx - 8, headY, 16, 12, hairCol.base);
+      prect(cx - 7, headY + 1, 14, 2, hairCol.hi);
+      prect(cx - 8, headY + 9, 16, 3, hairCol.sh);
+      if (cfg.hair === 2 || cfg.hair === 6) prect(cx - 8, headY + 11, 16, 4, hairCol.base);
+      if (cfg.hair === 5) prect(cx - 8, headY - 1, 16, 5, outfit.body);
+      if (cfg.hair === 6) prect(cx - 2, headY + 4, 4, 2, "#eb5e7c");
+    } else if (side) {
+      prect(cx - 8, headY, 13, 4, hairCol.base);
+      prect(cx - 8, headY + 3, 7, 8, hairCol.sh);
+      prect(cx - 6, headY + 1, 8, 2, hairCol.hi);
+      if (cfg.hair === 2 || cfg.hair === 1 || cfg.hair === 6) prect(cx - 9, headY + 7, 5, cfg.hair === 2 ? 9 : 5, hairCol.base);
+      if (cfg.hair === 5) prect(cx - 8, headY - 1, 14, 5, outfit.body);
+    } else {
+      stamp(cx - 10, headY - 1, HAIR_FRONT[cfg.hair] || HAIR_FRONT[0], hMap);
+    }
+  } else if (dir !== "up" && !side) {
+    // Subtle adorable hair tuft on top of animal forehead matching hairColor
+    prect(cx - 3, headY, 6, 2, hairCol.base);
+    prect(cx - 2, headY, 3, 1, hairCol.hi);
   }
 
-  // Headsets & Berets
-  if (headset.color && dir !== "up") {
-    if (headset.cap) {
+  // Species Ears, Stripes & Features layered cleanly above bangs!
+  drawSpeciesHeadDetails(skin, cx, headY, side, dir, prect, p);
+
+  // Stylish Hats & Headsets
+  if (headset.color && (dir !== "up" || headset.bucket || headset.crown || headset.beret)) {
+    if (headset.beret) {
       prect(cx - 7, headY - 3, 13, 4, headset.color);
-      prect(cx - 4, headY - 4, 7, 2, "#ffe3b8");
-      p(cx, headY - 5, headset.band);
-    } else {
+      prect(cx - 5, headY - 4, 8, 2, "#f794a4");
+      p(cx, headY - 5, "#64a668"); // cute strawberry leaf top
+    } else if (headset.bucket) {
+      prect(cx - 8, headY - 3, 16, 4, headset.color);
+      prect(cx - 10, headY, 20, 2, headset.band);
+    } else if (headset.crown) {
+      prect(cx - 4, headY - 3, 8, 3, headset.color);
+      p(cx - 4, headY - 4, headset.color);
+      p(cx, headY - 5, headset.color);
+      p(cx + 3, headY - 4, headset.color);
+      p(cx, headY - 2, "#e84f6e");
+    } else if (dir !== "up") {
       prect(cx - 8, headY - 1, 16, 2, headset.band);
       prect(cx - 10, headY + 4, 3, 6, headset.color);
       prect(cx + 7, headY + 4, 3, 6, headset.color);
@@ -461,28 +580,35 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
     }
   }
 
-  // Glasses & Cozy Scarf
+  // Cute Accessories
   if (cfg.accessory === 1 && dir !== "up") {
-    prect(cx - 7, headY + 6, 4, 3, "#362529");
-    p(cx - 6, headY + 7, "#cbeeff");
-    prect(cx - 3, headY + 7, 6, 1, "#362529");
-    prect(cx + 3, headY + 6, 4, 3, "#362529");
-    p(cx + 4, headY + 7, "#cbeeff");
+    prect(cx - 7, headY + 5, 5, 4, "#362529");
+    prect(cx - 6, headY + 6, 3, 2, "#d8f2ff");
+    prect(cx - 2, headY + 6, 4, 1, "#362529");
+    prect(cx + 2, headY + 5, 5, 4, "#362529");
+    prect(cx + 3, headY + 6, 3, 2, "#d8f2ff");
   } else if (cfg.accessory === 2 && dir !== "up") {
-    prect(cx - 7, headY + 6, 5, 3, "#f09948");
-    p(cx - 5, headY + 7, "#fff0a8");
-    prect(cx + 2, headY + 6, 5, 3, "#f09948");
-    p(cx + 4, headY + 7, "#fff0a8");
+    // Heart Sunglasses
+    prect(cx - 8, headY + 5, 6, 4, "#e35678");
+    prect(cx - 7, headY + 6, 4, 2, "#ff8ca8");
+    prect(cx - 2, headY + 6, 4, 1, "#e35678");
+    prect(cx + 2, headY + 5, 6, 4, "#e35678");
+    prect(cx + 3, headY + 6, 4, 2, "#ff8ca8");
   } else if (cfg.accessory === 3) {
     prect(cx - 6, torsoY - 1, 12, 3, "#d45d78");
     prect(cx + 2, torsoY + 1, 3, 5, "#ad3e59");
+    p(cx + 3, torsoY + 5, "#fff2f4");
+  } else if (cfg.accessory === 4 && dir !== "up") {
+    prect(cx - 3, torsoY, 2, 3, "#d94f6d");
+    prect(cx + 1, torsoY, 2, 3, "#d94f6d");
+    p(cx, torsoY + 1, "#ffdf85");
   }
 
   // Ground Pixel Shadow
   ctx.fillStyle = "rgba(38, 28, 41, 0.24)";
   ctx.fillRect(ox + cx - 6, oy + 42, 12, 2);
 
-  // Clean 1px Dark Outline Pass (only edges bordering empty cells)
+  // Clean 1px Dark Outline Pass
   ctx.fillStyle = OUTLINE;
   for (let y = 1; y < H - 1; y++) {
     for (let x = 1; x < W - 1; x++) {

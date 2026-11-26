@@ -29,7 +29,7 @@ export function initSolitaire() {
 
   mountLeaderboardBox(dialog, "solitaire", () => (drawCount === 3 ? "draw3" : "draw1"), (s, m) => m || `${s}점`);
 
-  let drawCount = 1;
+  let drawCount = 3;
   let game = createSolitaireGame({ drawCount });
   let selected = null;
   let hintPair = null;
@@ -174,12 +174,22 @@ export function initSolitaire() {
     });
     topRow.append(stockBtn);
 
-    // Waste
+    // Waste (spread up to 3 top cards cleanly so 3-card draw shows all 3)
     const wasteWrap = document.createElement("div");
-    wasteWrap.className = "sol-pile";
+    wasteWrap.className = "sol-pile sol-waste-fan";
     if (game.waste.length) {
-      const top = game.waste[game.waste.length - 1];
-      wasteWrap.append(cardEl(top, { kind: "waste" }, isSelectedSource("waste"), isHintSource("waste")));
+      const visible = game.waste.slice(-3);
+      visible.forEach((card, idx) => {
+        const isTop = idx === visible.length - 1;
+        const el = cardEl(card, { kind: "waste" }, isTop && isSelectedSource("waste"), isTop && isHintSource("waste"));
+        el.style.setProperty("--fan-i", String(idx));
+        if (!isTop) {
+          el.classList.add("is-under");
+          el.disabled = true;
+          el.tabIndex = -1;
+        }
+        wasteWrap.append(el);
+      });
     } else {
       const empty = document.createElement("div");
       empty.className = "sol-slot";
@@ -187,10 +197,6 @@ export function initSolitaire() {
       wasteWrap.append(empty);
     }
     topRow.append(wasteWrap);
-
-    const spacer = document.createElement("div");
-    spacer.setAttribute("aria-hidden", "true");
-    topRow.append(spacer);
 
     // 4 Foundations
     for (let fi = 0; fi < 4; fi++) {
@@ -306,5 +312,5 @@ export function initSolitaire() {
     window.cafeWorld?.setActivity("");
   });
 
-  reset(1);
+  reset(3);
 }

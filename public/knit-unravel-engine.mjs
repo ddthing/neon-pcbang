@@ -262,9 +262,9 @@ function buildSpoolsFromTapestry(tapestry, rand) {
   return spools;
 }
 
-export function isSingleReachable(tray, r, c) {
+export function isSingleReachable(tray, r, c, { ignoreIce = false } = {}) {
   const cell = tray[r]?.[c];
-  if (!cell || cell.type !== "spool" || cell.ice > 0) return false;
+  if (!cell || cell.type !== "spool" || (!ignoreIce && cell.ice > 0)) return false;
   if (r === 0) return true;
   const visited = Array.from({ length: TRAY_ROWS }, () => new Uint8Array(TRAY_COLS));
   const queue = [];
@@ -460,10 +460,10 @@ export function createKnitStage(stageNumber = 1) {
   if (stage >= 3) {
     let iceTarget = Math.min(3, Math.floor(stage / 2));
     for (let r = 2; r < TRAY_ROWS && iceTarget > 0; r++) {
-      for (let c = 0; c < TRAY_COLS && iceTarget > 0; c++) {
+      for (let c = 1; c < TRAY_COLS - 1 && iceTarget > 0; c++) {
         const cell = tray[r][c];
         if (cell?.type === "spool" && !cell.mystery && rand() < 0.25) {
-          cell.ice = 2;
+          cell.ice = 1;
           iceTarget--;
         }
       }
@@ -546,25 +546,26 @@ export function undoKnit(game) {
 }
 
 function triggerNeighborsAfterPick(game, coords) {
-  for (const [r, c] of coords) {
-    for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
-      const nr = r + dr;
-      const nc = c + dc;
-      const nb = game.tray[nr]?.[nc];
-      if (!nb) continue;
-      if (nb.type === "spool") {
-        if (nb.mystery) nb.mystery = false;
-        if (nb.ice > 0) nb.ice--;
-      }
-    }
-  }
-  // Dispensers push into their empty cell above (r - 1, c)
+  // Dispensers push into their empty cell above (r - 1, c) first
   for (let r = 1; r < TRAY_ROWS; r++) {
     for (let c = 0; c < TRAY_COLS; c++) {
       const cell = game.tray[r][c];
       if (cell?.type === "dispenser" && cell.queue.length && game.tray[r - 1][c] === null) {
         game.tray[r - 1][c] = cell.queue.shift();
         if (!cell.queue.length) game.tray[r][c] = null;
+      }
+    }
+  }
+  // Only unlock mystery/ice on neighbors whose own exit path to row 0 is now open (prevents unrelated side picks from breaking locks!)
+  for (const [r, c] of coords) {
+    for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+      const nr = r + dr;
+      const nc = c + dc;
+      const nb = game.tray[nr]?.[nc];
+      if (!nb || nb.type !== "spool") continue;
+      if (isSingleReachable(game.tray, nr, nc, { ignoreIce: true })) {
+        if (nb.mystery) nb.mystery = false;
+        if (nb.ice > 0) nb.ice--;
       }
     }
   }
@@ -587,7 +588,9 @@ export function pickKnitCell(game, r, c) {
   const openSlots = findOpenDockIndices(game);
   const partner = cell.pairId ? findPairPartner(game.tray, r, c) : null;
   const needed = partner ? 2 : 1;
-  if (openSlots.length < needed) return { ok: false, reason: "dock_full" };
+  if (openSlots.length < needed) {
+    return { ok: false, reason: partner && openSlots.length === 1 ? "pair_needs_two" : "dock_full" };
+  }
 
   game.history.push(snapshotGame(game));
 

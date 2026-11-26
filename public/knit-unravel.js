@@ -55,24 +55,34 @@ export function initKnitUnravel() {
   let wonHandled = false;
   let lastPullAt = 0;
   let rafId = 0;
+  // Smooth 60fps interpolated yarn threads & flying knit stitches
+  let flyingBeads = [];
+  let sparks = [];
 
-  function drawLoom() {
+  function loomMetrics() {
     const W = loomCanvas.width;
     const H = loomCanvas.height;
+    const frameX = 16;
+    const frameY = 10;
+    const frameW = W - 32;
+    const frameH = H - 28;
+    const cellW = Math.floor((frameW - 8) / game.cols);
+    const cellH = Math.floor((frameH - 6) / game.rows);
+    const padX = frameX + Math.floor((frameW - cellW * game.cols) / 2);
+    const padY = frameY + 3;
+    return { W, H, frameX, frameY, frameW, frameH, cellW, cellH, padX, padY };
+  }
+
+  function drawLoom(now = performance.now()) {
+    const { W, H, frameX, frameY, frameW, frameH, cellW, cellH, padX, padY } = loomMetrics();
     lctx.clearRect(0, 0, W, H);
 
-    // Subtle soft lilac-cream knitted frame backing
+    // Soft backdrop & wooden knit frame
     lctx.fillStyle = "#2b2434";
     lctx.fillRect(0, 0, W, H);
     lctx.fillStyle = "#362d42";
     lctx.fillRect(4, 4, W - 8, H - 8);
 
-    // Wooden loom side posts & bottom beam
-    const frameX = 16;
-    const frameY = 10;
-    const frameW = W - 32;
-    const frameH = H - 28;
-    // Left / Right wooden posts
     for (const wx of [frameX - 7, frameX + frameW]) {
       lctx.fillStyle = "#261c29";
       lctx.fillRect(wx, frameY - 2, 7, frameH + 8);
@@ -81,7 +91,6 @@ export function initKnitUnravel() {
       lctx.fillStyle = "#dfb08f";
       lctx.fillRect(wx + 1, frameY, 2, frameH + 4);
     }
-    // Bottom crossbar
     lctx.fillStyle = "#261c29";
     lctx.fillRect(frameX - 7, frameY + frameH, frameW + 14, 8);
     lctx.fillStyle = "#85524f";
@@ -89,16 +98,10 @@ export function initKnitUnravel() {
     lctx.fillStyle = "#c48870";
     lctx.fillRect(frameX - 5, frameY + frameH + 1, frameW + 10, 2);
 
-    // Dark canvas backing inside the wooden frame
     lctx.fillStyle = "#1c1722";
     lctx.fillRect(frameX, frameY, frameW, frameH);
 
-    // Pixel V-stitch knit cells
-    const cellW = Math.floor((frameW - 8) / game.cols);
-    const cellH = Math.floor((frameH - 6) / game.rows);
-    const padX = frameX + Math.floor((frameW - cellW * game.cols) / 2);
-    const padY = frameY + 3;
-
+    // Pixel V-stitch knit tapestry
     for (let r = 0; r < game.rows; r++) {
       for (let c = 0; c < game.cols; c++) {
         const cid = game.tapestry[r][c];
@@ -107,43 +110,94 @@ export function initKnitUnravel() {
         if (!pal) continue;
         const x = padX + c * cellW;
         const y = padY + r * cellH;
-        // Shadow trough
         lctx.fillStyle = pal.sh;
         lctx.fillRect(x, y, cellW, cellH - 1);
-        // Knitted V left & right arms
         const arm = Math.max(2, Math.floor(cellW * 0.42));
         lctx.fillStyle = pal.fill;
         lctx.fillRect(x + 1, y + 1, arm, cellH - 3);
         lctx.fillRect(x + cellW - 1 - arm, y + 1, arm, cellH - 3);
-        // Highlight tip
         lctx.fillStyle = pal.hi;
         lctx.fillRect(x + 1, y + 1, Math.max(1, arm - 1), Math.max(2, Math.floor(cellH * 0.35)));
       }
     }
 
-    // Active unraveling threads stretching cleanly from stitches down to active dock slots
-    if (game.activeThreads?.length) {
-      const dockStep = W / Math.max(1, game.dockCapacity);
-      for (const link of game.activeThreads) {
-        const pal = YARN_PALETTE[link.color];
-        if (!pal) continue;
-        const sx = padX + link.col * cellW + Math.floor(cellW / 2);
-        const sy = padY + link.row * cellH + cellH;
-        const dx = Math.round(dockStep * (link.dockIndex + 0.5));
-        const dy = H;
-        lctx.fillStyle = pal.hi;
-        const steps = 18;
-        for (let i = 0; i <= steps; i++) {
-          const t = i / steps;
-          const px = Math.round(sx + (dx - sx) * t);
-          const py = Math.round(sy + (dy - sy) * t + Math.sin(t * Math.PI) * 5);
-          lctx.fillRect(px, py, 2, 2);
-        }
-      }
+    // Smooth curved Bezier yarn threads + traveling stitch beads
+    const dockStep = W / Math.max(1, game.dockCapacity);
+    flyingBeads = flyingBeads.filter((b) => now - b.start < b.duration);
+    for (const b of flyingBeads) {
+      const pal = YARN_PALETTE[b.color];
+      if (!pal) continue;
+      const p = Math.min(1, (now - b.start) / b.duration);
+      const ease = 1 - Math.pow(1 - p, 2);
+      const sx = padX + b.col * cellW + Math.floor(cellW / 2);
+      const sy = padY + b.row * cellH + Math.floor(cellH * 0.7);
+      const dx = Math.round(dockStep * (b.dockIndex + 0.5));
+      const dy = H + 2;
+      const swayX = Math.sin(p * Math.PI * 2 + b.phase) * 9 * (1 - p);
+      const cx = (sx + dx) * 0.5 + swayX;
+      const cy = Math.max(sy, dy) - 18;
+
+      // Crisp quadratic Bezier yarn cord (smooth continuous curve)
+      lctx.save();
+      lctx.lineCap = "round";
+      lctx.lineWidth = 3.5;
+      lctx.strokeStyle = "#261c29";
+      lctx.beginPath();
+      lctx.moveTo(sx, sy);
+      lctx.quadraticCurveTo(cx, cy, dx, dy);
+      lctx.stroke();
+
+      lctx.lineWidth = 2;
+      lctx.strokeStyle = pal.hi;
+      lctx.beginPath();
+      lctx.moveTo(sx, sy);
+      lctx.quadraticCurveTo(cx, cy, dx, dy);
+      lctx.stroke();
+
+      // Traveling yarn bead interpolating smoothly from stitch -> spool
+      const u = 1 - ease;
+      const bx = u * u * sx + 2 * u * ease * cx + ease * ease * dx;
+      const by = u * u * sy + 2 * u * ease * cy + ease * ease * dy;
+      lctx.fillStyle = "#ffffff";
+      lctx.fillRect(Math.round(bx) - 2, Math.round(by) - 2, 4, 4);
+      lctx.fillStyle = pal.fill;
+      lctx.fillRect(Math.round(bx) - 1, Math.round(by) - 1, 2, 2);
+      lctx.restore();
+    }
+
+    // Soft pop sparkles when stitches detach
+    sparks = sparks.filter((s) => now - s.start < 260);
+    for (const s of sparks) {
+      const p = (now - s.start) / 260;
+      lctx.save();
+      lctx.globalAlpha = Math.max(0, 1 - p);
+      lctx.fillStyle = s.col;
+      const px = Math.round(s.x + s.vx * p * 12);
+      const py = Math.round(s.y + s.vy * p * 12);
+      lctx.fillRect(px, py, 2, 2);
+      lctx.restore();
     }
   }
 
-  function renderDock() {
+  function renderDockAndHud() {
+    const doneRatio = game.totalStitches
+      ? Math.round(((game.totalStitches - game.remainingStitches) / game.totalStitches) * 100)
+      : 100;
+    spoolsEl.textContent = `${game.completedSpools} / ${game.totalSpools}`;
+    scoreEl.textContent = game.score.toLocaleString();
+    progressFillEl.style.width = `${doneRatio}%`;
+    selectEl.value = String(game.stage);
+    undoBtn.disabled = !game.history.length || wonHandled;
+
+    slotCountEl.textContent = String(game.boosters.slot);
+    gloveCountEl.textContent = String(game.boosters.glove);
+    scissorsCountEl.textContent = String(game.boosters.scissors);
+    slotBoostBtn.disabled = game.boosters.slot <= 0 || game.dockCapacity >= DOCK_MAX_SLOTS;
+    gloveBoostBtn.disabled = game.boosters.glove <= 0;
+    scissorsBoostBtn.disabled = game.boosters.scissors <= 0 || game.dock.every((s) => !s);
+    gloveBoostBtn.setAttribute("aria-pressed", String(game.armedBooster === "glove"));
+    scissorsBoostBtn.setAttribute("aria-pressed", String(game.armedBooster === "scissors"));
+
     const slots = [];
     for (let i = 0; i < game.dockCapacity; i++) {
       const slot = game.dock[i];
@@ -165,14 +219,15 @@ export function initKnitUnravel() {
             const res = useKnitBooster(game, "scissors", { dockIndex: i });
             if (res.ok) {
               window.cafeAudioPlay?.("pop");
-              statusEl.textContent = "가위로 도크 실타래 1개를 시원하게 정리했어요!";
-              renderAll();
+              statusEl.textContent = "가위로 도크 실타래 1개를 정리했어요!";
+              renderDockAndHud();
+              renderTray();
+              drawLoom();
             }
           }
         });
       } else {
         btn.disabled = true;
-        btn.textContent = "";
       }
       slots.push(btn);
     }
@@ -188,14 +243,26 @@ export function initKnitUnravel() {
         if (useKnitBooster(game, "slot").ok) {
           window.cafeAudioPlay?.("pop");
           statusEl.textContent = "상단 실타래 도크가 1칸 넓어졌어요!";
-          renderAll();
+          renderDockAndHud();
+          renderTray();
         }
       });
       slots.push(addSlot);
     }
     dockEl.replaceChildren(...slots);
+
+    if (isKnitWon(game) && !wonHandled) {
+      wonHandled = true;
+      window.cafeAudioPlay?.("chime");
+      window.recordCafeStamp?.("game");
+      statusEl.textContent = `🎉 ${game.stage}단계 「${game.patternName}」 완성! (+${game.score}점)`;
+      submitArcadeScore("knit", game.score, { mode: `stage${game.stage}`, metric: `${game.stage}탄 ${doneRatio}%` });
+    } else if (!wonHandled && isKnitStuck(game)) {
+      statusEl.textContent = "⚠️ 도크가 막혔어요! 되돌리기, +1 슬롯 또는 가위 도우미를 사용해 보세요.";
+    }
   }
 
+  // Only called on discrete tray changes (NEVER during the 60fps unravel loop!) so rapid clicks never drop!
   function renderTray() {
     const frag = [];
     for (let r = 0; r < TRAY_ROWS; r++) {
@@ -247,7 +314,10 @@ export function initKnitUnravel() {
               if (gRes.ok) {
                 window.cafeAudioPlay?.("pop");
                 statusEl.textContent = "만능 손으로 막혀 있던 실타래를 바로 꺼냈어요!";
-                renderAll();
+                renderDockAndHud();
+                renderTray();
+                drawLoom();
+                startLoop();
               } else {
                 statusEl.textContent = "위쪽 도크에 빈칸이 부족해요!";
               }
@@ -257,14 +327,17 @@ export function initKnitUnravel() {
             const res = pickKnitCell(game, r, c);
             if (!res.ok) {
               window.cafeAudioPlay?.("tick");
-              if (res.reason === "frozen") statusEl.textContent = "얼음 실타래예요! 주변 실을 빼서 얼음을 녹이세요.";
+              if (res.reason === "frozen") statusEl.textContent = "얼음 실타래예요! 통로가 먼저 열린 뒤 녹일 수 있어요.";
+              else if (res.reason === "pair_needs_two") statusEl.textContent = "끈으로 묶인 2개의 실타래는 도크 빈칸이 2개 필요해요!";
               else if (res.reason === "dock_full") statusEl.textContent = "위쪽 실타래 도크가 꽉 찼어요! 가위나 +1 슬롯을 써보세요.";
               else statusEl.textContent = "위쪽 출구 행까지 빈 칸 길이 열려 있어야 꺼낼 수 있어요!";
-              renderAll();
               return;
             }
             window.cafeAudioPlay?.("pop");
-            renderAll();
+            renderDockAndHud();
+            renderTray();
+            drawLoom();
+            startLoop();
           });
         }
         frag.push(btn);
@@ -273,57 +346,44 @@ export function initKnitUnravel() {
     trayEl.replaceChildren(...frag);
   }
 
-  function renderAll() {
-    const doneRatio = game.totalStitches
-      ? Math.round(((game.totalStitches - game.remainingStitches) / game.totalStitches) * 100)
-      : 100;
-    spoolsEl.textContent = `${game.completedSpools} / ${game.totalSpools}`;
-    scoreEl.textContent = game.score.toLocaleString();
-    progressFillEl.style.width = `${doneRatio}%`;
-    selectEl.value = String(game.stage);
-    undoBtn.disabled = !game.history.length || wonHandled;
-
-    slotCountEl.textContent = String(game.boosters.slot);
-    gloveCountEl.textContent = String(game.boosters.glove);
-    scissorsCountEl.textContent = String(game.boosters.scissors);
-    slotBoostBtn.disabled = game.boosters.slot <= 0 || game.dockCapacity >= DOCK_MAX_SLOTS;
-    gloveBoostBtn.disabled = game.boosters.glove <= 0;
-    scissorsBoostBtn.disabled = game.boosters.scissors <= 0 || game.dock.every((s) => !s);
-    gloveBoostBtn.setAttribute("aria-pressed", String(game.armedBooster === "glove"));
-    scissorsBoostBtn.setAttribute("aria-pressed", String(game.armedBooster === "scissors"));
-
-    drawLoom();
-    renderDock();
-    renderTray();
-
-    if (isKnitWon(game) && !wonHandled) {
-      wonHandled = true;
-      window.cafeAudioPlay?.("chime");
-      window.recordCafeStamp?.("game");
-      statusEl.textContent = `🎉 ${game.stage}단계 「${game.patternName}」 완성! (+${game.score}점)`;
-      submitArcadeScore("knit", game.score, { mode: `stage${game.stage}`, metric: `${game.stage}탄 ${doneRatio}%` });
-    } else if (!wonHandled && isKnitStuck(game)) {
-      statusEl.textContent = "⚠️ 도크가 막혔어요! 되돌리기, +1 슬롯 또는 가위 도우미를 사용해 보세요.";
-    }
-  }
-
   function tickLoop(now) {
     if (!dialog.open || document.hidden) {
       rafId = 0;
       return;
     }
-    if (!wonHandled && now - lastPullAt >= 75) {
+    const { padX, padY, cellW, cellH } = loomMetrics();
+    if (!wonHandled && now - lastPullAt >= 55) {
       lastPullAt = now;
       const pulled = stepKnitUnravel(game, 1);
       if (pulled.length) {
         window.cafeAudioPlay?.("tick");
-        renderAll();
-      } else if (game.activeThreads?.length) {
-        game.activeThreads = [];
-        drawLoom();
+        for (const p of pulled) {
+          flyingBeads.push({ ...p, start: now, duration: 220, phase: Math.random() * 6 });
+          const pal = YARN_PALETTE[p.color];
+          if (pal) {
+            for (let k = 0; k < 2; k++) {
+              sparks.push({
+                x: padX + p.col * cellW + cellW * 0.5,
+                y: padY + p.row * cellH + cellH * 0.5,
+                vx: (Math.random() - 0.5) * 1.4,
+                vy: -0.5 - Math.random(),
+                col: pal.hi,
+                start: now,
+              });
+            }
+          }
+        }
+        // Only update HUD & Dock (NEVER destroy tray buttons while unraveling!)
+        renderDockAndHud();
       }
     }
-    rafId = requestAnimationFrame(tickLoop);
+    drawLoom(now);
+    const activeDock = game.dock.some((s, i) => i < game.dockCapacity && s && s.remaining > 0);
+    if (flyingBeads.length || sparks.length || (!wonHandled && activeDock)) {
+      rafId = requestAnimationFrame(tickLoop);
+    } else {
+      rafId = 0;
+    }
   }
 
   function startLoop() {
@@ -337,8 +397,12 @@ export function initKnitUnravel() {
     game = createKnitStage(stage);
     hintCell = null;
     wonHandled = false;
-    statusEl.textContent = `🧶 ${game.patternName} — 위쪽 출구와 이어진 실패를 눌러 실을 풀어보세요!`;
-    renderAll();
+    flyingBeads = [];
+    sparks = [];
+    statusEl.textContent = `🧶 ${game.patternName} — 위쪽 통로와 이어진 실패를 눌러 실을 풀어보세요!`;
+    renderDockAndHud();
+    renderTray();
+    drawLoom();
     startLoop();
   }
 
@@ -347,8 +411,11 @@ export function initKnitUnravel() {
   undoBtn.addEventListener("click", () => {
     if (undoKnit(game)) {
       hintCell = null;
+      flyingBeads = [];
       statusEl.textContent = "한 수 되돌렸어요.";
-      renderAll();
+      renderDockAndHud();
+      renderTray();
+      drawLoom();
     }
   });
   hintBtn.addEventListener("click", () => {
@@ -365,7 +432,8 @@ export function initKnitUnravel() {
     if (useKnitBooster(game, "slot").ok) {
       window.cafeAudioPlay?.("pop");
       statusEl.textContent = "위쪽 도크가 1칸 넓어졌어요!";
-      renderAll();
+      renderDockAndHud();
+      renderTray();
     }
   });
   gloveBoostBtn.addEventListener("click", () => {
@@ -373,20 +441,22 @@ export function initKnitUnravel() {
     statusEl.textContent = game.armedBooster === "glove"
       ? "🧤 아래 그리드에서 원하는 실패 1개를 바로 눌러 꺼내세요!"
       : "만능 손 선택을 취소했어요.";
-    renderAll();
+    renderDockAndHud();
+    renderTray();
   });
   scissorsBoostBtn.addEventListener("click", () => {
     if (game.armedBooster === "scissors") {
       game.armedBooster = null;
       statusEl.textContent = "가위 선택을 취소했어요.";
-      renderAll();
+      renderDockAndHud();
       return;
     }
     const firstActive = game.dock.findIndex((s, i) => i < game.dockCapacity && s);
     if (firstActive >= 0 && useKnitBooster(game, "scissors", { dockIndex: firstActive }).ok) {
       window.cafeAudioPlay?.("pop");
       statusEl.textContent = "✂️ 도크의 실타래 1개를 시원하게 잘라 정리했어요!";
-      renderAll();
+      renderDockAndHud();
+      drawLoom();
     }
   });
 
@@ -402,7 +472,9 @@ export function initKnitUnravel() {
   const observer = new MutationObserver(() => {
     if (dialog.open) {
       window.cafeWorld?.setActivity("game:knit");
-      renderAll();
+      renderDockAndHud();
+      renderTray();
+      drawLoom();
       startLoop();
     } else {
       if (rafId) {

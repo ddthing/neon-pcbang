@@ -1,51 +1,6 @@
 // Seat-to-Seat Real-Time Multiplayer Arena (Omok 15x15 & Alkkagi Physics + Cat Clerk AI)
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
-
-function checkLocalOmokWin(board, index, stone) {
-  const size = 15;
-  const r0 = Math.floor(index / size), c0 = index % size;
-  for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
-    let count = 1;
-    for (const s of [-1, 1]) {
-      let r = r0 + dr * s, c = c0 + dc * s;
-      while (r >= 0 && r < size && c >= 0 && c < size && board[r * size + c] === stone) {
-        count++; r += dr * s; c += dc * s;
-      }
-    }
-    if (count >= 5) return true;
-  }
-  return false;
-}
-
-function chooseAiOmokMove(board) {
-  const size = 15;
-  // Heuristic scorer for attack (2) and defense (1)
-  let bestIdx = 112, bestScore = -1;
-  for (let idx = 0; idx < 225; idx++) {
-    if (board[idx] !== 0) continue;
-    const r0 = Math.floor(idx / size), c0 = idx % size;
-    let score = 7 - Math.hypot(r0 - 7, c0 - 7) * 0.4;
-    for (const [stone, weight] of [[2, 1.15], [1, 1.05]]) {
-      for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
-        let len = 0, openEnds = 0;
-        for (const s of [-1, 1]) {
-          let r = r0 + dr * s, c = c0 + dc * s;
-          while (r >= 0 && r < size && c >= 0 && c < size && board[r * size + c] === stone) {
-            len++; r += dr * s; c += dc * s;
-          }
-          if (r >= 0 && r < size && c >= 0 && c < size && board[r * size + c] === 0) openEnds++;
-        }
-        if (len >= 4) score += 100000 * weight;
-        else if (len === 3 && openEnds >= 1) score += (openEnds === 2 ? 9000 : 1800) * weight;
-        else if (len === 2 && openEnds >= 1) score += (openEnds === 2 ? 420 : 90) * weight;
-        else if (len === 1 && openEnds === 2) score += 18 * weight;
-      }
-    }
-    score += Math.random() * 2;
-    if (score > bestScore) { bestScore = score; bestIdx = idx; }
-  }
-  return bestIdx;
-}
+import { chooseAlkkagiAiShot, chooseOmokAiMove, hasFiveInARow } from "./pvp-ai.mjs";
 
 function stepLocalAlkkagi(stonesInput, stoneId, rawVx, rawVy) {
   const R = 4.2;
@@ -101,6 +56,7 @@ export function initPvp() {
   const statusEl = document.getElementById("pvp-status");
   const roomsList = document.getElementById("pvp-rooms");
   const modeSelect = document.getElementById("pvp-game-type");
+  const aiLevelSelect = document.getElementById("pvp-ai-level");
   const seatInviteSelect = document.getElementById("pvp-invite-seat");
   const createBtn = document.getElementById("pvp-create");
   const aiBtn = document.getElementById("pvp-vs-ai");
@@ -191,15 +147,16 @@ export function initPvp() {
 
   function runAiTurn() {
     if (mode !== "ai" || !activeMatch || activeMatch.status !== "playing" || activeMatch.turn !== "guest") return;
+    const difficulty = aiLevelSelect?.value || "hard";
     setTimeout(() => {
       if (mode !== "ai" || !activeMatch || activeMatch.status !== "playing") return;
       if (activeMatch.game === "omok") {
-        const idx = chooseAiOmokMove(activeMatch.state.board);
+        const idx = chooseOmokAiMove(activeMatch.state.board, difficulty, 2);
         activeMatch.state.board[idx] = 2;
         activeMatch.state.lastMove = idx;
         activeMatch.state.moveCount++;
         window.cafeAudioPlay?.("tick");
-        if (checkLocalOmokWin(activeMatch.state.board, idx, 2)) {
+        if (hasFiveInARow(activeMatch.state.board, idx, 2)) {
           activeMatch.status = "finished";
           activeMatch.winner = "guest";
           statusEl.textContent = "고양이 알바 AI 승리! 🐱 '냐하하 한 수 배웠냥!'";
@@ -209,16 +166,9 @@ export function initPvp() {
         }
         drawBoard();
       } else {
-        const aiStones = activeMatch.state.stones.filter((s) => s.owner === "guest" && s.alive);
-        const playerStones = activeMatch.state.stones.filter((s) => s.owner === "host" && s.alive);
-        if (!aiStones.length || !playerStones.length) return;
-        const shooter = aiStones[Math.floor(Math.random() * aiStones.length)];
-        const target = playerStones[Math.floor(Math.random() * playerStones.length)];
-        const dx = target.x - shooter.x + (Math.random() - 0.5) * 4;
-        const dy = target.y - shooter.y + (Math.random() - 0.5) * 4;
-        const dist = Math.hypot(dx, dy) || 1;
-        const power = Math.min(3.4, 1.8 + dist * 0.024);
-        const sim = stepLocalAlkkagi(activeMatch.state.stones, shooter.id, (dx / dist) * power, (dy / dist) * power);
+        const best = chooseAlkkagiAiShot(activeMatch.state.stones, stepLocalAlkkagi, difficulty, "guest");
+        const sim = best?.sim;
+        if (!sim) return;
         playAlkkagiAnimation(sim, () => {
           activeMatch.state.stones = sim.stones;
           if (sim.winner) {
@@ -237,7 +187,7 @@ export function initPvp() {
           drawBoard();
         });
       }
-    }, 520);
+    }, 420);
   }
 
   function playAlkkagiAnimation(sim, onDone) {
@@ -508,7 +458,7 @@ export function initPvp() {
         activeMatch.state.lastMove = index;
         activeMatch.state.moveCount++;
         window.cafeAudioPlay?.("tick");
-        if (checkLocalOmokWin(activeMatch.state.board, index, 1)) {
+        if (hasFiveInARow(activeMatch.state.board, index, 1)) {
           activeMatch.status = "finished";
           activeMatch.winner = "host";
           statusEl.textContent = "🎉 오목 승리! 알바냥을 이겼어요!";

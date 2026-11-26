@@ -47,21 +47,31 @@
 
 ### ③ 캐릭터 스프라이트 & 화살표 옷장 UI 지침
 - **순수 도트 매트릭스 ([public/avatar-sprites.js](public/avatar-sprites.js)):**
-  - `pellipse()` 등 수학 도형 사용 금지. `HEAD_FRONT`, `HEAD_SIDE`, `HAIR_FRONT`처럼 명시적 픽셀 매트릭스와 1px 외곽선 패스로 48×48프레임(7열×11행 시트)을 생성합니다.
-  - `AVATAR_WARDROBE`와 6자리 16진 코드(`encodeAvatarCode`/`normalizeAvatarCode`) 스키마는 D1 저장·테스트와 호환되도록 유지합니다.
+  - `pellipse()` 등 수학 도형 사용 금지. `HEAD_FRONT`, `HEAD_SIDE`, `HAIR_FRONT`처럼 명시적 픽셀 매트릭스와 1px 외곽선(`#261c29`) + **2×3 반짝이 눈동자**로 48×48프레임(7열×11행 시트)을 생성합니다.
+  - **7종 종족(`skins`):** `0: 사람`, `1: 고양이`, `2: 곰`, `3: 토끼`, `4: 쥐`, `5: 기린`, `6: 호랑이` (각 종족별 4톤 팔레트 + 귀·뿔·코·볼터치·줄무늬/점박이 픽셀 파츠).
+  - **6자리 16진 코드(`AVATAR_WARDROBE`, `encodeAvatarCode`/`normalizeAvatarCode`):** 각 카테고리(`skins`, `hairs`, `hairColors`, `outfits`, `headsets`, `accessories`)는 6-니블(nibble) 규격 상 **최대 16개(0~15)** 이내로 유지해 D1 저장·테스트 호환성을 지킵니다.
 - **옷장 UI ([app/cafe.html](app/cafe.html), [public/walk.js](public/walk.js), [public/walk.css](public/walk.css)):**
   - 부위별 선택은 작은 칩 버튼 나열 대신 **`.wardrobe-stepper` (`[◀]` · 현재 스타일/색상/인덱스 · `[▶]`)** 형태를 유지하고, `#wardrobe-rot-left`/`#wardrobe-rot-right`로 4방향(정면·오른쪽·뒷모습·왼쪽)을 즉시 회전 미리보기할 수 있어야 합니다.
 
 ---
 
-### ④ 미니게임·런처·랭킹 개발 지침
+### ④ 미니게임·런처·대전 AI·랭킹 개발 지침
 - **게임 런처 기본 상태:** `#pc-desktop`을 열 때 `#pc-launcher`는 기본 `hidden` 상태여야 하며(`pc.css` `.pc-launcher[hidden] { display: none !important; }`), `[data-launcher]` 버튼 클릭으로만 열립니다.
 - **구조 분리 및 자원 정리:**
-  - 순수 게임 규칙·상태 엔진은 `.mjs`(`solitaire-engine.mjs`, `knit-unravel-engine.mjs` 등)로 분리해 브라우저 없이 Node 단위 테스트가 가능하게 작성합니다.
+  - 순수 게임 규칙·상태 엔진은 `.mjs`(`solitaire-engine.mjs`, `knit-unravel-engine.mjs`, `pvp-ai.mjs` 등)로 분리해 브라우저 없이 Node 단위 테스트가 가능하게 작성합니다.
   - 모든 미니게임은 `dialog`가 닫히거나(`close` 이벤트) 탭이 비활성화(`document.hidden`)될 때 `requestAnimationFrame`과 `setInterval`을 즉시 정지해야 합니다.
 - **스도쿠 / 솔리테어 / Knit Unravel 핵심 규칙:**
   - **스도쿠:** 고정 숫자(`[data-given]`), 사용자 입력(`[data-user]`), 중복 오류(`[data-conflict]`)가 배경·글자색·밑줄로 한눈에 구분되고 Undo(`#sudoku-undo`, `Ctrl+Z`)를 지원합니다.
-  - **Knit Unravel:** 상단 니트 도안(`KNIT_PATTERNS`)의 색상별 총 스티치 수와 하단 실패 총 용량의 합은 **스테이지 생성 시 100% 일치**해야 하며, 도우미 `가위` 사용 시에도 해당 색상 스티치를 함께 정리해 클리어 불가능(데드락)을 방지합니다.
+  - **솔리테어 ([public/solitaire.js](public/solitaire.js)):** 기본 뽑기는 **3장 뽑기(`drawCount = 3`)**이며, `.sol-waste-fan` 컨테이너 안에서 최대 3장을 부채꼴(`--fan-i`)로 펼쳐 최상단 카드만 조작 가능하게 합니다.
+  - **Knit Unravel ([public/knit-unravel-engine.mjs](public/knit-unravel-engine.mjs), [public/knit-unravel.js](public/knit-unravel.js)):**
+    - 상단 니트 도안(`KNIT_PATTERNS`)의 색상별 총 스티치 수와 하단 실패 총 용량의 합은 **스테이지 생성 시 100% 일치**해야 하며, 도우미 `가위` 사용 시에도 해당 색상 스티치를 함께 정리해 클리어 불가능(데드락)을 방지합니다.
+    - **엄격한 인접 해제 규칙:** `triggerNeighborsAfterPick`은 픽셀을 집었을 때 **실제로 출구(0행)까지 열릴 수 있는 이웃(`isSingleReachable(..., { ignoreIce: true })`)만** `?` 미스터리/얼음(`ice = 1`)을 해제합니다. 옆 칸을 집었더라도 아직 앞줄에 막힌 칸의 잠금은 풀리지 않습니다.
+    - **트레이 DOM 분리 (연속 터치 보장):** 실이 풀리는 60fps 루프에서는 `drawLoom()`과 `renderDockAndHud()`만 갱신하며 `#knit-tray` 버튼 DOM을 재생성하는 `renderTray()`는 셀 선택·Undo·부스터 등 상태 변화 시에만 호출해 실이 풀리는 중에도 다른 가능한 실을 막힘없이 누를 수 있어야 합니다.
+    - **모바일 뷰포트 상단 고정:** `@media (max-width: 680px)`에서 `#knit` 다이얼로그는 `margin: max(6px, env(safe-area-inset-top)) auto auto;`로 상단 클리핑 없이 전체 UI가 노출되어야 합니다.
+- **대전 AI ([public/pvp-ai.mjs](public/pvp-ai.mjs), [public/pvp.js](public/pvp.js)):**
+  - `#pvp-ai-level`로 난이도(`hard`: 고수 AI, `medium`: 보통 AI, `easy`: 쉬움 AI, 기본값 `hard`)를 선택합니다.
+  - **오목 AI (`chooseOmokAiMove`):** 연속/띄엄 5·열린4(`011110`)·끊긴4(`10111` 등)·열린3(`010110`) 패턴 평가 + 쌍삼/사삼 포크 가산점 + `hard` 2수 앞(2-ply) 상대 최선 응수 감점을 적용합니다.
+  - **알까기 AI (`chooseAlkkagiAiShot`):** `lib/cafe-pvp.mjs`의 `simulateAlkkagiShot`으로 전 살아있는 말·타겟·각도(`[-0.08, 0, 0.08]`)·파워(`2.4/3.1/3.8`)를 선계산해 자살 샷을 피하고 상대 말 장외를 극대화합니다.
 - **랭킹 연동:** 새 게임을 추가할 때는 [lib/cafe-arcade.mjs](lib/cafe-arcade.mjs)의 `validGames`에 게임 ID를 등록하고 `mountLeaderboardBox()`를 연결합니다.
 
 ---
