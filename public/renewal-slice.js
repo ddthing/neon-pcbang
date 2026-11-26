@@ -17,6 +17,12 @@ import {
   planSeatApproach,
 } from "./renewal-layout.mjs";
 import { createSeatPicker } from "./renewal-seat-picker.mjs";
+import {
+  SLICE_WINDOWS,
+  renderClippedWindow,
+  renderFloorLightingAndSplashes,
+  renderTraySteamAndSeatHighlight,
+} from "./renewal-effects.mjs";
 
 const { width: W, height: H, palette: C } = WORLD_SPEC;
 
@@ -67,7 +73,17 @@ const state = {
   clickFeedback: null, // { x, y, ok, timer }
   keysDown: new Set(),
   lastScale: 1,
+  env: {
+    lightPhase: "night",
+    weather: "rain",
+    effectsEnabled: true,
+    reducedMotionOverride: null,
+  },
 };
+
+function effectiveReducedMotion() {
+  return state.env.reducedMotionOverride ?? reducedMotionQuery.matches;
+}
 
 let toastTimer = null;
 function showToast(text, tone = "info") {
@@ -388,19 +404,21 @@ function renderScene(timeSec) {
   }
   px(26, 46, 588, 1, "#b27c71");
   px(26, 49, 588, 2, "rgba(49,33,53,0.29)");
-  // Solo room north window looking at rainy city skyline
-  drawWindowScene(56, 18, 64, 24, timeSec);
-  // Hall north cozy windows
-  drawWindowScene(248, 18, 68, 24, timeSec);
-  drawWindowScene(398, 18, 68, 24, timeSec);
+  // Clipped north windows rendered from shared Track E window specs
+  const envInput = {
+    lightPhase: state.env.lightPhase,
+    weather: state.env.weather,
+    effectsEnabled: state.env.effectsEnabled,
+    reducedMotion: effectiveReducedMotion(),
+  };
+  for (const win of SLICE_WINDOWS) {
+    renderClippedWindow(ctx, win, envInput, timeSec);
+  }
   // Warm wall sconces (apricot lighting)
   for (const sx of [164, 348, 520]) {
-    px(sx - 12, 23, 24, 28, "rgba(242,179,122,0.07)");
-    px(sx - 16, 38, 32, 16, "rgba(242,179,122,0.07)");
-    px(sx - 19, 47, 38, 10, "rgba(242,179,122,0.05)");
     framedRect(sx - 5, 22, 10, 12, "#a77478", C.shade);
     px(sx - 3, 24, 6, 7, C.gold);
-    px(sx - 2, 24, 4, 6, C.milk);
+    px(sx - 2, 24, 4, 6, state.env.effectsEnabled ? C.milk : C.gold);
     px(sx - 2, 34, 4, 2, C.shade);
   }
 
@@ -451,7 +469,15 @@ function renderScene(timeSec) {
 
   const player = state.player;
   const activeSeat = player.seatKey ? SEATS[player.seatKey] : null;
-  const reduced = reducedMotionQuery.matches;
+  const reduced = effectiveReducedMotion();
+
+  // Floor lighting pools, ambient day/night glaze & exterior splashes under characters/furniture
+  renderFloorLightingAndSplashes(ctx, envInput, timeSec, {
+    doors: DOORS,
+    doorOpen: state.doorOpen,
+    seatsRuntime: state.seatsRuntime,
+    playerPos: player,
+  });
   const drawSeatTray = (seat) => {
     if (state.showTray) art.drawTray(seat);
   };
@@ -504,13 +530,18 @@ function renderScene(timeSec) {
   depthList.sort((a, b) => a.y - b.y);
   for (const entry of depthList) entry.draw();
 
+  // Steam above active delivery trays & subtle active seat highlight
+  renderTraySteamAndSeatHighlight(ctx, envInput, timeSec, {
+    activeSeatKey: player.seatKey,
+    showTray: state.showTray,
+  });
   // Click destination / unreachable visual feedback
   if (state.clickFeedback) {
     const cf = state.clickFeedback;
     ctx.save();
     ctx.strokeStyle = cf.ok ? C.aqua : "#ff8585";
     ctx.lineWidth = 1;
-    const r = reducedMotionQuery.matches ? 5 : 4 + Math.round((1 - cf.timer / 0.6) * 4);
+    const r = effectiveReducedMotion() ? 5 : 4 + Math.round((1 - cf.timer / 0.6) * 4);
     ctx.strokeRect(Math.round(cf.x - r) + 0.5, Math.round(cf.y - r) + 0.5, r * 2, r * 2);
     if (!cf.ok) {
       ctx.font = "bold 8px sans-serif";
@@ -884,6 +915,37 @@ btnOverlay.addEventListener("click", () => setOverlay(!state.showOverlay));
 btnCollapse.addEventListener("click", () => setHudCollapsed(!state.hudCollapsed));
 
 seatmapSimConflict.hidden = !new URLSearchParams(window.location.search).has("qa");
+
+const btnLight = document.getElementById("btn-toggle-light");
+const btnWeather = document.getElementById("btn-cycle-weather");
+const btnFx = document.getElementById("btn-toggle-fx");
+const btnReduced = document.getElementById("btn-toggle-reduced");
+
+function setEnvironment(patch = {}) {
+  if (patch.lightPhase) state.env.lightPhase = patch.lightPhase === "day" ? "day" : "night";
+  if (patch.weather && ["clear", "rain", "snow"].includes(patch.weather)) state.env.weather = patch.weather;
+  if (typeof patch.effectsEnabled === "boolean") state.env.effectsEnabled = patch.effectsEnabled;
+  if (patch.reducedMotionOverride === null || typeof patch.reducedMotionOverride === "boolean") {
+    state.env.reducedMotionOverride = patch.reducedMotionOverride;
+  }
+  btnLight?.setAttribute("aria-pressed", String(state.env.lightPhase === "night"));
+  if (btnLight) btnLight.textContent = state.env.lightPhase === "night" ? "조명: 밤" : "조명: 낮";
+  const wLabel = { clear: "맑음", rain: "비", snow: "눈" }[state.env.weather];
+  if (btnWeather) btnWeather.textContent = `날씨: ${wLabel}`;
+  btnFx?.setAttribute("aria-pressed", String(state.env.effectsEnabled));
+  if (btnFx) btnFx.textContent = state.env.effectsEnabled ? "효과 켜짐" : "효과 꺼짐";
+  const rm = effectiveReducedMotion();
+  btnReduced?.setAttribute("aria-pressed", String(rm));
+}
+
+btnLight?.addEventListener("click", () => setEnvironment({ lightPhase: state.env.lightPhase === "night" ? "day" : "night" }));
+btnWeather?.addEventListener("click", () => {
+  const order = ["clear", "rain", "snow"];
+  const next = order[(order.indexOf(state.env.weather) + 1) % order.length];
+  setEnvironment({ weather: next });
+});
+btnFx?.addEventListener("click", () => setEnvironment({ effectsEnabled: !state.env.effectsEnabled }));
+btnReduced?.addEventListener("click", () => setEnvironment({ reducedMotionOverride: !effectiveReducedMotion() }));
 seatmapSimConflict.addEventListener("click", () => {
   seatmapSimConflict.setAttribute("aria-pressed", String(seatmapSimConflict.getAttribute("aria-pressed") !== "true"));
 });
@@ -906,11 +968,13 @@ window.__renewalSlice = {
     showTray: state.showTray,
     hudCollapsed: state.hudCollapsed,
     modalOpen: seatPicker.isOpen,
+    env: { ...state.env, reducedMotion: effectiveReducedMotion() },
     doors: { ...state.doorOpen },
     seats: Object.fromEntries(
       SEAT_LIST.map((s) => [s.key, { ...state.seatsRuntime[s.key] }]),
     ),
   }),
+  setEnvironment,
   walkTo: (x, y) => startWalkTo({ x, y }),
   selectSeat: (key) => selectSeat(key),
   standUp: () => standUp(),
