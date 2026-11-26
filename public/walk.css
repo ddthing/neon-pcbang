@@ -148,20 +148,43 @@
   border: 1px solid #6c6053; border-radius: 8px;
   background: radial-gradient(circle at 30% 35%, #3c4a47, #24211f 75%);
 }
+.wardrobe-preview-box {
+  display: grid; gap: 6px; justify-items: center; flex-shrink: 0;
+}
 #wardrobe-preview {
   width: 96px; height: 96px; image-rendering: pixelated;
-  border: 2px solid #4c383d; border-radius: 6px; background: #261b1e; flex-shrink: 0;
+  border: 2px solid #4c383d; border-radius: 6px; background: #261b1e;
 }
+.wardrobe-rotator {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px; width: 100%;
+}
+.wardrobe-rotator span { text-align: center; font-size: 10px; color: #e6d2b5; }
 .wardrobe-poses { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.wardrobe-poses [aria-pressed="true"] { background: #569e7c; border-color: #ffe7a8; color: #fff9f2; }
 .wardrobe-controls {
-  display: grid; gap: 9px; max-height: 38dvh; overflow-y: auto; padding-right: 4px; margin-bottom: 12px;
+  display: grid; gap: 7px; margin-bottom: 12px;
 }
-.wardrobe-group strong { display: block; font-size: 11px; color: #e6d2b5; margin-bottom: 4px; }
-.wardrobe-chips { display: flex; flex-wrap: wrap; gap: 5px; }
-.wardrobe-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; }
-.wardrobe-chip i { width: 10px; height: 10px; border-radius: 2px; border: 1px solid #ffffff66; display: inline-block; }
-.wardrobe-chip[aria-pressed="true"] {
-  background: #c5dec2; color: #1e2e23; border-color: #eef7ec; font-weight: 800;
+.wardrobe-stepper {
+  display: grid; grid-template-columns: minmax(82px, auto) 40px minmax(0, 1fr) 40px;
+  align-items: center; gap: 6px; padding: 4px 6px;
+  border: 1px solid #59444a; border-radius: 6px; background: #2d2125;
+}
+.wardrobe-stepper strong { font-size: 11px; color: #e6d2b5; }
+.wardrobe-arrow {
+  min-width: 38px; min-height: 38px; padding: 0; display: grid; place-items: center; font-size: 12px;
+}
+.wardrobe-val {
+  display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px;
+  padding: 0 8px; border-radius: 5px; background: #3b2d31; border: 1px solid #6e525a;
+}
+.wardrobe-dot { width: 11px; height: 11px; border-radius: 2px; border: 1px solid #ffffff66; flex-shrink: 0; }
+.wardrobe-name { font-size: 12px; font-weight: 750; color: #fff5eb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wardrobe-idx { margin-left: auto; font-size: 10px; color: #cfb097; flex-shrink: 0; }
+@media (max-width: 600px) {
+  .wardrobe-stage { flex-direction: column; text-align: center; }
+  .wardrobe-poses { justify-content: center; }
+  .wardrobe-stepper { grid-template-columns: 1fr 44px minmax(0, 1.5fr) 44px; }
+  .wardrobe-arrow { min-width: 44px; min-height: 44px; }
 }
 
 .walk-controls {

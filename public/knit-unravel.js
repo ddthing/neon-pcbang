@@ -1,167 +1,426 @@
 import {
+  DOCK_MAX_SLOTS,
+  KNIT_PATTERNS,
   KNIT_STAGE_COUNT,
-  TRAY_CAPACITY,
-  YARN_COLORS,
+  TRAY_COLS,
+  TRAY_ROWS,
+  YARN_PALETTE,
   createKnitStage,
   findKnitHint,
+  isCellReachable,
   isKnitStuck,
   isKnitWon,
-  isStrandFree,
-  pickKnitStrand,
+  pickKnitCell,
+  stepKnitUnravel,
   undoKnit,
+  useKnitBooster,
 } from "./knit-unravel-engine.mjs";
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
 
-const COLOR_MAP = Object.fromEntries(YARN_COLORS.map((c) => [c.id, c]));
-
 export function initKnitUnravel() {
   const dialog = document.getElementById("knit");
+  const loomCanvas = document.getElementById("knit-loom");
+  const dockEl = document.getElementById("knit-dock");
+  const trayEl = document.getElementById("knit-tray");
   const selectEl = document.getElementById("knit-select");
-  const stageEl = document.getElementById("knit-stage");
   const spoolsEl = document.getElementById("knit-spools");
   const scoreEl = document.getElementById("knit-score");
-  const bobbinsEl = document.getElementById("knit-bobbins");
-  const boardEl = document.getElementById("knit-board");
-  const trayEl = document.getElementById("knit-tray");
+  const progressFillEl = document.getElementById("knit-progress-fill");
   const statusEl = document.getElementById("knit-status");
   const undoBtn = document.getElementById("knit-undo");
   const hintBtn = document.getElementById("knit-hint");
   const resetBtn = document.getElementById("knit-reset");
+  const slotBoostBtn = document.getElementById("knit-boost-slot");
+  const gloveBoostBtn = document.getElementById("knit-boost-glove");
+  const scissorsBoostBtn = document.getElementById("knit-boost-scissors");
+  const slotCountEl = document.getElementById("knit-count-slot");
+  const gloveCountEl = document.getElementById("knit-count-glove");
+  const scissorsCountEl = document.getElementById("knit-count-scissors");
 
-  mountLeaderboardBox(dialog, "knit", () => `stage-${currentStage}`, (s, m) => m || `${s}점`);
+  const lctx = loomCanvas.getContext("2d");
+  lctx.imageSmoothingEnabled = false;
 
-  for (let s = 1; s <= KNIT_STAGE_COUNT; s++) {
+  mountLeaderboardBox(dialog, "knit", () => `stage${currentStage}`, (s, m) => m || `${s}점`);
+
+  for (let i = 1; i <= KNIT_STAGE_COUNT; i++) {
     const opt = document.createElement("option");
-    opt.value = String(s);
-    opt.textContent = `${s}단계`;
+    opt.value = String(i);
+    opt.textContent = `${i}단계 · ${KNIT_PATTERNS[i - 1].name}`;
     selectEl.append(opt);
   }
 
   let currentStage = 1;
-  let game = createKnitStage(currentStage);
-  let hintId = null;
+  let game = createKnitStage(1);
+  let hintCell = null;
   let wonHandled = false;
+  let lastPullAt = 0;
+  let rafId = 0;
 
-  function render() {
-    stageEl.textContent = `${game.stage} / ${KNIT_STAGE_COUNT}`;
-    spoolsEl.textContent = `${game.completedBobbins} / ${game.totalBobbins}`;
-    scoreEl.textContent = game.score.toLocaleString();
-    undoBtn.disabled = game.history.length === 0 || wonHandled;
+  function drawLoom() {
+    const W = loomCanvas.width;
+    const H = loomCanvas.height;
+    lctx.clearRect(0, 0, W, H);
 
-    // Bobbins
-    bobbinsEl.replaceChildren(...game.activeBobbins.map((b) => {
-      const meta = COLOR_MAP[b.color];
-      const box = document.createElement("div");
-      box.className = "knit-bobbin";
-      const spool = document.createElement("span");
-      spool.className = "knit-spool";
-      spool.style.background = meta.fill;
-      const info = document.createElement("div");
-      info.className = "knit-bobbin-meta";
-      info.innerHTML = `<strong>${meta.name} (${b.count}/${b.max})</strong>`;
-      const pips = document.createElement("div");
-      pips.className = "knit-pips";
-      for (let i = 0; i < b.max; i++) {
-        const pip = document.createElement("i");
-        if (i < b.count) pip.className = "filled";
-        pips.append(pip);
+    // Subtle soft lilac-cream knitted frame backing
+    lctx.fillStyle = "#2b2434";
+    lctx.fillRect(0, 0, W, H);
+    lctx.fillStyle = "#362d42";
+    lctx.fillRect(4, 4, W - 8, H - 8);
+
+    // Wooden loom side posts & bottom beam
+    const frameX = 16;
+    const frameY = 10;
+    const frameW = W - 32;
+    const frameH = H - 28;
+    // Left / Right wooden posts
+    for (const wx of [frameX - 7, frameX + frameW]) {
+      lctx.fillStyle = "#261c29";
+      lctx.fillRect(wx, frameY - 2, 7, frameH + 8);
+      lctx.fillStyle = "#a86c5e";
+      lctx.fillRect(wx + 1, frameY, 5, frameH + 5);
+      lctx.fillStyle = "#dfb08f";
+      lctx.fillRect(wx + 1, frameY, 2, frameH + 4);
+    }
+    // Bottom crossbar
+    lctx.fillStyle = "#261c29";
+    lctx.fillRect(frameX - 7, frameY + frameH, frameW + 14, 8);
+    lctx.fillStyle = "#85524f";
+    lctx.fillRect(frameX - 6, frameY + frameH + 1, frameW + 12, 6);
+    lctx.fillStyle = "#c48870";
+    lctx.fillRect(frameX - 5, frameY + frameH + 1, frameW + 10, 2);
+
+    // Dark canvas backing inside the wooden frame
+    lctx.fillStyle = "#1c1722";
+    lctx.fillRect(frameX, frameY, frameW, frameH);
+
+    // Pixel V-stitch knit cells
+    const cellW = Math.floor((frameW - 8) / game.cols);
+    const cellH = Math.floor((frameH - 6) / game.rows);
+    const padX = frameX + Math.floor((frameW - cellW * game.cols) / 2);
+    const padY = frameY + 3;
+
+    for (let r = 0; r < game.rows; r++) {
+      for (let c = 0; c < game.cols; c++) {
+        const cid = game.tapestry[r][c];
+        if (!cid) continue;
+        const pal = YARN_PALETTE[cid];
+        if (!pal) continue;
+        const x = padX + c * cellW;
+        const y = padY + r * cellH;
+        // Shadow trough
+        lctx.fillStyle = pal.sh;
+        lctx.fillRect(x, y, cellW, cellH - 1);
+        // Knitted V left & right arms
+        const arm = Math.max(2, Math.floor(cellW * 0.42));
+        lctx.fillStyle = pal.fill;
+        lctx.fillRect(x + 1, y + 1, arm, cellH - 3);
+        lctx.fillRect(x + cellW - 1 - arm, y + 1, arm, cellH - 3);
+        // Highlight tip
+        lctx.fillStyle = pal.hi;
+        lctx.fillRect(x + 1, y + 1, Math.max(1, arm - 1), Math.max(2, Math.floor(cellH * 0.35)));
       }
-      info.append(pips);
-      box.append(spool, info);
-      return box;
-    }));
+    }
 
-    // Overlapping strands sorted back-to-front by layer
-    const sorted = game.strands.slice().sort((a, b) => a.layer - b.layer);
-    boardEl.replaceChildren(...sorted.map((st) => {
-      const free = isStrandFree(game, st.id);
-      const meta = COLOR_MAP[st.color];
+    // Active unraveling threads stretching cleanly from stitches down to active dock slots
+    if (game.activeThreads?.length) {
+      const dockStep = W / Math.max(1, game.dockCapacity);
+      for (const link of game.activeThreads) {
+        const pal = YARN_PALETTE[link.color];
+        if (!pal) continue;
+        const sx = padX + link.col * cellW + Math.floor(cellW / 2);
+        const sy = padY + link.row * cellH + cellH;
+        const dx = Math.round(dockStep * (link.dockIndex + 0.5));
+        const dy = H;
+        lctx.fillStyle = pal.hi;
+        const steps = 18;
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps;
+          const px = Math.round(sx + (dx - sx) * t);
+          const py = Math.round(sy + (dy - sy) * t + Math.sin(t * Math.PI) * 5);
+          lctx.fillRect(px, py, 2, 2);
+        }
+      }
+    }
+  }
+
+  function renderDock() {
+    const slots = [];
+    for (let i = 0; i < game.dockCapacity; i++) {
+      const slot = game.dock[i];
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "knit-strand " + (free ? "is-free" : "is-locked");
-      btn.dataset.strandId = String(st.id);
-      btn.dataset.hint = String(hintId === st.id);
-      btn.style.left = st.x + "%";
-      btn.style.top = st.y + "%";
-      btn.style.width = st.w + "%";
-      btn.style.height = st.h + "%";
-      btn.style.zIndex = String(st.layer + 1);
-      btn.style.background = meta.fill;
-      btn.setAttribute("aria-label", `${meta.name} 실 ${free ? "풀 수 있음" : "다른 실에 덮여 있음"}`);
-      btn.textContent = free ? "●" : "🔒";
-      btn.addEventListener("click", () => {
-        hintId = null;
-        const res = pickKnitStrand(game, st.id);
-        if (!res.ok) {
-          window.cafeAudioPlay?.("thud");
-          statusEl.textContent = res.reason === "locked"
-            ? "위에 덮인 다른 실을 먼저 풀어주세요!"
-            : "대기 실칸(5칸)이 꽉 찼어요! 되돌리거나 다시 시작하세요.";
-          return;
-        }
-        window.cafeAudioPlay?.(res.woundDirectly ? "pop" : "tick");
-        render();
-      });
-      return btn;
-    }));
-
-    // 5-slot waiting tray
-    const slots = [];
-    for (let i = 0; i < TRAY_CAPACITY; i++) {
-      const colId = game.tray[i];
-      const slot = document.createElement("div");
-      slot.className = "knit-tray-slot" + (colId ? " filled" : "");
-      if (colId) {
-        const meta = COLOR_MAP[colId];
-        slot.style.background = meta.fill;
-        slot.textContent = meta.name.split(" ")[0];
+      btn.className = "knit-dock-slot" + (slot ? " filled" : "");
+      if (slot) {
+        const pal = YARN_PALETTE[slot.color];
+        btn.setAttribute("aria-label", `${pal.name} 실타래 남은 코 ${slot.remaining}개`);
+        const spool = document.createElement("span");
+        spool.className = "knit-dock-spool";
+        spool.style.background = pal.fill;
+        const num = document.createElement("span");
+        num.className = "knit-dock-rem";
+        num.textContent = String(slot.remaining);
+        btn.append(spool, num);
+        btn.addEventListener("click", () => {
+          if (game.armedBooster === "scissors") {
+            const res = useKnitBooster(game, "scissors", { dockIndex: i });
+            if (res.ok) {
+              window.cafeAudioPlay?.("pop");
+              statusEl.textContent = "가위로 도크 실타래 1개를 시원하게 정리했어요!";
+              renderAll();
+            }
+          }
+        });
       } else {
-        slot.textContent = "빈 칸";
+        btn.disabled = true;
+        btn.textContent = "";
       }
-      slots.push(slot);
+      slots.push(btn);
     }
-    trayEl.replaceChildren(...slots);
+
+    if (game.dockCapacity < DOCK_MAX_SLOTS) {
+      const addSlot = document.createElement("button");
+      addSlot.type = "button";
+      addSlot.className = "knit-dock-slot locked";
+      addSlot.textContent = "+1";
+      addSlot.title = "슬롯 추가 (+1)";
+      addSlot.disabled = (game.boosters.slot || 0) <= 0;
+      addSlot.addEventListener("click", () => {
+        if (useKnitBooster(game, "slot").ok) {
+          window.cafeAudioPlay?.("pop");
+          statusEl.textContent = "상단 실타래 도크가 1칸 넓어졌어요!";
+          renderAll();
+        }
+      });
+      slots.push(addSlot);
+    }
+    dockEl.replaceChildren(...slots);
+  }
+
+  function renderTray() {
+    const frag = [];
+    for (let r = 0; r < TRAY_ROWS; r++) {
+      for (let c = 0; c < TRAY_COLS; c++) {
+        const cell = game.tray[r][c];
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "knit-cell";
+
+        if (!cell) {
+          btn.disabled = true;
+          btn.setAttribute("aria-hidden", "true");
+        } else if (cell.type === "dispenser") {
+          btn.classList.add("dispenser");
+          btn.disabled = true;
+          btn.textContent = `${cell.queue.length}`;
+          btn.setAttribute("aria-label", `남은 실패 배출구 ${cell.queue.length}개`);
+        } else {
+          const pal = YARN_PALETTE[cell.color];
+          const reach = isCellReachable(game, r, c);
+          const canGlove = game.armedBooster === "glove";
+          btn.classList.add("spool", reach || canGlove ? "reachable" : "blocked");
+          if (cell.mystery) btn.classList.add("mystery");
+          if (cell.ice > 0) btn.classList.add("frozen");
+          if (cell.pairId) btn.classList.add("paired");
+          btn.style.background = cell.mystery ? "#6b6375" : pal.fill;
+          btn.style.color = !cell.mystery && (cell.color === "w" || cell.color === "y" || cell.color === "l")
+            ? "#261c29"
+            : "#fff9f2";
+          btn.dataset.hint = String(Boolean(hintCell && hintCell.r === r && hintCell.c === c));
+
+          if (cell.ice > 0) {
+            btn.textContent = `❄${cell.ice}`;
+          } else if (cell.mystery) {
+            btn.textContent = "?";
+          } else {
+            btn.textContent = String(cell.remaining);
+          }
+
+          btn.setAttribute(
+            "aria-label",
+            `${cell.mystery ? "미스터리" : pal.name} 실타래 (${cell.remaining}코)${reach ? ", 이동 가능" : ", 막혀 있음"}`
+          );
+
+          btn.addEventListener("click", () => {
+            hintCell = null;
+            if (game.armedBooster === "glove") {
+              const gRes = useKnitBooster(game, "glove", { r, c });
+              if (gRes.ok) {
+                window.cafeAudioPlay?.("pop");
+                statusEl.textContent = "만능 손으로 막혀 있던 실타래를 바로 꺼냈어요!";
+                renderAll();
+              } else {
+                statusEl.textContent = "위쪽 도크에 빈칸이 부족해요!";
+              }
+              return;
+            }
+
+            const res = pickKnitCell(game, r, c);
+            if (!res.ok) {
+              window.cafeAudioPlay?.("tick");
+              if (res.reason === "frozen") statusEl.textContent = "얼음 실타래예요! 주변 실을 빼서 얼음을 녹이세요.";
+              else if (res.reason === "dock_full") statusEl.textContent = "위쪽 실타래 도크가 꽉 찼어요! 가위나 +1 슬롯을 써보세요.";
+              else statusEl.textContent = "위쪽 출구 행까지 빈 칸 길이 열려 있어야 꺼낼 수 있어요!";
+              renderAll();
+              return;
+            }
+            window.cafeAudioPlay?.("pop");
+            renderAll();
+          });
+        }
+        frag.push(btn);
+      }
+    }
+    trayEl.replaceChildren(...frag);
+  }
+
+  function renderAll() {
+    const doneRatio = game.totalStitches
+      ? Math.round(((game.totalStitches - game.remainingStitches) / game.totalStitches) * 100)
+      : 100;
+    spoolsEl.textContent = `${game.completedSpools} / ${game.totalSpools}`;
+    scoreEl.textContent = game.score.toLocaleString();
+    progressFillEl.style.width = `${doneRatio}%`;
+    selectEl.value = String(game.stage);
+    undoBtn.disabled = !game.history.length || wonHandled;
+
+    slotCountEl.textContent = String(game.boosters.slot);
+    gloveCountEl.textContent = String(game.boosters.glove);
+    scissorsCountEl.textContent = String(game.boosters.scissors);
+    slotBoostBtn.disabled = game.boosters.slot <= 0 || game.dockCapacity >= DOCK_MAX_SLOTS;
+    gloveBoostBtn.disabled = game.boosters.glove <= 0;
+    scissorsBoostBtn.disabled = game.boosters.scissors <= 0 || game.dock.every((s) => !s);
+    gloveBoostBtn.setAttribute("aria-pressed", String(game.armedBooster === "glove"));
+    scissorsBoostBtn.setAttribute("aria-pressed", String(game.armedBooster === "scissors"));
+
+    drawLoom();
+    renderDock();
+    renderTray();
 
     if (isKnitWon(game) && !wonHandled) {
       wonHandled = true;
       window.cafeAudioPlay?.("chime");
       window.recordCafeStamp?.("game");
-      const pts = game.score + currentStage * 80;
-      window.cafeEarnPoints?.(40, `뜨개 실풀기 ${currentStage}단계 완성`);
-      submitArcadeScore("knit", pts, { mode: `stage-${currentStage}`, metric: `${game.moves}수 클리어` });
-      statusEl.textContent = `🎉 ${currentStage}단계 실타래 정리 완료! 다음 단계에 도전해 보세요!`;
-    } else if (isKnitStuck(game)) {
-      statusEl.textContent = "앗! 대기 실칸이 가득 차서 풀 수 있는 색실이 없어요. [되돌리기]를 눌러보세요.";
+      statusEl.textContent = `🎉 ${game.stage}단계 「${game.patternName}」 완성! (+${game.score}점)`;
+      submitArcadeScore("knit", game.score, { mode: `stage${game.stage}`, metric: `${game.stage}탄 ${doneRatio}%` });
+    } else if (!wonHandled && isKnitStuck(game)) {
+      statusEl.textContent = "⚠️ 도크가 막혔어요! 되돌리기, +1 슬롯 또는 가위 도우미를 사용해 보세요.";
+    }
+  }
+
+  function tickLoop(now) {
+    if (!dialog.open || document.hidden) {
+      rafId = 0;
+      return;
+    }
+    if (!wonHandled && now - lastPullAt >= 75) {
+      lastPullAt = now;
+      const pulled = stepKnitUnravel(game, 1);
+      if (pulled.length) {
+        window.cafeAudioPlay?.("tick");
+        renderAll();
+      } else if (game.activeThreads?.length) {
+        game.activeThreads = [];
+        drawLoom();
+      }
+    }
+    rafId = requestAnimationFrame(tickLoop);
+  }
+
+  function startLoop() {
+    if (!rafId && dialog.open && !document.hidden) {
+      rafId = requestAnimationFrame(tickLoop);
     }
   }
 
   function loadStage(stage) {
     currentStage = stage;
-    selectEl.value = String(stage);
     game = createKnitStage(stage);
-    hintId = null;
+    hintCell = null;
     wonHandled = false;
-    window.cafeWorld?.setActivity("game:knit");
-    statusEl.textContent = "위에 다른 실이 덮여있지 않은 색실을 눌러 실타래를 완성하세요.";
-    render();
+    statusEl.textContent = `🧶 ${game.patternName} — 위쪽 출구와 이어진 실패를 눌러 실을 풀어보세요!`;
+    renderAll();
+    startLoop();
   }
 
-  selectEl.addEventListener("change", () => loadStage(Number(selectEl.value)));
+  selectEl.addEventListener("change", () => loadStage(Number(selectEl.value) || 1));
   resetBtn.addEventListener("click", () => loadStage(currentStage));
   undoBtn.addEventListener("click", () => {
     if (undoKnit(game)) {
-      hintId = null;
-      window.cafeAudioPlay?.("tick");
-      statusEl.textContent = "직전 수를 되돌렸어요.";
-      render();
+      hintCell = null;
+      statusEl.textContent = "한 수 되돌렸어요.";
+      renderAll();
     }
   });
   hintBtn.addEventListener("click", () => {
-    hintId = findKnitHint(game);
-    statusEl.textContent = hintId ? "💡 반짝이는 색실을 먼저 풀어보세요!" : "풀 수 있는 실이 남아있지 않아요.";
-    render();
+    hintCell = findKnitHint(game);
+    if (hintCell) {
+      statusEl.textContent = "💡 반짝이는 실패를 누르면 상단 실밥이 바로 풀려요!";
+      renderTray();
+    } else {
+      statusEl.textContent = "지금 당장 꺼낼 수 있는 실패가 없어요. 도우미나 되돌리기를 써보세요.";
+    }
   });
 
-  dialog.addEventListener("close", () => window.cafeWorld?.setActivity(""));
+  slotBoostBtn.addEventListener("click", () => {
+    if (useKnitBooster(game, "slot").ok) {
+      window.cafeAudioPlay?.("pop");
+      statusEl.textContent = "위쪽 도크가 1칸 넓어졌어요!";
+      renderAll();
+    }
+  });
+  gloveBoostBtn.addEventListener("click", () => {
+    game.armedBooster = game.armedBooster === "glove" ? null : "glove";
+    statusEl.textContent = game.armedBooster === "glove"
+      ? "🧤 아래 그리드에서 원하는 실패 1개를 바로 눌러 꺼내세요!"
+      : "만능 손 선택을 취소했어요.";
+    renderAll();
+  });
+  scissorsBoostBtn.addEventListener("click", () => {
+    if (game.armedBooster === "scissors") {
+      game.armedBooster = null;
+      statusEl.textContent = "가위 선택을 취소했어요.";
+      renderAll();
+      return;
+    }
+    const firstActive = game.dock.findIndex((s, i) => i < game.dockCapacity && s);
+    if (firstActive >= 0 && useKnitBooster(game, "scissors", { dockIndex: firstActive }).ok) {
+      window.cafeAudioPlay?.("pop");
+      statusEl.textContent = "✂️ 도크의 실타래 1개를 시원하게 잘라 정리했어요!";
+      renderAll();
+    }
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    } else if (!document.hidden && dialog.open) {
+      startLoop();
+    }
+  });
+
+  const observer = new MutationObserver(() => {
+    if (dialog.open) {
+      window.cafeWorld?.setActivity("game:knit");
+      renderAll();
+      startLoop();
+    } else {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+      window.cafeWorld?.setActivity("");
+    }
+  });
+  observer.observe(dialog, { attributes: true, attributeFilter: ["open"] });
+
+  dialog.addEventListener("close", () => {
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    }
+    window.cafeWorld?.setActivity("");
+  });
+
   loadStage(1);
 }

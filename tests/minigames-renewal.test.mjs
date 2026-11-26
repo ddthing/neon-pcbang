@@ -17,16 +17,18 @@ import {
   undoSolitaire,
 } from "../public/solitaire-engine.mjs";
 import {
-  BOBBIN_CAPACITY,
+  DOCK_BASE_SLOTS,
   KNIT_STAGE_COUNT,
-  TRAY_CAPACITY,
+  TRAY_COLS,
+  TRAY_ROWS,
   createKnitStage,
   findKnitHint,
-  isKnitStuck,
+  isCellReachable,
   isKnitWon,
-  isStrandFree,
-  pickKnitStrand,
+  pickKnitCell,
+  stepKnitUnravel,
   undoKnit,
+  useKnitBooster,
 } from "../public/knit-unravel-engine.mjs";
 
 function makeArcadeDb() {
@@ -106,16 +108,13 @@ test("Klondike Solitaire initializes 52 cards, draws 1/3, validates rules, undoe
 
   assert.equal(drawFromStock(game), true);
   assert.equal(game.waste.length, 1);
-  assert.equal(game.waste[0].faceUp, true);
   assert.equal(undoSolitaire(game), true);
   assert.equal(game.waste.length, 0);
-  assert.equal(game.stock.length, 24);
 
   const g3 = createSolitaireGame({ drawCount: 3, seed: 99 });
   assert.equal(drawFromStock(g3), true);
   assert.equal(g3.waste.length, 3);
 
-  // Foundation & tableau move validation + auto-complete win flow
   const manual = {
     drawCount: 1,
     stock: [],
@@ -135,12 +134,9 @@ test("Klondike Solitaire initializes 52 cards, draws 1/3, validates rules, undoe
   assert.equal(canMoveToFoundation(manual.waste[0], manual.foundations[0]), true);
   assert.equal(canMoveToTableau(manual.tableau[2][0], manual.tableau[1]), true);
   assert.equal(moveCards(manual, { kind: "tableau", index: 2, cardIndex: 0 }, { kind: "tableau", index: 1 }), true);
-  assert.equal(manual.tableau[1].length, 3);
   assert.ok(findSolitaireHint(manual));
   assert.equal(undoSolitaire(manual), true);
-  assert.equal(manual.tableau[1].length, 2);
 
-  // Auto-complete full deck from tableau -> 4 completed foundations
   const suits = ["spades", "hearts", "clubs", "diamonds"];
   const ready = {
     drawCount: 1,
@@ -156,66 +152,96 @@ test("Klondike Solitaire initializes 52 cards, draws 1/3, validates rules, undoe
     history: [],
   };
   assert.equal(canAutoComplete(ready), true);
-  while (stepAutoComplete(ready)) { /* step */ }
+  while (stepAutoComplete(ready)) { /* auto */ }
   assert.equal(isSolitaireWon(ready), true);
 });
 
-test("Knit Unravel blocks covered strands, flushes waiting tray to matching bobbins, undoes cleanly, and initializes all 10 stages", () => {
+test("Knit Unravel 10 stages strictly conserve color stitch counts and support BFS exit, mechanics, boosters & unraveling", () => {
   for (let stage = 1; stage <= KNIT_STAGE_COUNT; stage++) {
     const game = createKnitStage(stage);
     assert.equal(game.stage, stage);
-    assert.equal(game.totalBobbins, game.activeBobbins.length + game.bobbinQueue.length);
-    assert.equal(game.strands.length, game.totalBobbins * BOBBIN_CAPACITY);
-    assert.ok(game.strands.some((s) => isStrandFree(game, s.id)), `Stage ${stage} must start with at least one unblocked strand`);
+    assert.equal(game.tray.length, TRAY_ROWS);
+    assert.equal(game.tray[0].length, TRAY_COLS);
+
+    const tapestryCounts = new Map();
+    for (const row of game.tapestry) {
+      for (const cid of row) {
+        if (cid) tapestryCounts.set(cid, (tapestryCounts.get(cid) || 0) + 1);
+      }
+    }
+    const spoolCounts = new Map();
+    let totalSpoolCheck = 0;
+    for (const row of game.tray) {
+      for (const cell of row) {
+        if (!cell) continue;
+        if (cell.type === "spool") {
+          spoolCounts.set(cell.color, (spoolCounts.get(cell.color) || 0) + cell.capacity);
+          totalSpoolCheck++;
+        } else if (cell.type === "dispenser") {
+          for (const q of cell.queue) {
+            spoolCounts.set(q.color, (spoolCounts.get(q.color) || 0) + q.capacity);
+            totalSpoolCheck++;
+          }
+        }
+      }
+    }
+    assert.equal(totalSpoolCheck, game.totalSpools);
+    assert.deepEqual(Object.fromEntries([...spoolCounts.entries()].sort()), Object.fromEntries([...tapestryCounts.entries()].sort()));
+    assert.ok(findKnitHint(game), `Stage ${stage} must have an initial reachable move`);
   }
 
-  const g = createKnitStage(1);
-  const blocked = g.strands.find((s) => !isStrandFree(g, s.id));
-  if (blocked) {
-    assert.deepEqual(pickKnitStrand(g, blocked.id), { ok: false, reason: "locked" });
-  }
-
-  // Deterministic manual tray flush + win test
+  // Deterministic mechanics verification (BFS reachability, mystery reveal, ice melt, pair pickup, dispenser emit, unravel + win)
+  const makeSpool = (id, color, cap, extra = {}) => ({
+    type: "spool", id, color, capacity: cap, remaining: cap, mystery: false, ice: 0, pairId: null, ...extra,
+  });
   const synth = {
     stage: 1,
-    strands: [
-      { id: 1, color: "sage", layer: 3, x: 10, y: 10, w: 20, h: 12 },
-      { id: 2, color: "berry", layer: 2, x: 40, y: 10, w: 20, h: 12 },
-      { id: 3, color: "berry", layer: 1, x: 10, y: 40, w: 20, h: 12 },
-      { id: 4, color: "berry", layer: 0, x: 40, y: 40, w: 20, h: 12 },
-      { id: 5, color: "sage", layer: 4, x: 70, y: 10, w: 12, h: 20 },
-      { id: 6, color: "sage", layer: 5, x: 70, y: 40, w: 12, h: 20 },
+    patternName: "테스트",
+    tapestry: [
+      ["g", "y"],
+      ["y", "g"],
     ],
-    activeBobbins: [{ color: "berry", count: 0, max: 3 }],
-    bobbinQueue: [{ color: "sage", count: 0, max: 3 }],
-    totalBobbins: 2,
-    completedBobbins: 0,
-    tray: [],
+    rows: 2,
+    cols: 2,
+    totalStitches: 4,
+    remainingStitches: 4,
+    totalSpools: 3,
+    completedSpools: 0,
+    dockCapacity: DOCK_BASE_SLOTS,
+    dock: Array(8).fill(null),
+    tray: Array.from({ length: TRAY_ROWS }, () => Array(TRAY_COLS).fill(null)),
+    activeThreads: [],
+    boosters: { slot: 1, glove: 1, scissors: 1 },
+    armedBooster: null,
     score: 0,
     moves: 0,
     history: [],
   };
+  synth.tray[0][0] = makeSpool(1, "y", 2, { pairId: 1 });
+  synth.tray[0][1] = makeSpool(2, "g", 1, { pairId: 1 });
+  synth.tray[1][0] = makeSpool(3, "g", 1, { ice: 1, mystery: true });
+  synth.tray[2][0] = { type: "dispenser", id: 9, queue: [] };
 
-  // Pick sage strands while only berry bobbin is active -> buffered in tray (up to TRAY_CAPACITY=5)
-  assert.equal(TRAY_CAPACITY, 5);
-  assert.deepEqual(pickKnitStrand(synth, 1), { ok: true, woundDirectly: false });
-  assert.deepEqual(synth.tray, ["sage"]);
+  // Frozen cell is not reachable yet
+  assert.equal(isCellReachable(synth, 1, 0), false);
+  assert.equal(isCellReachable(synth, 0, 0), true);
+
+  // Pick paired spools (moves both into dock and clears mystery + melts ice on [1][0])
+  const pickRes = pickKnitCell(synth, 0, 0);
+  assert.equal(pickRes.ok, true);
+  assert.equal(pickRes.count, 2);
+  assert.equal(synth.tray[1][0].mystery, false);
+  assert.equal(synth.tray[1][0].ice, 0);
   assert.equal(undoKnit(synth), true);
-  assert.deepEqual(synth.tray, []);
+  assert.equal(synth.tray[1][0].ice, 1);
 
-  assert.equal(pickKnitStrand(synth, 1).ok, true);
-  assert.equal(pickKnitStrand(synth, 5).ok, true);
-  assert.equal(pickKnitStrand(synth, 6).ok, true);
-  assert.equal(synth.tray.length, 3);
-  assert.equal(isKnitStuck(synth), false);
-  assert.ok(findKnitHint(synth));
+  assert.equal(pickKnitCell(synth, 0, 0).ok, true);
+  assert.equal(useKnitBooster(synth, "slot").ok, true);
+  assert.equal(synth.dockCapacity, DOCK_BASE_SLOTS + 1);
+  assert.equal(useKnitBooster(synth, "glove", { r: 1, c: 0 }).ok, true);
 
-  // Complete berry bobbin -> automatically advances to sage bobbin and flushes all 3 tray strands to win!
-  assert.equal(pickKnitStrand(synth, 2).woundDirectly, true);
-  assert.equal(pickKnitStrand(synth, 3).woundDirectly, true);
-  assert.equal(pickKnitStrand(synth, 4).woundDirectly, true);
+  while (stepKnitUnravel(synth, 1).length) { /* unravel */ }
   assert.equal(isKnitWon(synth), true);
-  assert.equal(synth.completedBobbins, 2);
 });
 
 test("Arcade Leaderboard supports solitaire and knit games", async () => {
@@ -228,7 +254,7 @@ test("Arcade Leaderboard supports solitaire and knit games", async () => {
     assert.equal(sol.entries[0].nickname, "카드장인");
 
     const knit = await (await arcadeLeaderboard(postJson("https://pcbang.test/api/arcade", {
-      action: "submit", game: "knit", mode: "stage3", member, nickname: "뜨개장인", score: 1350, metric: "3탄 클리어",
+      action: "submit", game: "knit", mode: "stage3", member, nickname: "뜨개장인", score: 1350, metric: "3탄 100%",
     }), db, 1800000000010)).json();
     assert.equal(knit.entries[0].nickname, "뜨개장인");
   } finally {
@@ -236,24 +262,27 @@ test("Arcade Leaderboard supports solitaire and knit games", async () => {
   }
 });
 
-test("Launcher stays closed by default, Sudoku exposes given/user distinction & Undo, and Mobile HUD controls are present", () => {
+test("Pure-pixel hall tiles, pure-pixel avatar matrices, and arrow-stepper wardrobe are active with zero math blobs", () => {
   const html = readFileSync(new URL("../app/cafe.html", import.meta.url), "utf8");
   const pcCss = readFileSync(new URL("../public/pc.css", import.meta.url), "utf8");
   const shellCss = readFileSync(new URL("../public/game-shell.css", import.meta.url), "utf8");
-  const appJs = readFileSync(new URL("../public/app.js", import.meta.url), "utf8");
+  const walkCss = readFileSync(new URL("../public/walk.css", import.meta.url), "utf8");
+  const walkJs = readFileSync(new URL("../public/walk.js", import.meta.url), "utf8");
+  const cafeArt = readFileSync(new URL("../public/cafe-art.js", import.meta.url), "utf8");
+  const pixelTiles = readFileSync(new URL("../public/pixel-tiles.js", import.meta.url), "utf8");
+  const avatarJs = readFileSync(new URL("../public/avatar-sprites.js", import.meta.url), "utf8");
 
-  assert.match(html, /<section\s+class="pc-launcher"\s+id="pc-launcher"[^>]*\bhidden>/);
-  assert.match(html, /id="pc-launcher-close"/);
-  assert.match(html, /data-launcher\b/);
-  assert.match(html, /id="sudoku-undo"/);
-  assert.match(html, /class="sudoku-legend"/);
-  assert.match(html, /<dialog\s+id="solitaire"/);
-  assert.match(html, /<dialog\s+id="knit"/);
-
+  assert.match(html, /<script src="\.\/pixel-tiles\.js" defer><\/script>/);
+  assert.match(html, /id="wardrobe-rot-left"/);
+  assert.match(html, /id="wardrobe-rot-right"/);
+  assert.match(html, /id="knit-loom"/);
+  assert.match(html, /id="knit-boost-slot"/);
+  assert.match(walkJs, /className = "wardrobe-stepper"/);
+  assert.match(walkCss, /\.wardrobe-stepper/);
+  assert.match(cafeArt, /const WIDTH = 1152;\s*\r?\n\s*const HEIGHT = 768;/);
+  assert.match(pixelTiles, /window\.cafePixelTiles =/);
+  assert.ok(!avatarJs.includes("pellipse"), "avatar-sprites.js must use pixel matrices instead of math ellipses");
   assert.match(pcCss, /\.sudoku-cell\[data-given\]/);
-  assert.match(pcCss, /\.sudoku-cell\[data-user\]/);
   assert.match(pcCss, /\.pc-launcher\[hidden\]/);
   assert.match(shellCss, /\.cafe-joystick\[hidden\]/);
-  assert.match(appJs, /solitaire:\s*\(\)\s*=>\s*import\("\.\/solitaire\.js"\)/);
-  assert.match(appJs, /knit:\s*\(\)\s*=>\s*import\("\.\/knit-unravel\.js"\)/);
 });

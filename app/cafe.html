@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="./cafe-delivery.css">
   <link rel="stylesheet" href="./cafe-art.css">
   <link rel="stylesheet" href="./cafe-interface.css">
+  <script src="./pixel-tiles.js" defer></script>
   <script src="./cafe-art.js" defer></script>
   <script src="./boot.js" defer></script>
   <script src="./audio-engine.js" defer></script>
@@ -239,10 +240,17 @@
       <h2 id="wardrobe-title">내 캐릭터 옷장</h2>
       <p class="panel-copy">헤어, 후드·과잠 코디, 게이밍 헤드셋과 안경을 자유롭게 조합해 보세요.</p>
       <div class="wardrobe-stage">
-        <canvas id="wardrobe-preview" width="48" height="48" aria-label="캐릭터 미리보기"></canvas>
+        <div class="wardrobe-preview-box">
+          <canvas id="wardrobe-preview" width="96" height="96" aria-label="캐릭터 미리보기"></canvas>
+          <div class="wardrobe-rotator" aria-label="캐릭터 방향 회전">
+            <button class="walk-button wardrobe-arrow" type="button" id="wardrobe-rot-left" aria-label="왼쪽으로 회전">◀</button>
+            <span class="mono" id="wardrobe-dir-label">정면</span>
+            <button class="walk-button wardrobe-arrow" type="button" id="wardrobe-rot-right" aria-label="오른쪽으로 회전">▶</button>
+          </div>
+        </div>
         <div>
-          <strong class="mono">4방향 정통 픽셀 아바타</strong>
-          <p class="panel-copy">매장 걷기, 착석 타이핑, 흡연·밀크커피 포즈에 모두 반영돼요.</p>
+          <strong class="mono">순수 도트 매트릭스 아바타</strong>
+          <p class="panel-copy">좌우 화살표로 부위별 스타일을 넘기며 실시간으로 미리보세요.</p>
           <div class="wardrobe-poses">
             <button class="walk-button" type="button" data-pose-preview="idle">기본</button>
             <button class="walk-button" type="button" data-pose-preview="walk">걷기</button>
@@ -702,23 +710,30 @@
   <!-- GAME 11: KNIT UNRAVEL -->
   <dialog id="knit" aria-labelledby="knit-title">
     <div class="dialog-inner">
-      <div class="dialog-head"><span class="panel-index mono"><span>11</span> / KNIT PUZZLE</span><button class="close" type="button" data-close aria-label="실풀기 닫기">×</button></div>
-      <h2 id="knit-title">뜨개 실풀기 (Knit Unravel)</h2>
-      <div class="game-hud mono">
-        <span>스테이지 <strong id="knit-stage">1 / 10</strong></span>
-        <span>실타래 <strong id="knit-spools">0 / 0</strong></span>
-        <span>점수 <strong id="knit-score">0</strong></span>
+      <div class="dialog-head"><span class="panel-index mono"><span>11</span> / KNIT UNRAVEL</span><button class="close" type="button" data-close aria-label="실풀기 닫기">×</button></div>
+      <div class="knit-top-bar">
+        <div class="knit-pill mono">🧶 <strong id="knit-spools">0 / 0</strong></div>
+        <div class="knit-progress-wrap" aria-label="전체 진행률">
+          <div class="knit-progress-bar" id="knit-progress-fill"></div>
+        </div>
+        <div class="knit-pill mono">★ <strong id="knit-score">0</strong></div>
       </div>
       <div class="knit-toolbar">
-        <label>단계 <select id="knit-select"></select></label>
+        <h2 id="knit-title">뜨개 실풀기</h2>
+        <select id="knit-select" aria-label="스테이지 선택"></select>
         <button class="walk-button" id="knit-undo" type="button" disabled>되돌리기</button>
         <button class="walk-button" id="knit-hint" type="button">힌트</button>
-        <button class="walk-button" id="knit-reset" type="button">다시하기</button>
+        <button class="walk-button" id="knit-reset" type="button">새판</button>
       </div>
-      <div class="knit-bobbins" id="knit-bobbins" aria-label="목표 실타래"></div>
-      <div class="knit-board" id="knit-board" aria-label="겹친 뜨개실 보드"></div>
-      <div class="knit-tray" id="knit-tray" aria-label="대기 실칸"></div>
-      <p id="knit-status" class="game-status" role="status">위에 다른 실이 덮여있지 않은 색실을 눌러 실타래를 완성하세요.</p>
+      <canvas class="knit-loom" id="knit-loom" width="320" height="236" aria-label="픽셀 뜨개질 액자와 실 감김"></canvas>
+      <div class="knit-dock" id="knit-dock" aria-label="활성 실타래 도크"></div>
+      <div class="knit-tray-grid" id="knit-tray" aria-label="7x7 대기 실타래 그리드"></div>
+      <div class="knit-boosters" aria-label="실풀기 도우미">
+        <button class="walk-button knit-booster" id="knit-boost-slot" type="button">+1 슬롯 <span class="mono" id="knit-count-slot">1</span></button>
+        <button class="walk-button knit-booster" id="knit-boost-glove" type="button">만능 손 <span class="mono" id="knit-count-glove">2</span></button>
+        <button class="walk-button knit-booster" id="knit-boost-scissors" type="button">가위 <span class="mono" id="knit-count-scissors">2</span></button>
+      </div>
+      <p id="knit-status" class="game-status" role="status">맨 위 통로와 이어진 실패를 눌러 상단 뜨개 그림을 풀어내세요.</p>
     </div>
   </dialog>
 

@@ -767,65 +767,114 @@ function initWardrobe() {
   if (!modal || !openBtn) return;
   const preview = document.getElementById("wardrobe-preview");
   const controlsRoot = document.getElementById("wardrobe-controls");
+  const dirLabel = document.getElementById("wardrobe-dir-label");
+  const rotLeft = document.getElementById("wardrobe-rot-left");
+  const rotRight = document.getElementById("wardrobe-rot-right");
+  const dirs = [
+    ["down", "정면"],
+    ["right", "오른쪽"],
+    ["up", "뒷모습"],
+    ["left", "왼쪽"],
+  ];
   let draft = { ...avatarConfig };
   let previewAction = "idle";
+  let previewDirIdx = 0;
   let previewTick = 0;
   let previewTimer = 0;
 
   const categories = [
     ["skin", "캐릭터", AVATAR_WARDROBE.skins],
-    ["hair", "포인트 스타일", AVATAR_WARDROBE.hairs],
-    ["hairColor", "포인트 색", AVATAR_WARDROBE.hairColors],
+    ["hair", "헤어 스타일", AVATAR_WARDROBE.hairs],
+    ["hairColor", "헤어 색상", AVATAR_WARDROBE.hairColors],
     ["outfit", "의상 코디", AVATAR_WARDROBE.outfits],
     ["headset", "모자·헤드셋", AVATAR_WARDROBE.headsets],
     ["accessory", "안경·목도리", AVATAR_WARDROBE.accessories],
   ];
 
+  function currentDir() {
+    return dirs[previewDirIdx]?.[0] || "down";
+  }
+
   function repaintPreview() {
-    renderAvatarPreview(preview, encodeAvatarCode(draft), previewAction, previewTick % 4);
-    for (const [key] of categories) {
+    renderAvatarPreview(preview, encodeAvatarCode(draft), previewAction, previewTick % 4, currentDir());
+    if (dirLabel) dirLabel.textContent = dirs[previewDirIdx]?.[1] || "정면";
+    for (const [key, , list] of categories) {
       const row = controlsRoot.querySelector(`[data-part="${key}"]`);
       if (!row) continue;
-      for (const btn of row.querySelectorAll("button")) {
-        btn.setAttribute("aria-pressed", String(Number(btn.dataset.val) === draft[key]));
+      const idx = ((draft[key] ?? 0) % list.length + list.length) % list.length;
+      const item = list[idx];
+      const dot = row.querySelector(".wardrobe-dot");
+      const nameEl = row.querySelector(".wardrobe-name");
+      const countEl = row.querySelector(".wardrobe-idx");
+      const swatch = item.base || item.body || item.color;
+      if (dot) {
+        dot.style.background = swatch || "transparent";
+        dot.hidden = !swatch;
       }
+      if (nameEl) nameEl.textContent = item.name;
+      if (countEl) countEl.textContent = `${idx + 1}/${list.length}`;
     }
   }
 
   controlsRoot.replaceChildren(...categories.map(([key, title, list]) => {
     const group = document.createElement("div");
-    group.className = "wardrobe-group";
+    group.className = "wardrobe-stepper";
     group.dataset.part = key;
+
     const label = document.createElement("strong");
     label.textContent = title;
-    const chips = document.createElement("div");
-    chips.className = "wardrobe-chips";
-    for (const item of list) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "walk-button wardrobe-chip";
-      btn.dataset.val = String(item.id);
-      const swatch = item.base || item.body || item.color;
-      if (swatch) {
-        const dot = document.createElement("i");
-        dot.style.background = swatch;
-        btn.append(dot);
-      }
-      btn.append(document.createTextNode(item.name));
-      btn.addEventListener("click", () => {
-        draft[key] = item.id;
-        window.cafeAudioPlay?.("tick");
-        repaintPreview();
-      });
-      chips.append(btn);
-    }
-    group.append(label, chips);
+
+    const prevBtn = document.createElement("button");
+    prevBtn.type = "button";
+    prevBtn.className = "walk-button wardrobe-arrow";
+    prevBtn.textContent = "◀";
+    prevBtn.setAttribute("aria-label", `${title} 이전 스타일`);
+
+    const val = document.createElement("div");
+    val.className = "wardrobe-val";
+    const dot = document.createElement("i");
+    dot.className = "wardrobe-dot";
+    const nameEl = document.createElement("span");
+    nameEl.className = "wardrobe-name";
+    const countEl = document.createElement("small");
+    countEl.className = "wardrobe-idx mono";
+    val.append(dot, nameEl, countEl);
+
+    const nextBtn = document.createElement("button");
+    nextBtn.type = "button";
+    nextBtn.className = "walk-button wardrobe-arrow";
+    nextBtn.textContent = "▶";
+    nextBtn.setAttribute("aria-label", `${title} 다음 스타일`);
+
+    const step = (delta) => {
+      draft[key] = ((draft[key] ?? 0) + delta + list.length) % list.length;
+      window.cafeAudioPlay?.("tick");
+      repaintPreview();
+    };
+    prevBtn.addEventListener("click", () => step(-1));
+    nextBtn.addEventListener("click", () => step(1));
+
+    group.append(label, prevBtn, val, nextBtn);
     return group;
   }));
+
+  rotLeft?.addEventListener("click", () => {
+    previewDirIdx = (previewDirIdx - 1 + dirs.length) % dirs.length;
+    window.cafeAudioPlay?.("tick");
+    repaintPreview();
+  });
+  rotRight?.addEventListener("click", () => {
+    previewDirIdx = (previewDirIdx + 1) % dirs.length;
+    window.cafeAudioPlay?.("tick");
+    repaintPreview();
+  });
 
   modal.querySelectorAll("[data-pose-preview]").forEach((btn) => {
     btn.addEventListener("click", () => {
       previewAction = btn.dataset.posePreview;
+      modal.querySelectorAll("[data-pose-preview]").forEach((el) => {
+        el.setAttribute("aria-pressed", String(el === btn));
+      });
       repaintPreview();
     });
   });
@@ -875,7 +924,7 @@ function initWardrobe() {
     previewTimer = setInterval(() => {
       if (!modal.open) { clearInterval(previewTimer); return; }
       previewTick++;
-      renderAvatarPreview(preview, encodeAvatarCode(draft), previewAction, previewTick % 4);
+      renderAvatarPreview(preview, encodeAvatarCode(draft), previewAction, previewTick % 4, currentDir());
     }, 260);
   };
   openBtn.addEventListener("click", () => openModal(openBtn, false));

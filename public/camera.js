@@ -1,5 +1,5 @@
-// Each room in the atlas and each standalone painting uses this pixel grid.
-const worldPixels = { width: 768, height: 512 };
+// Each room and canvas world uses the high-density 1152x768 pure-pixel grid.
+const worldPixels = { width: 1152, height: 768 };
 
 export function createCafeCamera(scene) {
   const viewport = scene.parentElement;
@@ -20,34 +20,39 @@ export function createCafeCamera(scene) {
     }
     if (!bounds) return;
     const { width, height, worldWidth, worldHeight, density } = bounds;
-    const clamp = (target, overscan) => overscan < 0 ? -overscan / 2 : Math.min(0, Math.max(-overscan, target));
-    const x = clamp(width * .5 - worldWidth * (point?.x ?? 50) / 100, worldWidth - width);
-    const y = clamp(height * .53 - worldHeight * (point?.y ?? 50) / 100, worldHeight - height);
+    const clamp = (target, overscan) => (overscan < 0 ? -overscan / 2 : Math.min(0, Math.max(-overscan, target)));
+    const x = clamp(width * 0.5 - (worldWidth * (point?.x ?? 50)) / 100, worldWidth - width);
+    const y = clamp(height * 0.53 - (worldHeight * (point?.y ?? 50)) / 100, worldHeight - height);
     const nextX = Math.round(x * density) / density;
     const nextY = Math.round(y * density) / density;
     if (nextX !== cameraX) {
-      scene.style.setProperty("--camera-x", nextX + "px");
+      scene.style.setProperty("--camera-x", `${nextX}px`);
       cameraX = nextX;
     }
     if (nextY !== cameraY) {
-      scene.style.setProperty("--camera-y", nextY + "px");
+      scene.style.setProperty("--camera-y", `${nextY}px`);
       cameraY = nextY;
     }
   }
 
   function resize() {
-    const { clientWidth: width, clientHeight: height } = viewport;
+    const width = viewport.clientWidth || window.innerWidth;
+    const height = viewport.clientHeight || window.innerHeight;
     if (!width || !height) return;
-    const density = window.devicePixelRatio;
-    const scale = Math.max(1, Math.round(height * density / 360),
-      Math.ceil(height * density / worldPixels.height),
-      scene.hasAttribute("data-canvas-world") ? 0 : Math.ceil(width * density / worldPixels.width));
-    const worldWidth = worldPixels.width * scale / density;
-    const worldHeight = worldPixels.height * scale / density;
+    const density = window.devicePixelRatio || 1;
+    // Always fill at least the full viewport height cleanly on both mobile portrait and desktop FHD/4K
+    const coverH = Math.ceil((height * density) / worldPixels.height);
+    const coverW = Math.ceil((width * density) / worldPixels.width);
+    const cozyTarget = width < 700
+      ? Math.round((height * density) / 420)
+      : Math.round((height * density) / 540);
+    const scale = Math.max(1, coverH, scene.hasAttribute("data-canvas-world") ? coverH : coverW, cozyTarget);
+    const worldWidth = (worldPixels.width * scale) / density;
+    const worldHeight = (worldPixels.height * scale) / density;
     bounds = { width, height, worldWidth, worldHeight, density };
-    scene.style.setProperty("--camera-width", worldWidth + "px");
-    scene.style.setProperty("--camera-height", worldHeight + "px");
-    viewport.style.setProperty("--world-pixel", scale / density + "px");
+    scene.style.setProperty("--camera-width", `${worldWidth}px`);
+    scene.style.setProperty("--camera-height", `${worldHeight}px`);
+    viewport.style.setProperty("--world-pixel", `${scale / density}px`);
     follow(position, lastSeat);
   }
 
@@ -60,9 +65,11 @@ export function createCafeCamera(scene) {
       scene.focus({ preventScroll: true });
     } catch {
       scene.focus({ preventScroll: true });
+    } finally {
+      busy = false;
     }
-    finally { busy = false; }
   });
+
   document.addEventListener("fullscreenchange", () => {
     const native = Boolean(document.fullscreenElement);
     button.setAttribute("aria-pressed", String(native));
@@ -70,6 +77,7 @@ export function createCafeCamera(scene) {
     resize();
   });
   if (!document.fullscreenEnabled) button.hidden = true;
+
   function watchDensity() {
     window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
       .addEventListener("change", () => {
@@ -78,8 +86,10 @@ export function createCafeCamera(scene) {
       }, { once: true });
   }
   watchDensity();
+  window.addEventListener("resize", resize);
   new ResizeObserver(resize).observe(viewport);
   resize();
+  requestAnimationFrame(resize);
   pcButton.addEventListener("click", () => document.getElementById("open-monitor").click());
   return { follow };
 }
