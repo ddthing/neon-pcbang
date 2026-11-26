@@ -654,7 +654,10 @@ window.cafeEatOrder = async (orderId) => {
     document.querySelector(".u070")?.dispatchEvent(new CustomEvent("pcbang-notice", {
       detail: { message: "잘 먹었습니다! 빈 그릇 정리 보너스 +15 G 적립!", kind: "ok" },
     }));
-  } catch {}
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 window.cafeEarnPoints = async (amount = 25, reason = "미니게임 보너스") => {

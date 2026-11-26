@@ -37,6 +37,7 @@
   });
   const xPercent = (x) => x / WIDTH * 100;
   const yPercent = (y) => y / HEIGHT * 100;
+  const kitchenClerk = { x: xPercent(94), y: yPercent(381) };
   function rect(ctx, x, y, w, h, color) {
     ctx.fillStyle = color;
     ctx.fillRect(x, y, w, h);
@@ -84,16 +85,20 @@
       }
     }
   }
-  function plant(ctx, x, y, variant = 0) {
+  function plant(ctx, x, y, variant = 0, animated = false) {
     rect(ctx, x - 12, y - 3, 26, 5, "#503748");
     frame(ctx, x - 8, y - 14, 16, 13, variant ? violet : rust);
     rect(ctx, x - 6, y - 13, 4, 10, variant ? "#a88ea1" : peach);
     rect(ctx, x - 2, y - 32, 3, 21, green);
+    if (animated) foliage.push({ x, y });
+    else plantLeaves(ctx, x, y, 0);
+  }
+  function plantLeaves(ctx, x, y, sway) {
     for (const [dx, dy, w, h, tint] of [
       [-13, -27, 13, 7, green], [0, -34, 14, 8, mint], [-7, -40, 11, 10, mint],
       [0, -25, 12, 6, green], [-15, -36, 9, 6, "#788573"],
     ]) {
-      const left = x + dx;
+      const left = x + dx + (dy < -29 ? sway : 0);
       const top = y + dy;
       rect(ctx, left + 2, top, w - 4, h, "#394953");
       rect(ctx, left, top + 2, w, h - 4, "#394953");
@@ -105,6 +110,46 @@
   function windowFrame(ctx, x, y, w, h, night) {
     frame(ctx, x, y, w, h, night ? "#414b70" : "#a8adba");
     rect(ctx, x + 3, y + 3, w - 6, h - 7, night ? "#4f597d" : "#b8bbc5");
+    if (h > 60) {
+      const horizon = y + h - 12;
+      const backs = night ? ["#424f70", "#4a5272", "#555778"] : ["#8c9aab", "#a7a7b3", "#bab0b6"];
+      const fronts = night ? ["#3c4666", "#524763", "#48425a"] : ["#778ca4", "#a98793", "#9a8187"];
+      for (let index = 0; 19 + index * 31 < w - 23; index++) {
+        const left = x + 14 + index * 31;
+        const tower = 21 + (index * 37 % 49);
+        const top = horizon - tower;
+        rect(ctx, left, top, 26, tower, backs[index % 3]);
+        rect(ctx, left + 3, top - 2, 20, 3, backs[(index + 1) % 3]);
+        for (let pane = 9; pane < tower - 3; pane += 9) {
+          rect(ctx, left + 4, top + pane, 2, 3, night ? "#697393" : "#c4b3b7");
+          rect(ctx, left + 17, top + pane, 2, 3, night ? "#687590" : "#d0b8ad");
+        }
+      }
+      for (let index = 0; 8 + index * 47 < w - 31; index++) {
+        const left = x + 8 + index * 47;
+        const top = horizon - 20 - index * 13 % 25;
+        const fill = fronts[index % 3];
+        rect(ctx, left, top, 35, horizon - top, fill);
+        for (let tier = 0; tier < 7; tier++) {
+          rect(ctx, left + tier * 2, top - tier - 1, 35 - tier * 4, 1, night ? "#332c44" : "#765467");
+        }
+        rect(ctx, left + 2, top + 1, 31, 1, night ? "#71627b" : "#c0a39e");
+        rect(ctx, left + 23, top + 2, 10, horizon - top - 2, backs[index % 3]);
+        for (let pane = 6; pane < horizon - top - 5; pane += 12) {
+          rect(ctx, left + 5, top + pane, 4, 5, night ? gold : "#dde2e8");
+          rect(ctx, left + 15, top + pane, 4, 5, index % 2 ? "#939eb2" : paper);
+          rect(ctx, left + 26, top + pane, 4, 5, night ? "#7186a1" : "#bbc5d1");
+        }
+      }
+    }
+    if (h >= 35) {
+      const skyX = x + Math.floor(w * .62);
+      const skyY = y + (h > 60 ? 19 : 8);
+      const glow = night ? "#a3a5c4" : "#f0c5a0";
+      rect(ctx, skyX + 2, skyY, 6, 8, glow);
+      rect(ctx, skyX, skyY + 2, 10, 4, glow);
+      if (night) rect(ctx, skyX + 4, skyY, 6, 5, "#4f597d");
+    }
     for (let i = 0; i * 17 < w - 20; i++) {
       const px = x + 5 + i * 17;
       const top = y + h - 11 - (i * 7 % 14);
@@ -134,6 +179,9 @@
       ctx.globalAlpha = .14;
       rect(ctx, x - 10, y + 7, 21, 7, gold);
       rect(ctx, x - 14, y + 14, 29, 6, gold);
+      ctx.globalAlpha = .08;
+      rect(ctx, x - 19, y + 20, 39, 6, gold);
+      rect(ctx, x - 23, y + 26, 47, 4, gold);
       ctx.globalAlpha = 1;
     }
   }
@@ -192,6 +240,52 @@
     frame(ctx, x + 19, y + 4, 6, 6, milk);
     rect(ctx, x + 25, y + 5, 2, 2, milk);
   }
+  function fridge(ctx, x, y) {
+    frame(ctx, x, y, 23, 40, slate);
+    frame(ctx, x + 2, y + 2, 19, 30, glass);
+    rect(ctx, x + 3, y + 3, 17, 1, aqua);
+    for (const bottom of [12, 21, 30]) {
+      for (let n = 0; n < 4; n++) {
+        const left = x + 5 + n * 3;
+        const tint = [peach, mint, blue, gold][(n + bottom) % 4];
+        rect(ctx, left, y + bottom - 6, 1, 1, paper);
+        rect(ctx, left, y + bottom - 5, 2, 5, tint);
+        rect(ctx, left, y + bottom - 3, 2, 1, paper);
+      }
+      rect(ctx, x + 3, y + bottom, 17, 1, slate);
+    }
+    rect(ctx, x + 17, y + 14, 2, 9, paper);
+    rect(ctx, x + 5, y + 35, 8, 1, violet);
+  }
+  function cookingRange(ctx, x, y) {
+    frame(ctx, x, y, 27, 20, slate);
+    rect(ctx, x + 2, y + 2, 23, 12, glass);
+    for (const left of [x + 4, x + 15]) {
+      frame(ctx, left, y + 4, 8, 7, shade, violet);
+      rect(ctx, left + 2, y + 6, 4, 3, rust);
+    }
+    rect(ctx, x + 3, y + 16, 21, 2, "#8d8da6");
+    rect(ctx, x + 8, y + 16, 1, 2, gold);
+  }
+  function counterApron() {
+    const front = document.createElement("canvas");
+    front.className = "cafe-art-prop-front";
+    front.width = 101;
+    front.height = 23;
+    Object.assign(front.style, { left: xPercent(47) + "%", top: yPercent(367) + "%",
+      width: xPercent(front.width) + "%", height: yPercent(front.height) + "%",
+      zIndex: String(Math.round(yPercent(389) * 10)) });
+    const ctx = front.getContext("2d");
+    frame(ctx, 1, 0, 99, 21, darkWood);
+    rect(ctx, 2, 0, 97, 2, paper);
+    rect(ctx, 2, 2, 97, 2, wood);
+    for (let x = 4; x < 96; x += 12) {
+      frame(ctx, x, 5, 10, 12, wood, "#825567");
+      rect(ctx, x + 1, 6, 8, 1, lightWood);
+    }
+    rect(ctx, 2, 18, 97, 2, shade);
+    avatars.append(front);
+  }
 
   let area = "";
   let layout = [];
@@ -233,8 +327,11 @@
     couch(base, 131, 224, 42);
     frame(base, 142, 195, 20, 16, wood);
     rect(base, 150, 197, 4, 5, milk);
-    cabinet(base, 56, 295, 68, 42);
-    frame(base, 48, 281, 79, 15, shade);
+    floor(base, 48, 295, 99, 56, true);
+    cabinet(base, 49, 296, 55, 38);
+    fridge(base, 111, 295);
+    cookingRange(base, 106, 336);
+    frame(base, 48, 281, 90, 15, shade);
     rect(base, 52, 283, 71, 1, gold);
     for (const [x, w] of [[61, 12], [77, 9], [90, 17]]) {
       rect(base, x, 287, w, 2, milk);
@@ -243,6 +340,10 @@
     counter(base, 48, 352, 99);
     frame(base, 61, 359, 13, 8, slate);
     rect(base, 80, 358, 9, 6, rust);
+    for (const x of [120, 125, 130]) {
+      frame(base, x, 358, 4, 6, milk, darkWood);
+      rect(base, x + 1, 359, 2, 1, peach);
+    }
     plant(base, 110, 350);
     frame(base, 186, 389, 29, 24, slate);
     frame(base, 189, 392, 23, 13, glass);
@@ -252,14 +353,23 @@
     rug(base, 224, 432, 71, 29);
     doorway = { x: 241, y: 457, w: 36 };
     door(base, doorway.x, doorway.y, doorway.w);
+    frame(base, 240, 446, 38, 9, "#384d61");
+    rect(base, 243, 449, 32, 1, aqua);
+    for (const [x, y] of [[247, 490], [259, 487], [268, 492]]) {
+      base.globalAlpha = night ? .19 : .08;
+      rect(base, x, y, 4, 9, aqua);
+      rect(base, x - 1, y + 2, 6, 3, aqua);
+      base.globalAlpha = 1;
+    }
     for (const [x, y] of [[170, 449], [327, 449], [651, 449], [99, 448], [145, 83],
       [267, 386], [382, 386], [500, 386], [623, 386], [687, 405]]) plant(base, x, y, x % 2);
     for (const x of [22, 724]) rect(base, x, 447, 21, 30, shade);
   }
   function privateRoom(night) {
+    const roomAccent = { solo: violet, duo: "#716667", team: "#535f75", squad: "#775669" }[area] ?? violet;
     rect(base, 0, 0, WIDTH, HEIGHT, shade);
     floor(base, 58, 84, 650, 416);
-    frame(base, 52, 24, 664, 75, plum);
+    frame(base, 52, 24, 664, 75, roomAccent);
     rect(base, 55, 78, 658, 15, darkWood);
     rect(base, 55, 79, 658, 3, lightWood);
     windowFrame(base, 118, 37, 416, 39, night);
@@ -305,14 +415,27 @@
       const lastRow = Math.max(...layout.map(seat => seat.y));
       const firstRow = Math.min(...layout.map(seat => seat.y));
       floor(base, 60, 101, 646, Math.max(10, firstRow - 138), true);
-      rug(base, 88, Math.max(122, lastRow - 61), 591, 87, violet);
-      couch(base, 618, 420, 61, violet);
+      rug(base, 88, Math.max(122, lastRow - 61), 591, 87, roomAccent);
+      couch(base, 618, 420, 61, roomAccent);
       for (const seat of layout) {
         panel(base, seat.x - 35, seat.y - 91, 70, 44);
         poster(base, seat.x - 26, seat.y - 85, seat.x % 2 ? rust : green);
         lamp(base, seat.x + 18, seat.y - 78, night);
       }
-      if (area === "squad") {
+      if (area === "duo") {
+        rug(base, 84, 210, 119, 80, "#70647b");
+        couch(base, 102, 221, 75, rust);
+        sofaTable(base, 126, 256);
+        fridge(base, 631, 242);
+        cabinet(base, 565, 239, 45, 51);
+      } else if (area === "team") {
+        for (const x of [93, 217, 358, 500, 638]) {
+          frame(base, x - 8, 156, 31, 20, slate);
+          rect(base, x - 5, 160, 24, 2, blue);
+          rect(base, x - 5, 165, 17, 1, milk);
+        }
+        cabinet(base, 111, 390, 70, 46);
+      } else if (area === "squad") {
         for (const x of [119, 292, 466, 633]) {
           couch(base, x - 25, 215, 51, violet);
           plant(base, x + 31, 237);
@@ -333,18 +456,29 @@
     if (outside) {
       rect(base, 42, 248, 682, 4, paper);
       for (let x = 46; x < 725; x += 16) rect(base, x, 252, 2, 13, slate);
-      cabinet(base, 132, 295, 46, 51);
-      rect(base, 139, 301, 30, 4, milk);
+      frame(base, 131, 295, 47, 48, rust);
+      frame(base, 135, 299, 37, 15, glass);
+      rect(base, 138, 301, 31, 2, milk);
+      for (let x = 139; x < 167; x += 6) frame(base, x, 306, 4, 6, paper, violet);
+      frame(base, 144, 322, 17, 9, shade);
+      rect(base, 149, 324, 7, 4, paper);
+      rect(base, 133, 335, 43, 2, peach);
       couch(base, 480, 267, 75);
+      rug(base, 429, 314, 112, 49, violet);
+      sofaTable(base, 464, 325);
     } else {
       cabinet(base, 622, 243, 51, 47);
       couch(base, 327, 235, 46, violet);
       couch(base, 623, 332, 50);
-      rug(base, 244, 218, 66, 38);
+      rug(base, 211, 240, 108, 61, violet);
+      couch(base, 218, 245, 88, violet);
+      sofaTable(base, 246, 275);
+      frame(base, 570, 245, 48, 13, glass);
+      for (let x = 574; x < 614; x += 4) rect(base, x, 248, 2, 7, "#6e8196");
+      rect(base, 573, 255, 42, 1, aqua);
     }
     for (const [x, y] of [[61, 266], [111, 282], [696, 270], [636, 281], [682, 384], [75, 395]]) {
-      plant(base, x, y, 1);
-      foliage.push({ x, y });
+      plant(base, x, y, 1, true);
     }
     for (const x of [115, 274, 480, 646]) lamp(base, x, 256, night);
     doorway = { x: outside ? 365 : 448, y: outside ? 368 : 338, w: 30 };
@@ -468,9 +602,13 @@
         }
       }
     }
+    const tick = Math.floor(now / 100);
+    for (const { x, y } of foliage) {
+      const sway = reducedMotion.matches ? 0 : [-1, 0, 1, 0][Math.floor((tick + x) / 3) % 4];
+      plantLeaves(overlay, x, y, sway);
+    }
     if (reducedMotion.matches) return;
     const weather = document.body.dataset.cafeWeather;
-    const tick = Math.floor(now / 100);
     if (weather === "rain" || weather === "storm" || weather === "snow") {
       for (const { x, y, w, h } of glassPanes) {
         for (let drop = 0; drop < Math.floor(w / 11); drop++) {
@@ -479,10 +617,21 @@
           rect(overlay, x + px, y + py, 1, weather === "snow" ? 1 : 4, "#8e98b3");
         }
       }
+      if (area === "terrace" && weather !== "snow") {
+        for (let n = 0; n < 20; n++) {
+          const x = 65 + (n * 83) % 628;
+          const y = 266 + (n * 53) % 105;
+          const splash = (tick + n * 3) % 7;
+          if (splash < 3) rect(overlay, x - splash, y, 1 + splash * 2, 1, "#a2adbd");
+        }
+      }
     }
-    for (const { x, y } of foliage) {
-      const sway = tick % 6 < 3 ? -1 : 1;
-      rect(overlay, x - 5 + sway, y - 36, 5, 1, "#b1ba94");
+    const cooking = area === "hall" && document.querySelector("#cafe-delivery-clerk[data-mode='cook']:not([hidden])");
+    if (cooking) {
+      for (const x of [114, 123]) {
+        const rise = (tick + x) % 5;
+        rect(overlay, x + rise % 2, 338 - rise * 2, 1, 2, "#cfb8bb");
+      }
     }
     if (doorway && now - doorAt < 650) {
       const { x, y, w } = doorway;
@@ -495,6 +644,7 @@
   }
   window.cafeArt = {
     pixel,
+    kitchenClerk,
     place(point) {
       const { x, y } = pixel(point);
       return { x: xPercent(x), y: yPercent(y) };
@@ -519,8 +669,9 @@
       if (area === space) return;
       area = space;
       layout = seats.map(({ key, point, ...seat }) => ({ key, ...pixel(point), ...seat }));
-      avatars.querySelectorAll(".cafe-art-chair").forEach(element => element.remove());
+      avatars.querySelectorAll(".cafe-art-chair, .cafe-art-prop-front").forEach(element => element.remove());
       for (const seat of layout) chairFront(seat);
+      if (area === "hall") counterApron();
       lastPhase = "";
       doorAt = -Infinity;
       paintEffects(performance.now());

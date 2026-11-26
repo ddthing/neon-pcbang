@@ -1,0 +1,92 @@
+.cafe-fullscreen {
+  --interface-ink: #292435;
+  --interface-plum: #47364e;
+  --interface-border: #916c80;
+  --interface-highlight: #d3a789;
+  --interface-paper: #ffe4ba;
+  --interface-screen: #42646a;
+}
+
+.cafe-fullscreen .room-head-left,
+.cafe-fullscreen .room-hud,
+.cafe-fullscreen .walk-controls,
+.cafe-fullscreen .relax-hud {
+  border: 1px solid var(--interface-border);
+  border-radius: 3px;
+  color: var(--interface-paper);
+  background: var(--interface-ink);
+  box-shadow: inset 0 1px var(--interface-highlight), 0 3px 0 #211a29;
+}
+
+.cafe-fullscreen .room-hud,
+.cafe-fullscreen .room-head-left { min-height: 44px; }
+.cafe-fullscreen .hud-player-card {
+  background: #e1ba9f;
+  color: #402d45;
+  box-shadow: inset 0 1px #ffe4ba;
+}
+.cafe-fullscreen #hud-avatar-portrait { background: #d8997c; }
+.cafe-fullscreen .window-title #room-title { color: var(--interface-paper); }
+.cafe-fullscreen .hud-clock { color: #ffe4ba; background: #34293e; }
+
+.cafe-fullscreen .walk-controls { padding: 4px; }
+.cafe-fullscreen .game-view-actions { gap: 4px; }
+.cafe-fullscreen :is(.game-view-actions, .hud-icon-row, .cafe-chat-controls) .walk-button {
+  border: 1px solid #805b77;
+  border-radius: 2px;
+  color: var(--interface-paper);
+  background: var(--interface-plum);
+  box-shadow: inset 0 1px #a57b89, 0 2px 0 #20192a;
+  font-size: clamp(11px, .78vw, 14px);
+}
+.cafe-fullscreen :is(.game-view-actions, .hud-icon-row, .cafe-chat-controls) .walk-button:hover {
+  border-color: var(--interface-highlight);
+  background: #65465d;
+}
+.cafe-fullscreen :is(.game-view-actions, .hud-icon-row) .walk-button:is(.stage-key,[aria-pressed="true"]) {
+  border-color: #91b7a0;
+  background: var(--interface-screen);
+  box-shadow: inset 0 1px #81ac9b, 0 2px 0 #20192a;
+}
+
+.cafe-fullscreen :is(.game-view-actions, .hud-icon-row, .room-head-left, .cafe-chat-controls) button:focus-visible {
+  outline: 2px solid #ffe1a1;
+  outline-offset: 2px;
+}
+.cafe-fullscreen .stage-room-door {
+  border: 1px solid #bd9a9d;
+  border-radius: 2px;
+  background: #3d3048;
+  color: var(--interface-paper);
+  box-shadow: 0 2px #241c30;
+}
+.cafe-fullscreen .stage-room-door:hover { background: #59405b; }
+
+.cafe-fullscreen :is(#floor-kiosk, #avatar-wardrobe, #snacks, #pc-desktop, #cafe-menu) {
+  border-color: var(--interface-border);
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px #2d2536, 0 9px 24px #1d1729aa;
+}
+.cafe-fullscreen :is(.floor-top, .pc-statusbar, .pc-taskbar) { background: #48354e; }
+.cafe-fullscreen .pc-app {
+  border-radius: 2px;
+  border-color: #b4888d;
+  color: #34293e;
+  background: #f2d4b5;
+}
+.cafe-fullscreen .pc-app:hover { background: #ffe4ba; }
+.cafe-fullscreen .pc-app:focus-visible { outline: 2px solid #4b666c; }
+
+@media (max-width: 620px) {
+  .cafe-fullscreen .room-head { top: max(4px, env(safe-area-inset-top)); left: 6px; right: 6px; gap: 5px; }
+  .cafe-fullscreen .room-head-left { min-width: 0; }
+  .cafe-fullscreen .room-hud { margin-left: auto; }
+  .cafe-fullscreen .hud-status-row { gap: 4px; }
+  .cafe-fullscreen .game-view-actions { gap: 3px; }
+  .cafe-fullscreen .game-view-actions .walk-button { min-height: 40px; padding-inline: 6px; }
+  .cafe-fullscreen .cafe-joystick { bottom: 150px; }
+}
+
+@media (pointer: coarse) {
+  .cafe-fullscreen :is(.game-view-actions, .hud-icon-row, .cafe-chat-controls) .walk-button { min-height: 42px; }
+}

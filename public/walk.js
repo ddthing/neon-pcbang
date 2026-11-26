@@ -201,6 +201,7 @@ function paint(key, data, point, walking, awayAtDesk = false) {
     const [sSpace, sIdx] = String(data.seat).split(":");
     seatDir = sSpace === "hall" ? (Number(sIdx) % 2 === 0 ? "right" : "left") : "up";
     row = { up: 4, right: 5, left: 6 }[seatDir];
+    if (act === "eat") row += 4;
   } else if (!walking && (act === "smoke" || act === "coffee" || act === "candy")) {
     row = 7;
     breakCol = { coffee: 0, candy: 2, smoke: 4 }[act];
@@ -565,6 +566,9 @@ window.cafeWorld = {
   isOnBreak,
   currentZone: () => activeZone,
   setActivity,
+  clearActivity(expected) {
+    if (myActivity === expected) setActivity("");
+  },
   async standFromSeat() {
     const key = seating.current();
     if (!key || isOnBreak()) return;

@@ -6,16 +6,19 @@
 .scene:not([data-space="lobby"], [data-space="hall"]) .cafe-delivery-clerk { width: 4.8cqw; }
 .cafe-clerk-body { position: absolute; inset: 0; transform: scaleX(var(--clerk-facing, 1)); }
 
-/* Crisp 4x4 Cat Clerk Sprite Sheet (cat-clerk-sheet.png) */
+/* Four 48 × 52 frames per service pose. */
 .cafe-clerk-sprite {
   display: block; width: 100%; height: 100%;
-  background: url("./sprites/cat-clerk-sheet.png") no-repeat 0% 0% / 400% 400%;
+  background: url("./sprites/cat-clerk-service.png") no-repeat 0% 0% / 400% 700%;
   image-rendering: pixelated;
   filter: drop-shadow(0 1px 2px #1a121088);
 }
 .cafe-delivery-clerk[data-mode="idle"] .cafe-clerk-sprite { background-position-y: 0%; }
-.cafe-delivery-clerk[data-mode="cook"] .cafe-clerk-sprite { background-position-y: 33.3333%; }
+.cafe-delivery-clerk[data-mode="cook"] .cafe-clerk-sprite { background-position-y: 16.6667%; }
+.cafe-delivery-clerk[data-mode="plate"] .cafe-clerk-sprite { background-position-y: 33.3333%; }
+.cafe-delivery-clerk[data-mode="lift"] .cafe-clerk-sprite { background-position-y: 50%; }
 .cafe-delivery-clerk[data-mode="walk-tray"] .cafe-clerk-sprite { background-position-y: 66.6667%; }
+.cafe-delivery-clerk[data-mode="serve"] .cafe-clerk-sprite { background-position-y: 83.3333%; }
 .cafe-delivery-clerk[data-mode="walk-return"] .cafe-clerk-sprite { background-position-y: 100%; }
 
 /* Reusable 24x24 Crisp Pixel Snack Icon (snacks-atlas.png 6x4) */
@@ -26,6 +29,25 @@
 }
 
 .cafe-delivery-trays { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.cafe-carry-tray {
+  position: absolute;
+  width: 2.6cqw;
+  height: 1.3cqw;
+  transform: translate(-50%, -40%);
+  display: flex;
+  justify-content: center;
+  align-items: end;
+  padding-bottom: .13cqw;
+  background: linear-gradient(#583847 0 25%, #af796d 25% 78%, #583847 78%);
+  outline: max(1px, .13cqw) solid #382835;
+}
+.cafe-carry-tray .pixel-snack-icon { width: .91cqw; height: .91cqw; flex-shrink: 1; }
+.cafe-carry-tray:empty::after {
+  content: "";
+  width: .65cqw;
+  height: .52cqw;
+  background: #ffe1b5;
+}
 .cafe-world-tray {
   position: absolute; left: var(--tray-x); top: var(--tray-y); transform: translate(-50%, -40%);
   width: clamp(36px, 3.7cqw, 66px); min-height: 20px; padding: 3px;
@@ -58,6 +80,9 @@
 @media (prefers-reduced-motion: no-preference) {
   .cafe-delivery-clerk[data-mode="idle"] .cafe-clerk-sprite { animation: cat-sheet-4f 2.8s steps(1, end) infinite; }
   .cafe-delivery-clerk[data-mode="cook"] .cafe-clerk-sprite { animation: cat-sheet-4f .55s steps(1, end) infinite; }
+  .cafe-delivery-clerk[data-mode="plate"] .cafe-clerk-sprite { animation: cat-sheet-4f .42s steps(1, end) both; }
+  .cafe-delivery-clerk[data-mode="lift"] .cafe-clerk-sprite { animation: cat-sheet-4f .3s steps(1, end) both; }
+  .cafe-delivery-clerk[data-mode="serve"] .cafe-clerk-sprite { animation: cat-sheet-4f .48s steps(1, end) both; }
   .cafe-delivery-clerk:is([data-mode="walk-tray"], [data-mode="walk-return"]) .cafe-clerk-sprite {
     animation: cat-sheet-4f .46s steps(1, end) infinite;
   }

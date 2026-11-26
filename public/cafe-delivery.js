@@ -7,6 +7,15 @@ const trayLayer = document.getElementById("cafe-delivery-trays");
 const motion = matchMedia("(prefers-reduced-motion: reduce)");
 const seating = window.cafeSeating;
 const paintedTrays = new Map();
+const clearingOrders = new Set();
+const carryTray = document.createElement("div");
+carryTray.className = "cafe-carry-tray";
+carryTray.hidden = true;
+carryTray.setAttribute("aria-hidden", "true");
+trayLayer.append(carryTray);
+let requestedArrival = null;
+let confirmedArrival = null;
+let biteTimer = 0;
 
 // Exact sprite indices in snacks-atlas.png (6 cols x 4 rows of 24x24)
 export const SNACK_SPRITE_INDEX = {
@@ -29,12 +38,45 @@ function currentSpace() {
   return scene.dataset.space === "lobby" ? "hall" : scene.dataset.space;
 }
 
+function servicePosition(key) {
+  const chair = seating.position(key);
+  const art = window.cafeArt;
+  if (!chair || !art) return chair;
+  const [space, index] = key.split(":");
+  const side = space === "hall";
+  const offset = side && Number(index) % 2 ? 1 : -1;
+  return art.place({ x: chair.x + offset * 22 / 768 * 100,
+    y: chair.y + (side ? 6 : 8) / 512 * 100 });
+}
+
 function setSnackSpritePos(el, itemId) {
   const idx = SNACK_SPRITE_INDEX[itemId] ?? 4;
   const col = idx % 6;
   const row = Math.floor(idx / 6);
   el.style.setProperty("--snack-x", (col * 20) + "%");
   el.style.setProperty("--snack-y", (row * 33.3333) + "%");
+}
+
+function fillCarryTray(foods = []) {
+  carryTray.replaceChildren(...foods.slice(0, 3).map(id => {
+    const sprite = document.createElement("i");
+    sprite.className = "pixel-snack-icon";
+    setSnackSpritePos(sprite, id);
+    return sprite;
+  }));
+}
+
+function placeCarryTray(point, key, reach = 0, pawY = 29) {
+  if (!trip || trip.canServe === false) return;
+  const world = window.cafeArt;
+  const target = reach && seating.trayPosition(key);
+  const x = point.x - (point.facing || 1) * (world ? 10 / 768 * 100 : 1.2);
+  const y = point.y - (world ? (52 * .95 - pawY) / 512 * 100 : 4);
+  const position = target ? { x: x + (target.x - x) * reach, y: y + (target.y - y) * reach } : { x, y };
+  const snapped = world?.place(position) ?? position;
+  carryTray.style.left = snapped.x + "%";
+  carryTray.style.top = snapped.y + "%";
+  carryTray.hidden = false;
 }
 
 function createTray(entry, point, arriving) {
@@ -76,11 +118,13 @@ function createTray(entry, point, arriving) {
 
   if (isMine) {
     let bitesLeft = Math.min(3, Math.max(2, entry.items.reduce((s, i) => s + i.count, 0)));
-    node.addEventListener("click", (event) => {
+    node.addEventListener("click", async (event) => {
       event.stopPropagation();
       bitesLeft--;
       window.cafeAudioPlay?.("eat");
       window.cafeWorld?.setActivity("eat");
+      clearTimeout(biteTimer);
+      biteTimer = setTimeout(() => window.cafeWorld?.clearActivity("eat"), 1000);
       node.classList.remove("is-biting");
       void node.offsetWidth;
       node.classList.add("is-biting");
@@ -92,13 +136,19 @@ function createTray(entry, point, arriving) {
       }
       // Finished eating! Claim +15G and clear tray
       node.disabled = true;
-      setTimeout(() => window.cafeWorld?.setActivity(""), 1800);
-      if (entry.id) {
-        window.cafeEatOrder?.(entry.id);
+      clearingOrders.add(entry.key);
+      const eaten = entry.id && await window.cafeEatOrder?.(entry.id);
+      if (eaten) {
+        node.remove();
+        paintedTrays.delete(entry.key);
+        trays = trays.filter((t) => t.key !== entry.key);
+        window.cafeWorld?.syncNow();
+      } else {
+        clearingOrders.delete(entry.key);
+        bitesLeft = 1;
+        node.disabled = false;
+        renderTrays();
       }
-      node.remove();
-      paintedTrays.delete(entry.key);
-      trays = trays.filter((t) => t.key !== entry.key);
     });
   }
   return node;
@@ -108,7 +158,7 @@ function renderTrays(arrivals = new Set()) {
   const space = currentSpace();
   const bySeat = new Map();
   for (const entry of trays) {
-    if (!entry.seat.startsWith(space + ":") || !entry.items.length) continue;
+    if (!entry.seat.startsWith(space + ":") || !entry.items.length || clearingOrders.has(entry.key)) continue;
     const previous = bySeat.get(entry.seat);
     if (!previous || entry.readyAt > previous.readyAt) bySeat.set(entry.seat, entry);
   }
@@ -146,17 +196,19 @@ function renderStationedClerk(mode = "idle") {
   const inHall = currentSpace() === "hall";
   clerk.hidden = !inHall;
   if (!inHall) return;
-  clerk.dataset.mode = mode; // "idle" | "cook"
+  clerk.dataset.mode = mode;
   clerk.removeAttribute("data-carrying");
-  clerk.style.setProperty("--clerk-x", "11.9%");
-  clerk.style.setProperty("--clerk-y", "73.2%");
+  const point = window.cafeArt?.kitchenClerk ?? { x: 11.9, y: 73.2 };
+  clerk.style.setProperty("--clerk-x", point.x + "%");
+  clerk.style.setProperty("--clerk-y", point.y + "%");
   clerk.style.setProperty("--clerk-facing", "1");
   clerk.style.setProperty("--clerk-opacity", "1");
-  clerk.style.zIndex = "1";
+  clerk.style.zIndex = window.cafeArt ? String(Math.round(point.y * 10)) : "1";
 }
 
 function paintTrip() {
   frame = wake = 0;
+  carryTray.hidden = true;
   if (document.hidden) return;
   const inHall = currentSpace() === "hall";
 
@@ -172,31 +224,61 @@ function paintTrip() {
     return;
   }
   if (time < trip.startAt) {
-    // Open-Kitchen Cooking Phase right before departure!
-    renderStationedClerk("cook");
-    wake = setTimeout(paintTrip, Math.min(250, trip.startAt - time));
-    return;
-  }
-  if (motion.matches) {
-    renderStationedClerk("idle");
-    wake = setTimeout(paintTrip, trip.returnAt - time);
+    const remaining = trip.startAt - time;
+    const mode = remaining > 720 || motion.matches ? "cook" : remaining > 300 ? "plate" : "lift";
+    renderStationedClerk(mode);
+    if (inHall && mode !== "cook") {
+      const point = window.cafeArt?.kitchenClerk ?? { x: 11.9, y: 73.2 };
+      placeCarryTray(point, trip.seat, 0, mode === "lift" ? 26 : 31);
+    }
+    wake = setTimeout(paintTrip, Math.min(80, remaining));
     return;
   }
   const returning = time >= trip.readyAt;
+  if (returning && trip.canServe !== false && confirmedArrival !== trip.key) {
+    const destination = deliveryRoutePoint(route, 1);
+    if (destination.space === currentSpace()) placeCarryTray(destination, trip.seat, 1);
+    if (requestedArrival !== trip.key) {
+      requestedArrival = trip.key;
+      window.cafeWorld?.syncNow();
+    }
+  }
+  if (motion.matches) {
+    renderStationedClerk("idle");
+    wake = setTimeout(paintTrip, (returning ? trip.returnAt : trip.readyAt) - time);
+    return;
+  }
+  const serveMs = Math.min(480, (trip.readyAt - trip.startAt) / 3);
+  const serving = !returning && trip.readyAt - time <= serveMs && trip.canServe !== false;
   const progress = returning
     ? (time - trip.readyAt) / (trip.returnAt - trip.readyAt)
-    : elapsed / (trip.readyAt - trip.startAt);
-  const point = deliveryRoutePoint(route, progress, returning);
+    : elapsed / (trip.readyAt - trip.startAt - (trip.canServe === false ? 0 : serveMs));
+  let point = deliveryRoutePoint(route, progress, returning);
+  const kitchen = window.cafeArt?.kitchenClerk;
+  if (kitchen && !returning && elapsed < 650 && point.space === "hall") {
+    const lift = elapsed / 650;
+    // Leave the open right end of the counter before joining the aisle.
+    point = { ...point, x: kitchen.x + (point.x - kitchen.x) * Math.min(1, lift * 1.8),
+      y: kitchen.y + (point.y - kitchen.y) * Math.max(0, lift * 2 - 1) };
+  }
+  if (serving) {
+    const target = seating.trayPosition(trip.seat);
+    if (target) point.facing = target.x < point.x ? 1 : -1;
+  }
   clerk.hidden = point.space !== currentSpace();
   if (!clerk.hidden) {
-    clerk.dataset.mode = returning ? "walk-return" : "walk-tray";
+    clerk.dataset.mode = returning ? "walk-return" : serving ? "serve" : "walk-tray";
     const placement = window.cafeArt?.place(point) ?? point;
     clerk.style.setProperty("--clerk-x", placement.x + "%");
     clerk.style.setProperty("--clerk-y", placement.y + "%");
     clerk.style.setProperty("--clerk-facing", String(point.facing || 1));
-    clerk.style.setProperty("--clerk-opacity", String(Math.min(1, elapsed / 180, (trip.returnAt - time) / 180)));
-    clerk.style.zIndex = String(Math.max(2, Math.round(point.y)));
+    clerk.style.setProperty("--clerk-opacity", String(Math.min(1, (trip.returnAt - time) / 180)));
+    clerk.style.zIndex = String(Math.max(2, Math.round(point.y * (window.cafeArt ? 10 : 1))));
     clerk.toggleAttribute("data-carrying", !returning);
+    if (!returning) {
+      const reach = serving ? Math.max(0, Math.min(1, Math.floor((1 - (trip.readyAt - time) / serveMs) * 5) / 4)) : 0;
+      placeCarryTray(point, trip.seat, reach);
+    }
   }
   frame = requestAnimationFrame(paintTrip);
 }
@@ -206,33 +288,26 @@ function refreshPlayback() {
   paintTrip();
 }
 
-// Upgrade clerk markup to use our 4x4 pixel sprite sheet
 clerkBody.innerHTML = `<span class="cafe-clerk-sprite" aria-hidden="true"></span>`;
+if (window.cafeArt) document.getElementById("cafe-avatars").append(clerk);
 
 document.addEventListener("cafe-delivery-sync", ({ detail }) => {
   const next = detail.delivery;
   clockOffset = detail.now - Date.now();
   if (next?.key !== trip?.key) {
-    route = next ? routeForDelivery(next.seat, seating.position) : null;
+    route = next ? routeForDelivery(next.seat, servicePosition) : null;
     elapsed = -Infinity;
+    requestedArrival = null;
+    fillCarryTray(next?.foods);
   }
   trip = next;
   trays = detail.trays;
+  for (const key of clearingOrders) {
+    if (!trays.some(entry => entry.key === key)) clearingOrders.delete(key);
+  }
+  if (trip && trays.some(entry => entry.key === trip.key)) confirmedArrival = trip.key;
   const arrivals = new Set(trays.filter(({ key, readyAt }) =>
     seenTrays && !seenTrays.has(key) && detail.now - readyAt < 3200).map(({ key }) => key));
-  if (arrivals.size) {
-    for (const entry of trays) {
-      if (arrivals.has(entry.key) && entry.seat === seating.current() && entry.giftFrom) {
-        window.cafeAudioPlay?.("chime");
-        document.querySelector(".u070")?.dispatchEvent(new CustomEvent("pcbang-notice", {
-          detail: {
-            message: `🎁 ${entry.giftFrom}님이 [${entry.items.map((i) => i.name).join(", ")}] 선물을 보냈어요!${entry.giftNote ? ` "${entry.giftNote}"` : ""}`,
-            kind: "ok",
-          },
-        }));
-      }
-    }
-  }
   seenTrays = new Set(trays.map(({ key }) => key));
   renderTrays(arrivals);
   refreshPlayback();

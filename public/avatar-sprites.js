@@ -122,7 +122,8 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
 
   const isWalking = action === "walk";
   const settling = action === "sit-transition";
-  const isSeated = action === "sit" || settling;
+  const eating = action === "eat";
+  const isSeated = action === "sit" || settling || eating;
   const stride = frame % 6;
   const tap = frame % 4;
   const bob = isWalking ? [0, -1, -2, 0, -1, -2][stride] : 0;
@@ -391,7 +392,15 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
   }
 
   // 9. Break Zone Props (Cigarette / Milk Coffee / Candy)
-  if (action === "smoke") {
+  if (eating) {
+    const height = [0, 4, 8, 3][tap];
+    const handX = side ? 29 : 30;
+    const handY = torsoY + 3 - height;
+    prect(handX - 3, handY + 2, 5, height + 2, outfit.sub);
+    prect(handX, handY, 4, 3, skin.base);
+    prect(handX + 3, handY - 3, 5, 4, "#dca36c");
+    prect(handX + 3, handY - 3, 4, 1, "#fff0c8");
+  } else if (action === "smoke") {
     prect(37, torsoY - 3, 5, 2, "#fff5eb");
     prect(41, torsoY - 3, 1, 2, frame % 2 === 0 ? "#e8748c" : "#f6cf73");
   } else if (action === "coffee") {
@@ -434,7 +443,7 @@ export function getAvatarSheetUrl(avatarCode, fallbackColor = 0) {
 
   const canvas = document.createElement("canvas");
   canvas.width = 48 * 7;
-  canvas.height = 48 * 8;
+  canvas.height = 48 * 11;
   const ctx = canvas.getContext("2d");
 
   ["down", "up", "right", "left"].forEach((dir, row) => {
@@ -455,6 +464,11 @@ export function getAvatarSheetUrl(avatarCode, fallbackColor = 0) {
   ["coffee", "candy", "smoke"].forEach((action, index) => {
     for (let frame = 0; frame < 2; frame++) {
       drawChibiFrame(ctx, (2 * index + frame) * 48, 7 * 48, cfg, "down", action, frame);
+    }
+  });
+  ["up", "right", "left"].forEach((dir, index) => {
+    for (let frame = 0; frame < 4; frame++) {
+      drawChibiFrame(ctx, frame * 48, (index + 8) * 48, cfg, dir, "eat", frame);
     }
   });
 

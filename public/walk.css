@@ -22,8 +22,8 @@
   position: absolute;
   inset: 0;
   background-repeat: no-repeat;
-  background-size: 700% 800%;
-  background-position: calc(var(--sprite-col, 0) * 16.666667%) calc(var(--sprite-row, 0) * 14.285714%);
+  background-size: 700% 1100%;
+  background-position: calc(var(--sprite-col, 0) * 16.666667%) calc(var(--sprite-row, 0) * 10%);
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }

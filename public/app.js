@@ -438,14 +438,15 @@ function renderRoom() {
   marker.hidden = !seated || Boolean(seatJourney) || Boolean(activeBreakZone);
   if (seated) {
     const seat = floorSeats.get(room.space + ":" + room.seat);
+    const homeRoom = spaces[room.space];
     const panel = window.cafeArt?.screen(seat.key);
-    const [x, y] = panel ? [panel.x + panel.w / 2, panel.y - 2] : space.positions[room.seat];
+    const [x, y] = panel ? [panel.x + panel.w / 2, panel.y - 2] : homeRoom.positions[room.seat];
     marker.toggleAttribute("data-pixel-seat", Boolean(panel));
     marker.style.setProperty("--x", x + "%");
     marker.style.setProperty("--y", y + "%");
     marker.textContent = seat.code;
     marker.setAttribute("aria-label", seat.code + " 내 PC 열기");
-    const label = space.label + " · " + seat.code;
+    const label = homeRoom.label + " · " + seat.code;
     $("#ticket-seat").textContent = label;
     $("#pc-seat").textContent = label;
     $("#room-hint").textContent = activeBreakZone

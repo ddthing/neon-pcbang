@@ -105,6 +105,8 @@ test("a submitted order receives a single attendant timeline and an occupied sea
     assert.equal(result.orders[0].status, "preparing");
     const outgoing = await readCafeDelivery(db, result.order.startAt);
     assert.equal(outgoing.delivery.seat, seat);
+    assert.deepEqual(outgoing.delivery.foods, ["ramyeon"]);
+    assert.equal(outgoing.delivery.canServe, true);
     assert.equal(outgoing.trays.length, 0);
     const arrived = await readCafeDelivery(db, result.order.readyAt);
     assert.equal(arrived.delivery.key, String(sqlite.prepare("SELECT rowid FROM cafe_orders").get().rowid));
@@ -185,8 +187,10 @@ test("leaving cancels a queued tray, while an active attendant completes the ret
     const departAt = active.startAt + 1;
     assert.equal((await readCafeDelivery(db, departAt)).delivery.seat, "hall:12");
     await leaveSeat(db, sqlite, activeId, departAt + 1);
-    assert.equal((await readCafeDelivery(db, departAt + 2)).delivery.seat, "hall:12");
-    assert.equal((await readCafeDelivery(db, departAt + 2)).trays.length, 0);
+    const returning = await readCafeDelivery(db, departAt + 2);
+    assert.equal(returning.delivery.seat, "hall:12");
+    assert.equal(returning.delivery.canServe, false);
+    assert.equal(returning.trays.length, 0);
     assert.equal((await readCafeDelivery(db, active.returnAt)).delivery, null);
   } finally { sqlite.close(); }
 });

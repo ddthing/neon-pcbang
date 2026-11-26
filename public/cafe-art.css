@@ -2,7 +2,7 @@
   display: none;
 }
 
-.cafe-art-base, .cafe-art-effects, .cafe-art-chair {
+.cafe-art-base, .cafe-art-effects, .cafe-art-chair, .cafe-art-prop-front {
   position: absolute;
   pointer-events: none;
   image-rendering: pixelated;

@@ -410,7 +410,7 @@ snackIds.forEach((id, index) => {
 snacksAtlas.save("snacks-atlas.png");
 
 // ============================================================================
-// 2. COZY CAT CLERK SPRITE SHEET (4x4 of 48x52 = 192x208 PNG, #4c383d outlines)
+// 2. COZY CAT CLERK SPRITE SHEET (4x7 of 48x52, #4c383d outlines)
 // ============================================================================
 function makeCatFrame(mode, frame) {
   const out = new PixelSurface(48, 52);
@@ -425,7 +425,7 @@ function makeCatFrame(mode, frame) {
   c.rect(35 + tailSwing, 29 + bob, 4, 5, "#fbe3d3");
   c.rect(36 + tailSwing, 27 + bob, 3, 2, "#b86f4c");
 
-  if (mode !== "idle" && mode !== "cook") {
+  if (mode === "walk-tray" || mode === "walk-return") {
     c.rect(17 + stride, 41, 5, 6, "#f5d3c1");
     c.rect(26 - stride, 41, 5, 6, "#ecc28e");
     c.rect(16 + stride, 46, 6, 3, "#6e4c49");
@@ -461,7 +461,7 @@ function makeCatFrame(mode, frame) {
   c.rect(22, 12 + bob, 4, 4, "#b86f4c");
   c.rect(16, 11 + bob, 4, 2, "#ecc28e");
 
-  if (mode === "cook") {
+  if (mode === "cook" || mode === "plate" || mode === "lift") {
     c.rect(15, 9 + bob, 18, 4, "#fff9f2");
     c.rect(16, 12 + bob, 16, 1, "#e8748c");
   }
@@ -483,12 +483,13 @@ function makeCatFrame(mode, frame) {
   c.rect(23, 19 + bob, 2, 2, "#e8748c");
   c.pset(22, 21 + bob, OUTLINE); c.pset(25, 21 + bob, OUTLINE);
 
-  if (mode === "walk-tray") {
-    c.rect(11, 27 + bob, 5, 4, "#fff5eb");
-    c.rect(5, 24 + bob, 17, 3, "#dc9666");
-    c.rect(6, 25 + bob, 15, 1, "#fbe3d3");
-    c.rect(8, 20 + bob, 5, 4, "#e8748c");
-    c.rect(14, 19 + bob, 4, 5, "#f6cf73");
+  if (["plate", "lift", "walk-tray", "serve"].includes(mode)) {
+    const lift = mode === "lift" ? -(frame + 1) : mode === "serve" ? frame : 0;
+    const hand = 29 + bob + lift;
+    c.rect(12, 29 + bob, 6, 5, "#569e7c");
+    c.rect(11, hand, 6, 3, "#fff5eb");
+    c.rect(32, 29 + bob, 4, 6, "#fff5eb");
+    if (mode === "plate") c.rect(7 + frame, hand - 4, 5, 2, "#b98d7b");
   } else if (mode === "cook") {
     const stir = frame % 2 === 0 ? 0 : 2;
     c.rect(11, 29 + bob, 5, 4, "#fff5eb");
@@ -508,19 +509,19 @@ function makeCatFrame(mode, frame) {
   out.rect(10, 21 + bob, 4, 1, "#7e5e68");
   out.rect(34, 19 + bob, 4, 1, "#7e5e68");
   out.rect(34, 21 + bob, 4, 1, "#7e5e68");
-  if (mode === "cook" || mode === "walk-tray") {
-    drawSteam(out, mode === "cook" ? 18 : 10, mode === "cook" ? 23 : 14, mode === "cook" ? 24 + (frame % 2) : 14);
+  if (mode === "cook") {
+    drawSteam(out, 18, 23, 24 + (frame % 2));
   }
   return out;
 }
 
-const catSheet = new PixelSurface(48 * 4, 52 * 4);
-["idle", "cook", "walk-tray", "walk-return"].forEach((mode, row) => {
+const catSheet = new PixelSurface(48 * 4, 52 * 7);
+["idle", "cook", "plate", "lift", "walk-tray", "serve", "walk-return"].forEach((mode, row) => {
   for (let frame = 0; frame < 4; frame++) {
     catSheet.blit(makeCatFrame(mode, frame), frame * 48, row * 52);
   }
 });
-catSheet.save("cat-clerk-sheet.png");
+catSheet.save("cat-clerk-service.png");
 
 // ============================================================================
 // 3. 9 REMASTERED COZY PIXEL LAUNCHER ICONS (9 cols x 1 row of 24x24 = 216x24 PNG)
