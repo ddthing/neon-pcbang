@@ -30,7 +30,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: node --test tests/invite-gate.test.mjs
+      - run: node --test tests/*.test.mjs
       - name: Configure Cloudflare Worker
         run: node scripts/configure-github-worker.mjs
         env:
@@ -64,3 +64,8 @@ jobs:
 
       - name: Verify real production login request
         run: node tests/smoke-live-login.mjs
+
+      - name: Verify deployed web game and pixel assets
+        env:
+          NEON_ADMIN_PASSWORD: ${{ secrets.NEON_ADMIN_PASSWORD }}
+        run: node tests/smoke-live-game.mjs

@@ -40,12 +40,14 @@ export function createCafeCamera(scene) {
     if (!width || !height) return;
     const density = window.devicePixelRatio;
     const scale = Math.max(1, Math.round(height * density / 360),
-      Math.ceil(width * density / worldPixels.width), Math.ceil(height * density / worldPixels.height));
+      Math.ceil(height * density / worldPixels.height),
+      scene.hasAttribute("data-canvas-world") ? 0 : Math.ceil(width * density / worldPixels.width));
     const worldWidth = worldPixels.width * scale / density;
     const worldHeight = worldPixels.height * scale / density;
     bounds = { width, height, worldWidth, worldHeight, density };
     scene.style.setProperty("--camera-width", worldWidth + "px");
     scene.style.setProperty("--camera-height", worldHeight + "px");
+    viewport.style.setProperty("--world-pixel", scale / density + "px");
     follow(position, lastSeat);
   }
 
