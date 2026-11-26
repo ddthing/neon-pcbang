@@ -11,6 +11,8 @@
 - **창밖:** [Open-Meteo](https://open-meteo.com/)를 통해 사용자 현재 위치의 날씨와 일출·일몰 시각, 로컬 시간 흐름을 보여줍니다.
 - **제목 글꼴**은 귀댕이의 [뚝딱감자체](https://blog.naver.com/guidang2/224435435470)이며, [눈누의 웹폰트 주소](https://noonnu.cc/font_page/1969)를 사용합니다.
 
+2차 리뉴얼에 참여하는 작업자는 [픽셀아트 리뉴얼 기획안](docs/pixel-art-renewal.md)에서 공용 기준, 작업 순서, 검수 조건을 확인할 수 있습니다.
+
 ## GitHub에서 배포하기
 
 GitHub에 소스를 올리고 **Actions**에서 Cloudflare Workers로 배포합니다. 방문자 위치와 좌석은 D1에 저장되므로, 정적 파일만 제공하는 GitHub Pages로는 같이 돌아다니는 기능을 사용할 수 없어요.
