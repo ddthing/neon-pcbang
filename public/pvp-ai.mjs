@@ -1,4 +1,5 @@
 // Pure Tactical AI Engine for Omok (15x15 Split-Pattern + 2-Ply Alpha-Beta) & Alkkagi (Physics Lookahead)
+import { omokMoveVerdict } from "./omok-rules.mjs";
 
 const SIZE = 15;
 const DIRS = [[0, 1], [1, 0], [1, 1], [1, -1]];
@@ -111,16 +112,26 @@ function getCandidateCells(board) {
 
 export function chooseOmokAiMove(board, difficulty = "hard", aiStone = 2) {
   const humanStone = aiStone === 2 ? 1 : 2;
-  const candidates = getCandidateCells(board);
-  if (!candidates.length) return 112;
-  if (candidates.length === 1 && board[112] === 0) return 112;
+  const nearby = getCandidateCells(board);
+  if (!nearby.length) return 112;
+  if (nearby.length === 1 && board[112] === 0) return 112;
+
+  // 금수(쌍삼·육목) 자리는 AI도 두지 않는다.
+  let candidates = nearby.filter((idx) => omokMoveVerdict(board, idx, aiStone).ok);
+  if (!candidates.length) {
+    candidates = [];
+    for (let i = 0; i < 225; i++) {
+      if (board[i] === 0 && omokMoveVerdict(board, i, aiStone).ok) candidates.push(i);
+    }
+    if (!candidates.length) return nearby[0];
+  }
 
   // Immediate forced win / block check (all levels check obvious 5-in-a-row)
   for (const idx of candidates) {
-    if (hasFiveInARow(board, idx, aiStone)) return idx;
+    if (omokMoveVerdict(board, idx, aiStone).win) return idx;
   }
   for (const idx of candidates) {
-    if (hasFiveInARow(board, idx, humanStone)) return idx;
+    if (omokMoveVerdict(board, idx, humanStone).win) return idx;
   }
 
   // Rank candidates by combined tactical attack + defense value
