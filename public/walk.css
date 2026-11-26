@@ -337,3 +337,35 @@ body.cafe-fullscreen { overflow: hidden; background: #261b1e; }
 
 .cafe-fullscreen .walk-controls { width: max-content; }
 .cafe-fullscreen .game-view-actions { justify-content: center; }
+
+/* Ground click & unreachable destination marker */
+.cafe-move-marker {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  border: 2px solid #83c9c5;
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 4;
+}
+.cafe-move-marker.blocked {
+  width: auto;
+  height: auto;
+  padding: 2px 6px;
+  border-color: #ff8585;
+  background: rgba(41, 36, 53, 0.92);
+  color: #ffd7d6;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cafe-move-marker:not(.blocked) {
+    animation: move-marker-pop .55s ease-out forwards;
+  }
+}
+@keyframes move-marker-pop {
+  0% { opacity: 0.95; transform: translate(-50%, -50%) scale(0.7); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.35); }
+}

@@ -1,4 +1,4 @@
-import { canWalkInSpace, entrance, kiosk, pathTo, routeToSeat, roomPortals, relaxPortals, relaxZones } from "./world.js";
+import { clearSegmentInSpace, entrance, kiosk, pathTo, routeToSeat, roomPortals, relaxPortals, relaxZones, canWalkInSpace } from "./world.js";
 import { createCafeCamera } from "./camera.js";
 import { AVATAR_WARDROBE, encodeAvatarCode, getAvatarSheetUrl, normalizeAvatarCode, renderAvatarPortrait, renderAvatarPreview } from "./avatar-sprites.js";
 
@@ -78,6 +78,8 @@ let path = [];
 let waveUntil = 0;
 let lastWave = 0;
 let lastSeat = seating.current();
+let stoodFromSeat = null;
+let moveMarkerTimer = 0;
 let peers = [];
 let queue = Promise.resolve();
 let connected = false;
@@ -583,7 +585,9 @@ window.cafeWorld = {
     const point = seating.position(key);
     const hall = point && space === "hall";
     const aisle = hall && point.x + (Number(index) % 2 ? 3.4 : -3.4);
-    Object.assign(location, hall && canWalkInSpace(aisle, point.y) ? { x: aisle, y: point.y } : entrance);
+    const portal = roomPortals[space];
+    stoodFromSeat = key;
+    Object.assign(location, hall && canWalkInSpace(aisle, point.y) ? { x: aisle, y: point.y } : (portal || entrance));
     dirName = hall ? (Number(index) % 2 ? "right" : "left") : "down";
   },
   syncNow: () => send("sync").catch(disconnected),
@@ -591,6 +595,7 @@ window.cafeWorld = {
   getPeers: () => peers.slice(),
   walkToSeat(seat, previous, showSpace) {
     activeZone = "hall";
+    stoodFromSeat = null;
     if (reducedMotion.matches) return Promise.resolve();
     const legs = routeToSeat(location, previous, seat, seating.position);
     if (!legs.length) return Promise.resolve();
@@ -889,13 +894,37 @@ function startMovement() {
   requestFrame();
 }
 
+function showMoveFeedback(point, ok) {
+  let marker = scene.querySelector(".cafe-move-marker");
+  if (!marker) {
+    marker = document.createElement("div");
+    marker.className = "cafe-move-marker";
+    marker.setAttribute("aria-hidden", "true");
+    scene.append(marker);
+  }
+  const placement = window.cafeArt?.place(point) ?? point;
+  marker.style.left = placement.x + "%";
+  marker.style.top = placement.y + "%";
+  marker.classList.toggle("blocked", !ok);
+  marker.textContent = ok ? "" : "도달 불가";
+  marker.hidden = false;
+  clearTimeout(moveMarkerTimer);
+  moveMarkerTimer = setTimeout(() => { marker.hidden = true; }, ok ? 550 : 900);
+}
+
 scene.addEventListener("click", (event) => {
-  if (event.target.closest("button") || !canMove()) return;
+  if (event.target.closest("button, .cafe-move-marker") || !canMove()) return;
   scene.focus({ preventScroll: true });
   const box = scene.getBoundingClientRect();
   const target = { x: (event.clientX - box.left) * 100 / box.width, y: (event.clientY - box.top) * 100 / box.height };
-  path = pathTo(location, target, isOnBreak() ? activeZone : "hall");
-  if (path.length) startMovement();
+  const route = pathTo(location, target, isOnBreak() ? activeZone : "hall", { strictTarget: true });
+  if (route.length) {
+    path = route;
+    showMoveFeedback(target, true);
+    startMovement();
+  } else {
+    showMoveFeedback(target, false);
+  }
 });
 
 document.addEventListener("keydown", (event) => {
@@ -997,7 +1026,10 @@ function animate(time) {
   advanceRemoteJourneys(dt);
   drawRemoteJourneys();
   const seat = seating.current();
-  if (lastSeat && !seat && !isOnBreak()) Object.assign(location, spawn);
+  if (lastSeat && !seat && !isOnBreak()) {
+    if (stoodFromSeat === lastSeat) stoodFromSeat = null;
+    else Object.assign(location, spawn);
+  }
   if (seat !== lastSeat) path = [];
   const free = canMove();
   if (!free) stopJoystick();
@@ -1024,8 +1056,8 @@ function animate(time) {
       const step = path.length ? Math.min(length, walkSpeed * dt) : Math.min(length, 1) * walkSpeed * dt;
       const x = location.x + dx / length * step;
       const y = location.y + dy / length * step / .67;
-      if (canWalkInSpace(x, location.y, walkSpace)) { walking ||= x !== location.x; location.x = x; }
-      if (canWalkInSpace(location.x, y, walkSpace)) { walking ||= y !== location.y; location.y = y; }
+      if (x !== location.x && clearSegmentInSpace(location, { x, y: location.y }, walkSpace)) { walking = true; location.x = x; }
+      if (y !== location.y && clearSegmentInSpace(location, { x: location.x, y }, walkSpace)) { walking = true; location.y = y; }
       dirName = resolveDir(dx, dy, dirName);
       if (dx) facing = dx < 0 ? -1 : 1;
     }
