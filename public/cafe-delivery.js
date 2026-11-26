@@ -190,8 +190,9 @@ function paintTrip() {
   clerk.hidden = point.space !== currentSpace();
   if (!clerk.hidden) {
     clerk.dataset.mode = returning ? "walk-return" : "walk-tray";
-    clerk.style.setProperty("--clerk-x", point.x + "%");
-    clerk.style.setProperty("--clerk-y", point.y + "%");
+    const placement = window.cafeArt?.place(point) ?? point;
+    clerk.style.setProperty("--clerk-x", placement.x + "%");
+    clerk.style.setProperty("--clerk-y", placement.y + "%");
     clerk.style.setProperty("--clerk-facing", String(point.facing || 1));
     clerk.style.setProperty("--clerk-opacity", String(Math.min(1, elapsed / 180, (trip.returnAt - time) / 180)));
     clerk.style.zIndex = String(Math.max(2, Math.round(point.y)));

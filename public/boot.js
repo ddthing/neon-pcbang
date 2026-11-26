@@ -19,7 +19,11 @@
   paint(15, "매장 준비 중");
   let ready = false;
   const world = new Promise((resolve) => document.addEventListener("cafe-ready", resolve, { once: true }));
-  const art = document.getElementById("lobby-art").decode().catch(() => {}).then(() => {
+  const art = (window.cafeArt ? Promise.resolve() : new Promise((resolve) => {
+    const hall = document.getElementById("lobby-art");
+    hall.src ||= hall.dataset.src;
+    hall.decode().then(resolve, resolve);
+  })).then(() => {
     if (!ready) paint(82, "문을 열고 있어요");
   });
   let timeout;

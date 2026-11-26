@@ -153,8 +153,19 @@ function paint(key, data, point, walking, awayAtDesk = false) {
     if (jumped) node.classList.add("instant-move");
     sprite.x = point.x;
     sprite.y = point.y;
-    node.style.left = point.x + "%";
-    node.style.top = point.y + "%";
+    const placement = window.cafeArt?.place(point) ?? point;
+    node.style.left = placement.x + "%";
+    node.style.top = placement.y + "%";
+    if (window.cafeArt && walking && (key === "mine" || data.walking === true) && prevX !== undefined && !jumped) {
+      const start = window.cafeArt.pixel({ x: prevX, y: prevY });
+      const end = window.cafeArt.pixel(point);
+      sprite.strideDistance = (sprite.strideDistance ?? 0) + Math.hypot(end.x - start.x, end.y - start.y);
+      node.style.setProperty("--stride-frame", 1 + Math.floor(sprite.strideDistance / 6) % 6);
+      node.dataset.stride = "";
+    } else {
+      sprite.strideDistance = 0;
+      delete node.dataset.stride;
+    }
     if (jumped) requestAnimationFrame(() => node.classList.remove("instant-move"));
   }
 
@@ -170,14 +181,15 @@ function paint(key, data, point, walking, awayAtDesk = false) {
   const seatedHere = Boolean(data.seat) && !awayAtDesk && data.zone !== "booth" && data.zone !== "terrace";
   node.classList.toggle("seated", seatedHere);
   const furniture = seatedHere && seating.chair(data.seat);
-  if (furniture) {
+  if (furniture && !window.cafeArt) {
     node.style.setProperty("--seated-size", furniture.size + "cqw");
     node.style.setProperty("--seat-lift", (furniture.y - furniture.top) * .18 + "%");
     node.style.zIndex = String(furniture.depth - 1);
   } else {
     node.style.removeProperty("--seated-size");
     node.style.removeProperty("--seat-lift");
-    node.style.zIndex = String(Math.round(point.y * 10));
+    const placement = window.cafeArt?.place(point) ?? point;
+    node.style.zIndex = String(Math.round(placement.y * 10));
   }
 
   // Determine directional seated / break sprite row & column cleanly
@@ -188,10 +200,10 @@ function paint(key, data, point, walking, awayAtDesk = false) {
   if (seatedHere) {
     const [sSpace, sIdx] = String(data.seat).split(":");
     seatDir = sSpace === "hall" ? (Number(sIdx) % 2 === 0 ? "right" : "left") : "up";
-    row = seatDir === "left" ? 5 : 4;
+    row = { up: 4, right: 5, left: 6 }[seatDir];
   } else if (!walking && (act === "smoke" || act === "coffee" || act === "candy")) {
-    row = act === "smoke" ? 5 : 6;
-    breakCol = act === "smoke" ? 2 : act === "coffee" ? 0 : 2;
+    row = 7;
+    breakCol = { coffee: 0, candy: 2, smoke: 4 }[act];
   }
   node.style.setProperty("--sprite-row", String(row));
   if (seatDir) node.dataset.seatDir = seatDir;
@@ -308,7 +320,7 @@ function drawSelf(walking = false) {
   }
   const chair = seat && seating.chair(seat);
   // Frame the back of the chair and the display together in the private rooms.
-  const focus = chair ? { x: point.x, y: (chair.top + point.y) / 2 - 5 } : point;
+  const focus = chair && !window.cafeArt ? { x: point.x, y: (chair.top + point.y) / 2 - 5 } : point;
   camera.follow(focus, phase ? null : mine);
   updateProximityPrompt();
 }
@@ -553,6 +565,23 @@ window.cafeWorld = {
   isOnBreak,
   currentZone: () => activeZone,
   setActivity,
+  async standFromSeat() {
+    const key = seating.current();
+    if (!key || isOnBreak()) return;
+    const sprite = visitors.get("mine");
+    if (sprite && !reducedMotion.matches) {
+      sprite.node.classList.add("standing");
+      await new Promise(resolve => setTimeout(resolve, 240));
+      sprite.node.classList.remove("standing");
+    }
+    if (key !== seating.current()) return;
+    const [space, index] = key.split(":");
+    const point = seating.position(key);
+    const hall = point && space === "hall";
+    const aisle = hall && point.x + (Number(index) % 2 ? 3.4 : -3.4);
+    Object.assign(location, hall && canWalkInSpace(aisle, point.y) ? { x: aisle, y: point.y } : entrance);
+    dirName = hall ? (Number(index) % 2 ? "right" : "left") : "down";
+  },
   syncNow: () => send("sync").catch(disconnected),
   getProfile: () => ({ name: name || "손님", avatar: avatarCode, token }),
   getPeers: () => peers.slice(),

@@ -22,8 +22,8 @@
   position: absolute;
   inset: 0;
   background-repeat: no-repeat;
-  background-size: 400% 700%;
-  background-position: calc(var(--sprite-col, 0) * 33.3333%) calc(var(--sprite-row, 0) * 16.6667%);
+  background-size: 700% 800%;
+  background-position: calc(var(--sprite-col, 0) * 16.666667%) calc(var(--sprite-row, 0) * 14.285714%);
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
@@ -176,7 +176,7 @@
   box-shadow: inset 0 -2px #4c383d, 0 2px 0 #261b1e;
 }
 .walk-button:hover { background: #84636c; }
-.walk-button:active:not(:disabled) { transform: translateY(1px); box-shadow: inset 0 -1px #4c383d, 0 1px 0 #261b1e; }
+.walk-button:active:not(:disabled) { transform: translateY(2.083333%); box-shadow: inset 0 -1px #4c383d, 0 1px 0 #261b1e; }
 .walk-name { display: flex; align-items: center; gap: 5px; color: var(--sub); font-size: 11px; }
 .walk-name input { width: 92px; min-height: 30px; padding: 4px 5px; border: 1px solid var(--line); border-radius: 4px; background: #292825; color: var(--text); font: inherit; }
 .walk-name input:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
@@ -247,24 +247,17 @@ body.cafe-fullscreen { overflow: hidden; background: #261b1e; }
 .floor-legend .taken { background: #93807d; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .cafe-visitor.walking .cafe-sprite {
-    animation: avatar-stride .38s steps(1, end) infinite;
+  .cafe-visitor.walking:not(.seated) .cafe-sprite {
+    animation: avatar-stride .48s steps(6, end) infinite;
   }
-  .cafe-visitor.walking::before {
-    animation: shadow-step .38s steps(1, end) infinite;
+  .cafe-visitor.walking:not(.seated)::before {
+    animation: shadow-step .48s steps(1, end) infinite;
   }
-  .cafe-visitor.seated:not(.away-desk):not([data-seat-dir="right"]) .cafe-sprite {
-    animation: avatar-typing .75s steps(1, end) infinite;
+  .cafe-visitor.seated:not(.away-desk) .cafe-sprite {
+    animation: avatar-typing .8s steps(4, end) infinite;
   }
-  .cafe-visitor.seated:not(.away-desk)[data-seat-dir="right"] .cafe-sprite {
-    animation: avatar-typing-hi .75s steps(1, end) infinite;
-  }
-  .cafe-visitor[data-pose="smoke"] .cafe-sprite,
-  .cafe-visitor[data-pose="candy"] .cafe-sprite {
-    animation: avatar-typing-hi 2.8s steps(1, end) infinite;
-  }
-  .cafe-visitor[data-pose="coffee"] .cafe-sprite {
-    animation: avatar-typing 2.8s steps(1, end) infinite;
+  .cafe-visitor[data-pose] .cafe-sprite {
+    animation: avatar-break 2.8s steps(2, end) infinite;
   }
   .cafe-vapor i {
     animation: vapor-rise 2.7s ease-out infinite;
@@ -284,22 +277,20 @@ body.cafe-fullscreen { overflow: hidden; background: #261b1e; }
 }
 
 @keyframes avatar-stride {
-  0% { background-position-x: 0%; }
-  25% { background-position-x: 33.3333%; }
-  50% { background-position-x: 66.6667%; }
-  75% { background-position-x: 100%; }
+  from { background-position-x: 16.666667%; }
+  to { background-position-x: 116.666667%; }
 }
 @keyframes shadow-step {
   0%, 50% { transform: scaleX(1); opacity: .88; }
   25%, 75% { transform: scaleX(.76); opacity: .55; }
 }
 @keyframes avatar-typing {
-  0%, 49% { background-position-x: 0%; }
-  50%, 100% { background-position-x: 33.3333%; }
+  from { background-position-x: 0%; }
+  to { background-position-x: 66.666667%; }
 }
-@keyframes avatar-typing-hi {
-  0%, 49% { background-position-x: 66.6667%; }
-  50%, 100% { background-position-x: 100%; }
+@keyframes avatar-break {
+  from { background-position-x: calc(var(--sprite-col, 0) * 16.666667%); }
+  to { background-position-x: calc((var(--sprite-col, 0) + 2) * 16.666667%); }
 }
 @keyframes vapor-rise {
   0% { opacity: 0; transform: translate(0, 0) scale(.8); }
@@ -315,8 +306,8 @@ body.cafe-fullscreen { overflow: hidden; background: #261b1e; }
   .cafe-visitor:not(.mine) { transition: none; }
 }
 @keyframes cafe-sit {
-  0% { transform: translateY(-4px); }
-  67% { transform: translateY(1px); }
+  0% { transform: translateY(-8.333333%); }
+  67% { transform: translateY(2.083333%); }
   100% { transform: none; }
 }
 @keyframes cafe-hello { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
@@ -325,7 +316,6 @@ body.cafe-fullscreen { overflow: hidden; background: #261b1e; }
 .scene[data-space="duo"] .cafe-avatars { --avatar-scale: 6.1; }
 .scene[data-space="team"] .cafe-avatars { --avatar-scale: 4.7; }
 .scene[data-space="squad"] .cafe-avatars { --avatar-scale: 5.5; }
-.cafe-visitor.seated[data-seat-dir="right"] .cafe-sprite { background-position-x: 66.6667%; }
 .cafe-visitor.seated::before { display: none; }
 .cafe-visitor.seated { width: var(--seated-size, 3.2cqw); height: var(--seated-size, 3.2cqw); margin-top: calc(0px - var(--seat-lift, 0px)); }
 .cafe-visitor.seated .cafe-sprite { inset: 0; clip-path: none; }

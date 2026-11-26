@@ -121,16 +121,17 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
   };
 
   const isWalking = action === "walk";
-  const isSeated = action === "sit";
-  const bob = isWalking ? [0, -2, 0, -2][frame % 4] : isSeated ? (frame % 2 === 1 ? 1 : 0) : 0;
-  const stepL = isWalking ? [0, -4, 0, 4][frame % 4] : 0;
-  const stepR = isWalking ? [0, 4, 0, -4][frame % 4] : 0;
-  const armBob = isWalking ? [0, -3, 0, 3][frame % 4] : 0;
-  const leftLegY = isWalking ? (frame % 4 === 1 ? -3 : frame % 4 === 3 ? 1 : 0) : 0;
-  const rightLegY = isWalking ? (frame % 4 === 3 ? -3 : frame % 4 === 1 ? 1 : 0) : 0;
-
-  // Crisp plump 48x48 GPT-sheet proportions!
-  const headCenterY = (isSeated ? 22 : 19) + bob;
+  const settling = action === "sit-transition";
+  const isSeated = action === "sit" || settling;
+  const stride = frame % 6;
+  const tap = frame % 4;
+  const bob = isWalking ? [0, -1, -2, 0, -1, -2][stride] : 0;
+  const stepL = isWalking ? [-4, -2, 1, 4, 2, -1][stride] : 0;
+  const stepR = -stepL;
+  const armBob = isWalking ? [3, 2, -1, -3, -2, 1][stride] : 0;
+  const leftLegY = isWalking ? [0, -1, -3, 1, 0, 0][stride] : 0;
+  const rightLegY = isWalking ? [1, 0, 0, 0, -1, -3][stride] : 0;
+  const headCenterY = (settling ? 19 + frame : isSeated ? 22 : 19) + bob;
   const torsoY = headCenterY + 9;
 
   // Back hair layer for long wave / medium hair
@@ -204,15 +205,15 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
 
   // 3. Arms / Poses
   if (isSeated) {
-    const tap = frame % 2;
+    const reach = settling ? 3 - frame : 0;
     if (side) {
       prect(24, torsoY + 3, 7, 3, outfit.sub);
-      prect(31, torsoY + 4 - tap, 3, 3, skin.base);
+      prect(31 - reach + (tap === 2 ? 1 : 0), torsoY + 3 - (tap % 2) + reach, 3, 2, skin.base);
     } else {
-      prect(12, torsoY + 2, 3, 5, outfit.sub);
-      prect(33, torsoY + 2, 3, 5, outfit.sub);
-      prect(13, torsoY + 4 - tap, 3, 2, skin.base);
-      prect(32, torsoY + 3 + tap, 3, 2, skin.base);
+      prect(12, torsoY - 6 + reach, 3, 11 - reach, outfit.sub);
+      prect(33, torsoY - 6 + reach, 3, 11 - reach, outfit.sub);
+      prect(13 + (tap === 1 ? 1 : 0), torsoY - 7 - (tap === 0 ? 1 : 0) + reach, 3, 3, skin.base);
+      prect(32 + (tap === 2 ? 1 : 0), torsoY - 7 - (tap === 3 ? 1 : 0) + reach, 3, 3, skin.base);
     }
   } else if (action === "smoke" || action === "coffee" || action === "candy") {
     prect(12, torsoY + 2, 3, 6, outfit.sub);
@@ -432,29 +433,30 @@ export function getAvatarSheetUrl(avatarCode, fallbackColor = 0) {
   if (spriteCache.has(key)) return spriteCache.get(key);
 
   const canvas = document.createElement("canvas");
-  canvas.width = 48 * 4;
-  canvas.height = 48 * 7;
+  canvas.width = 48 * 7;
+  canvas.height = 48 * 8;
   const ctx = canvas.getContext("2d");
 
   ["down", "up", "right", "left"].forEach((dir, row) => {
-    for (let f = 0; f < 4; f++) {
-      drawChibiFrame(ctx, f * 48, row * 48, cfg, dir, f === 0 ? "idle" : "walk", f);
+    drawChibiFrame(ctx, 0, row * 48, cfg, dir, "idle", 0);
+    for (let frame = 0; frame < 6; frame++) {
+      drawChibiFrame(ctx, (frame + 1) * 48, row * 48, cfg, dir, "walk", frame);
     }
   });
-  drawChibiFrame(ctx, 0, 4 * 48, cfg, "up", "sit", 0);
-  drawChibiFrame(ctx, 48, 4 * 48, cfg, "up", "sit", 1);
-  drawChibiFrame(ctx, 96, 4 * 48, cfg, "right", "sit", 0);
-  drawChibiFrame(ctx, 144, 4 * 48, cfg, "right", "sit", 1);
-
-  drawChibiFrame(ctx, 0, 5 * 48, cfg, "left", "sit", 0);
-  drawChibiFrame(ctx, 48, 5 * 48, cfg, "left", "sit", 1);
-  drawChibiFrame(ctx, 96, 5 * 48, cfg, "down", "smoke", 0);
-  drawChibiFrame(ctx, 144, 5 * 48, cfg, "down", "smoke", 1);
-
-  drawChibiFrame(ctx, 0, 6 * 48, cfg, "down", "coffee", 0);
-  drawChibiFrame(ctx, 48, 6 * 48, cfg, "down", "coffee", 1);
-  drawChibiFrame(ctx, 96, 6 * 48, cfg, "down", "candy", 0);
-  drawChibiFrame(ctx, 144, 6 * 48, cfg, "down", "candy", 1);
+  ["up", "right", "left"].forEach((dir, index) => {
+    const y = (index + 4) * 48;
+    for (let frame = 0; frame < 4; frame++) {
+      drawChibiFrame(ctx, frame * 48, y, cfg, dir, "sit", frame);
+    }
+    for (let frame = 0; frame < 3; frame++) {
+      drawChibiFrame(ctx, (frame + 4) * 48, y, cfg, dir, "sit-transition", frame);
+    }
+  });
+  ["coffee", "candy", "smoke"].forEach((action, index) => {
+    for (let frame = 0; frame < 2; frame++) {
+      drawChibiFrame(ctx, (2 * index + frame) * 48, 7 * 48, cfg, "down", action, frame);
+    }
+  });
 
   const url = canvas.toDataURL("image/png");
   spriteCache.set(key, url);

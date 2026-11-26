@@ -158,7 +158,7 @@ function prepareZoneArt(zoneId) {
 
 // The 88 computers share a packed sheet. Positions follow the glass calibration.
 const hardwareLayer = document.querySelector(".hall-hardware");
-for (const [index, polygon] of cafeScreenShapes.hall.entries()) {
+for (const [index, polygon] of (window.cafeArt ? [] : cafeScreenShapes.hall).entries()) {
   const x = Math.round(Math.min(...polygon.map(point => point[0])) / 2) - 3;
   const y = Math.round(Math.min(...polygon.map(point => point[1])) / 2) - 2;
   const col = Math.floor(index / 22) * 2 + index % 2;
@@ -171,6 +171,28 @@ for (const [index, polygon] of cafeScreenShapes.hall.entries()) {
 }
 
 function renderMonitorPower(spaceId) {
+  if (window.cafeArt) {
+    const key = isSeated() && room.space === spaceId ? room.space + ":" + room.seat : null;
+    const panel = key && window.cafeArt.screen(key);
+    const away = new Set(awaySeats);
+    if (key && activeBreakZone) away.add(key);
+    window.cafeArt.updateScreens(key, occupiedSeats, away);
+    if (!panel) {
+      poweredMonitor = null;
+      monitorLayer.replaceChildren();
+      return;
+    }
+    const anchor = poweredMonitor?.dataset.seat === key ? poweredMonitor : document.createElement("span");
+    anchor.className = "pc-screen";
+    anchor.dataset.seat = key;
+    for (const [name, value] of Object.entries({ x: panel.x, y: panel.y,
+      "screen-width": panel.w, "screen-height": panel.h })) {
+      anchor.style.setProperty("--" + name, value + "%");
+    }
+    poweredMonitor = anchor;
+    if (anchor.parentElement !== monitorLayer) monitorLayer.replaceChildren(anchor);
+    return;
+  }
   if (spaceId === "booth" || spaceId === "terrace") {
     monitorLayer.hidden = true;
     return;
@@ -359,16 +381,31 @@ function renderRoom() {
   const inTerrace = view === "terrace";
   const inSpecial = inSubRoom || inBooth || inTerrace;
 
-  $(".scene").dataset.space = view;
-  renderChairFronts(view);
-  $("#lobby-art").hidden = inSpecial;
-  if (inSubRoom) prepareRoomArt();
-  if (inBooth) prepareZoneArt("booth");
-  if (inTerrace) prepareZoneArt("terrace");
-  roomsArtwork.hidden = !inSubRoom;
-  roomsArtwork.alt = inSubRoom ? space.alt : "";
-  boothArtwork.hidden = !inBooth;
-  terraceArtwork.hidden = !inTerrace;
+  const scene = $(".scene");
+  const oldView = scene.dataset.space;
+  scene.dataset.space = view;
+  if (window.cafeArt) {
+    const area = view === "lobby" ? "hall" : view;
+    const seats = (spaces[area]?.positions ?? []).map((_, index) => {
+      const key = area + ":" + index;
+      const point = window.cafeSeating.position(key);
+      return { key, point, direction: area === "hall" ? (index % 2 ? "left" : "right") : "up" };
+    });
+    window.cafeArt.show(area, seats);
+    if (oldView !== view) window.cafeArt.openDoor();
+  } else {
+    renderChairFronts(view);
+    const hall = $("#lobby-art");
+    if (!inSpecial) hall.src ||= hall.dataset.src;
+    hall.hidden = inSpecial;
+    if (inSubRoom) prepareRoomArt();
+    if (inBooth) prepareZoneArt("booth");
+    if (inTerrace) prepareZoneArt("terrace");
+    roomsArtwork.hidden = !inSubRoom;
+    roomsArtwork.alt = inSubRoom ? space.alt : "";
+    boothArtwork.hidden = !inBooth;
+    terraceArtwork.hidden = !inTerrace;
+  }
 
   $("#cafe-joystick").hidden = Boolean((room.space && !activeBreakZone) || seatJourney);
   $("#kiosk-pin").hidden = inSpecial;
@@ -401,7 +438,9 @@ function renderRoom() {
   marker.hidden = !seated || Boolean(seatJourney) || Boolean(activeBreakZone);
   if (seated) {
     const seat = floorSeats.get(room.space + ":" + room.seat);
-    const [x, y] = space.positions[room.seat];
+    const panel = window.cafeArt?.screen(seat.key);
+    const [x, y] = panel ? [panel.x + panel.w / 2, panel.y - 2] : space.positions[room.seat];
+    marker.toggleAttribute("data-pixel-seat", Boolean(panel));
     marker.style.setProperty("--x", x + "%");
     marker.style.setProperty("--y", y + "%");
     marker.textContent = seat.code;
@@ -647,7 +686,7 @@ $("#enter").addEventListener("click", async () => {
       journey.phase = "booting";
       window.cafeAudioPlay?.("pop");
       renderRoom();
-      await new Promise((resolve) => setTimeout(resolve, 290));
+      await new Promise((resolve) => setTimeout(resolve, window.cafeArt ? 800 : 290));
       if (seatJourney !== journey) return;
     }
     seatJourney = null;
@@ -682,7 +721,14 @@ function clearSeat() {
   renderRoom();
   $("#open-floor").focus();
 }
-function leaveSeat() {
+let leavingSeat = false;
+async function leaveSeat() {
+  if (leavingSeat || !room.space) return;
+  leavingSeat = true;
+  if (desktop.open) desktop.close();
+  await window.cafeWorld?.standFromSeat?.();
+  leavingSeat = false;
+  if (!room.space) return;
   window.cafeWorld?.release();
   clearSeat();
   notify("자리를 비웠어요. 언제든 다시 들러요.");
@@ -1090,6 +1136,7 @@ connectCafeSwitch(document.querySelector(".top-actions .u013"), async (enabled) 
 
 window.cafeSeating = {
   placeRoomDoors(portals, relaxPortals = {}) {
+    window.cafeArt?.placeDoors(portals, relaxPortals);
     const container = $("#room-doors");
     container.replaceChildren();
     for (const [id, point] of Object.entries(portals)) {
@@ -1130,6 +1177,8 @@ window.cafeSeating = {
   label(key) { return floorSeats.get(key)?.code ?? null; },
   chair: chairGeometry,
   trayPosition(key) {
+    const placement = window.cafeArt?.tray(key);
+    if (placement) return placement;
     const seat = floorSeats.get(key);
     if (!seat) return null;
     const [x, y] = spaces[seat.space].positions[seat.index];
