@@ -14,21 +14,24 @@
     mint, green, rust, peach, wood, darkWood, lightWood, paper } = colors;
   const scene = document.querySelector(".scene");
   const background = document.createElement("canvas");
+  const previous = document.createElement("canvas");
   const effects = document.createElement("canvas");
   const avatars = document.getElementById("cafe-avatars");
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   background.className = "cafe-art-base";
+  previous.className = "cafe-art-base cafe-art-previous";
   effects.className = "cafe-art-effects";
-  for (const canvas of [background, effects]) {
+  for (const canvas of [background, previous, effects]) {
     canvas.width = WIDTH;
     canvas.height = HEIGHT;
     canvas.setAttribute("aria-hidden", "true");
   }
   const base = background.getContext("2d", { alpha: false });
+  const prior = previous.getContext("2d", { alpha: false });
   const overlay = effects.getContext("2d");
-  if (!base || !overlay) return;
-  base.imageSmoothingEnabled = overlay.imageSmoothingEnabled = false;
-  scene.prepend(background, effects);
+  if (!base || !prior || !overlay) return;
+  base.imageSmoothingEnabled = prior.imageSmoothingEnabled = overlay.imageSmoothingEnabled = false;
+  scene.prepend(background, previous, effects);
   scene.dataset.canvasWorld = "";
 
   const pixel = (point) => ({
@@ -297,6 +300,7 @@
   let activeSeat = null;
   let bootAt = 0;
   let lastPhase = "";
+  let lightFade;
   let doorAt = 0;
   let doorway = null;
   let hallDoors = [];
@@ -580,8 +584,14 @@
     if (!area) return;
     const phase = document.body.dataset.cafeLight || "night";
     if (phase !== lastPhase) {
+      const fade = lastPhase && !document.hidden && !reducedMotion.matches;
+      if (fade) {
+        lightFade?.cancel();
+        prior.drawImage(background, 0, 0);
+      }
       lastPhase = phase;
       paintBase(phase);
+      if (fade) lightFade = previous.animate([{ opacity: 1 }, { opacity: 0 }], 900);
     }
     if (document.hidden) return;
     overlay.clearRect(0, 0, WIDTH, HEIGHT);
@@ -607,6 +617,7 @@
       const sway = reducedMotion.matches ? 0 : [-1, 0, 1, 0][Math.floor((tick + x) / 3) % 4];
       plantLeaves(overlay, x, y, sway);
     }
+    if (area === "hall") paintHallStatus();
     if (reducedMotion.matches) return;
     const weather = document.body.dataset.cafeWeather;
     if (weather === "rain" || weather === "storm" || weather === "snow") {
@@ -642,6 +653,26 @@
       rect(overlay, x + Math.floor(w / 2) - half, y + 2, 1, 27, blue);
     }
   }
+  function paintHallStatus() {
+    const phase = window.cafeSeating?.phase();
+    const selecting = document.getElementById("floor-kiosk").open;
+    if (phase || selecting) {
+      rect(overlay, 191, 394, 19, 8, phase ? "#435d62" : slate);
+      if (phase) {
+        rect(overlay, 197, 398, 2, 2, mint);
+        rect(overlay, 199, 400, 2, 1, mint);
+        rect(overlay, 201, 397, 2, 3, mint);
+      } else {
+        for (const y of [396, 398, 400]) rect(overlay, 194, y, 11, 1, paper);
+      }
+    }
+    const mode = document.getElementById("cafe-delivery-clerk").dataset.mode;
+    if (mode === "plate") {
+      frame(overlay, 124, 297, 15, 30, glass);
+      rect(overlay, 125, 298, 13, 1, aqua);
+      rect(overlay, 135, 310, 2, 8, paper);
+    }
+  }
   window.cafeArt = {
     pixel,
     kitchenClerk,
@@ -672,6 +703,7 @@
       avatars.querySelectorAll(".cafe-art-chair, .cafe-art-prop-front").forEach(element => element.remove());
       for (const seat of layout) chairFront(seat);
       if (area === "hall") counterApron();
+      lightFade?.cancel();
       lastPhase = "";
       doorAt = -Infinity;
       paintEffects(performance.now());

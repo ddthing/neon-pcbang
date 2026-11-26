@@ -23,6 +23,7 @@
 }
 
 .cafe-art-effects { z-index: 1; }
+.cafe-art-previous { opacity: 0; }
 .scene[data-canvas-world] .cafe-avatars { container-type: inline-size; }
 .scene[data-canvas-world] .cafe-visitor {
   width: 6.25cqw;
