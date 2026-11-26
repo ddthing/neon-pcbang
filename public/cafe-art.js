@@ -613,25 +613,33 @@
       }
     }
     const tick = Math.floor(now / 100);
+    const staticMotion = reducedMotion.matches;
+    const animTick = staticMotion ? 0 : tick;
     for (const { x, y } of foliage) {
-      const sway = reducedMotion.matches ? 0 : [-1, 0, 1, 0][Math.floor((tick + x) / 3) % 4];
+      const sway = staticMotion ? 0 : [-1, 0, 1, 0][Math.floor((tick + x) / 3) % 4];
       plantLeaves(overlay, x, y, sway);
     }
     if (area === "hall") paintHallStatus();
-    if (reducedMotion.matches) return;
     const weather = document.body.dataset.cafeWeather;
     if (weather === "rain" || weather === "storm" || weather === "snow") {
       for (const { x, y, w, h } of glassPanes) {
+        overlay.save();
+        overlay.beginPath();
+        overlay.rect(x, y, w, h);
+        overlay.clip();
         for (let drop = 0; drop < Math.floor(w / 11); drop++) {
-          const px = (drop * 23 + tick) % w;
-          const py = (drop * 17 + tick * 3) % (h - 4);
+          const px = (drop * 23 + animTick) % w;
+          const py = (drop * 17 + animTick * 3) % Math.max(1, h - 4);
           rect(overlay, x + px, y + py, 1, weather === "snow" ? 1 : 4, "#8e98b3");
         }
+        overlay.restore();
       }
-      if (area === "terrace" && weather !== "snow") {
+      if (!staticMotion && area === "terrace" && weather !== "snow") {
         for (let n = 0; n < 20; n++) {
           const x = 65 + (n * 83) % 628;
           const y = 266 + (n * 53) % 105;
+          if (doorway && x + 6 >= doorway.x - 8 && x - 6 <= doorway.x + doorway.w + 8 &&
+              y >= doorway.y - 8 && y <= doorway.y + 32) continue;
           const splash = (tick + n * 3) % 7;
           if (splash < 3) rect(overlay, x - splash, y, 1 + splash * 2, 1, "#a2adbd");
         }
@@ -640,7 +648,7 @@
     const cooking = area === "hall" && document.querySelector("#cafe-delivery-clerk[data-mode='cook']:not([hidden])");
     if (cooking) {
       for (const x of [114, 123]) {
-        const rise = (tick + x) % 5;
+        const rise = staticMotion ? 1 : (tick + x) % 5;
         rect(overlay, x + rise % 2, 338 - rise * 2, 1, 2, "#cfb8bb");
       }
     }
