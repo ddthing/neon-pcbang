@@ -194,7 +194,59 @@ export function initMerge() {
     confettiFrame = requestAnimationFrame(draw);
   }
 
+  // 슬라이딩 모션: 이동하는 타일마다 "유령 타일"을 원래 자리에서 도착 칸으로 transform 으로만 밀어 준 뒤 실제 판을 그린다.
+  const slideMs = 110;
+  let slideTimer = 0;
+  let afterSlide = null;
+
+  function clearSlide() {
+    clearTimeout(slideTimer);
+    slideTimer = 0;
+    board.querySelectorAll(".merge-ghost").forEach((ghost) => ghost.remove());
+  }
+
+  // 미끄러지는 중에 다음 입력이 오거나 창이 닫히면 즉시 마무리한다(입력이 밀리지 않게).
+  function finishSlide() {
+    clearSlide();
+    const settle = afterSlide;
+    afterSlide = null;
+    settle?.();
+  }
+
+  function startSlide(slides, settle) {
+    for (const { from, to, value } of slides) {
+      const source = cells[from].tile;
+      const target = cells[to].tile;
+      const ghost = document.createElement("div");
+      ghost.className = "merge-cell merge-ghost";
+      ghost.dataset.value = value;
+      ghost.setAttribute("aria-hidden", "true");
+      const number = document.createElement("span");
+      number.className = "merge-number";
+      number.textContent = value;
+      ghost.append(number);
+      ghost.style.left = source.offsetLeft + "px";
+      ghost.style.top = source.offsetTop + "px";
+      ghost.style.width = source.offsetWidth + "px";
+      ghost.style.height = source.offsetHeight + "px";
+      board.append(ghost);
+      ghost.animate(
+        [{ transform: "none" }, { transform: `translate(${target.offsetLeft - source.offsetLeft}px, ${target.offsetTop - source.offsetTop}px)` }],
+        { duration: slideMs, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
+      );
+      // 출발 칸은 유령이 떠난 빈칸으로 보이게 한다. paint()가 이후 실제 값으로 다시 그린다.
+      source.querySelector(".u022")?.remove();
+      source.dataset.value = "0";
+      cells[from].number.textContent = "";
+      source.setAttribute("aria-label", "빈 칸");
+    }
+    afterSlide = settle;
+    slideTimer = setTimeout(finishSlide, slideMs);
+  }
+
   function start() {
+    afterSlide = null;
+    clearSlide();
     stopConfetti();
     board.querySelectorAll(".u022").forEach((effect) => effect.remove());
     values = createMergeBoard();
@@ -207,6 +259,7 @@ export function initMerge() {
   function move(direction) {
     if (finished) return;
     finishHint();
+    finishSlide();
     const result = moveMergeBoard(values, direction);
     if (!result.changed) {
       status.textContent = "이쪽으로는 움직일 수 없어요.";
@@ -223,8 +276,9 @@ export function initMerge() {
     }
     const won = !reachedGoal && values.some((value) => value >= goal);
     finished = !canMoveMergeBoard(values);
-    paint();
-    if (!motion.matches) {
+    const settle = () => {
+      paint();
+      if (motion.matches) return;
       for (const index of result.merged) {
         const { tile, number } = cells[index];
         tile.querySelector(".u022")?.remove();
@@ -242,7 +296,9 @@ export function initMerge() {
           { duration: 180, easing: "ease-out" },
         );
       }
-    }
+    };
+    if (motion.matches || document.hidden || !result.slides.length) settle();
+    else startSlide(result.slides, settle);
     if (won) {
       reachedGoal = true;
       celebrate();
@@ -288,6 +344,7 @@ export function initMerge() {
   });
   dialog.addEventListener("close", () => {
     swipe = null;
+    finishSlide();
     stopConfetti();
   });
   motion.addEventListener("change", () => {
