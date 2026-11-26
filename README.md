@@ -1,21 +1,95 @@
 # 길모퉁이PC방
 
-내 위치의 날씨와 시간이 창밖으로 흐르는 포근한 픽셀 아트 온라인 PC방입니다. 같은 매장에 들어온 손님은 서로의 캐릭터와 좌석 상태를 볼 수 있어요.
+내 위치의 날씨와 시간이 창밖으로 흐르는 **100% 순수 코드 픽셀아트** 온라인 PC방입니다. 같은 매장에 입장한 손님들이 실시간으로 걸어다니며 좌석을 고르고, 음식 배달을 시키고, 11종의 미니게임과 대전을 함께 즐길 수 있습니다.
 
-- **이동 & 아바타 옷장:** 방향키, WASD, 또는 바닥 누르기. `👕 옷장`에서 4방향 정통 픽셀 아바타(헤어, 코디, 게이밍 헤드셋, 안경)를 자유롭게 꾸밀 수 있어요.
-- **휴식·흡연구역 2종 (좌석 유지 외출):** 매장 좌측 상단의 **실내 흡연구역(`booth`)**과 우측 상단의 **야외 흡연구역(`terrace`)**을 내 PC 좌석을 반납하지 않고도 오갈 수 있어요. 비흡연자도 자판기 밀크커피나 멘솔·막대사탕 모드로 구역별 담소를 즐길 수 있습니다.
-- **길모퉁이 매점 2.0 & 오픈키친:** 짜계치·얼박사·아샷추·붕어빵 등 24종 픽셀아트 메뉴와 내 맘대로 토핑 커스텀을 지원해요. 고양이 알바생이 오픈키친에서 조리 후 책상으로 배달하며, 도착한 쟁반을 클릭해 직접 먹거나 무료 `G-포인트`로 옆 자리 손님에게 간식을 선물할 수 있습니다.
-- **길모퉁이 OS 2.0 & 미니게임 9종:** 좌석 간 실시간 1:1 대전(오목·알까기 + 고양이 알바 AI), 모퉁이 블록 드롭(테트리스), 붕어빵 제작 타이쿤, 알바냥 매점 러시, 코지 빗방울 산성비(청축·갈축·적축 타건음 지원), 3단계 지뢰찾기(초·중·고급), 벽돌깨기 DX, 2048, 스도쿠와 D1 실시간 매장 TOP 랭킹을 제공합니다.
-- **채팅**은 같은 공간에 있는 손님에게 잠깐 말풍선으로 표시돼요. 채팅 설정에서 특정 손님이나 다른 손님 모두의 말풍선을 숨길 수 있어요.
-- **단골 쿠폰:** 한국 시간 기준 하루 착석 시간 30분을 채우면 도장 1개를 받을 수 있어요. 10개를 모아 매점의 단골 메뉴로 바꿀 수 있습니다. 이 브라우저에 저장된 손님 정보로 쿠폰을 이어서 사용해요.
-- **창밖:** [Open-Meteo](https://open-meteo.com/)를 통해 사용자 현재 위치의 날씨와 일출·일몰 시각, 로컬 시간 흐름을 보여줍니다.
-- **제목 글꼴**은 귀댕이의 [뚝딱감자체](https://blog.naver.com/guidang2/224435435470)이며, [눈누의 웹폰트 주소](https://noonnu.cc/font_page/1969)를 사용합니다.
+- **순수 픽셀아트 월드 & 타일맵 (`1152×768`):** 외부 그림 파일이나 AI 이미지 없이 [pixel-tiles.js](public/pixel-tiles.js)와 [cafe-art.js](public/cafe-art.js)가 4단계 셰이딩·디더링·도트 매트릭스로 바닥·가구·PC·오픈키친·조명·창밖 날씨를 직접 그립니다.
+- **도트 매트릭스 캐릭터 & 화살표 옷장:** [avatar-sprites.js](public/avatar-sprites.js)가 4방향 48×48 도트 매트릭스 스프라이트(걷기·착석 타이핑·휴식·간식)를 생성하고, [walk.js](public/walk.js)에서 좌우 화살표 스태퍼와 4방향 회전으로 즉시 미리보며 갈아입을 수 있습니다.
+- **휴식·흡연구역 2종 (좌석 유지 외출):** 매장 좌측 상단 **실내 흡연구역(`booth`)**과 우측 상단 **야외 흡연구역(`terrace`)**을 PC 자리를 반납하지 않고 오갈 수 있으며, 구역별 독립 채팅을 지원합니다.
+- **길모퉁이 매점 2.0 & 오픈키친:** 24종 메뉴([snack-menu.json](public/snack-menu.json)) 주문, 알바냥 서빙 배달([cafe-delivery.js](public/cafe-delivery.js)), 옆 자리 간식 선물을 지원합니다.
+- **길모퉁이 OS 2.0 & 미니게임 11종:** 런처 아이콘(`게임 런처` / 작업표시줄 `게임`)을 누를 때 열리며, 실시간 오목·알까기(`모퉁이 대국장`), 테트리스(`모퉁이 블록 드롭`), **코지 솔리테어**, **뜨개 실풀기(Knit Unravel)**, 붕어빵 포차, 매점 러시, 산성비, 지뢰찾기, 벽돌깨기 DX, 2048, 스도쿠(고정/입력 구분·Undo 지원)와 실시간 TOP 5 랭킹([lib/cafe-arcade.mjs](lib/cafe-arcade.mjs))을 제공합니다.
 
-2차 리뉴얼에 참여하는 작업자는 [픽셀아트 리뉴얼 기획안](docs/pixel-art-renewal.md)에서 공용 기준, 작업 순서, 검수 조건을 확인할 수 있습니다.
+---
+
+## 공동개발자 필독 지침 (아키텍처·디자인·동기화 규칙)
+
+새로운 가구를 추가하거나 인테리어·미니게임·UI를 수정할 때는 **반드시 아래 항목별 지침**을 지켜 주세요.
+
+### ① 단일 배치 원본(Single Source of Truth) 및 좌석도 동기화 규칙
+> **원칙:** 인테리어·가구·좌석 위치가 바뀌면 **홀 렌더링**, **좌석 선택기(`#floor-kiosk`)**, **충돌·길찾기**, **알바냥 배달**이 함께 바뀌어야 합니다. 좌표값을 HTML이나 여러 JS 파일에 중복 하드코딩하지 마세요.
+
+| 대상 | 원본 파일 | 연동 소비처 (수정 시 반드시 함께 확인) |
+| --- | --- | --- |
+| 홀 좌석 열·행, 룸 좌석, 구역 랜드마크(입구·키오스크·매점·라운지·흡연구역·화분) | [public/cafe-layout.js](public/cafe-layout.js) (`window.cafeLayout`) | [public/cafe-art.js](public/cafe-art.js) (홀 렌더링), [public/app.js](public/app.js) (`#floor-kiosk` 좌석 버튼 및 `syncFloorLandmarks()`) |
+| 충돌 박스·출입문 통행·경로탐색·착석 기준점 | [lib/cafe-world.mjs](lib/cafe-world.mjs) (운영 시 `/world.js`로 서빙) | [public/walk.js](public/walk.js) (캐릭터 이동·클릭 길찾기), [public/cafe-delivery.js](public/cafe-delivery.js) (배달 동선) |
+| 상세 2차 리뉴얼 시안 규격·검수 기록 | [docs/pixel-art-renewal.md](docs/pixel-art-renewal.md), [public/renewal-layout.mjs](public/renewal-layout.mjs) | [public/renewal-seat-picker.mjs](public/renewal-seat-picker.mjs) |
+
+- **좌석·인테리어 수정 절차:**
+  1. [public/cafe-layout.js](public/cafe-layout.js)의 `hallBanks`, `hallRows`, `spaces`, `landmarks`를 먼저 수정합니다.
+  2. [app/cafe.html](app/cafe.html)의 `.floor-map-marker`에는 반드시 `data-landmark="<key>"` 속성을 유지해 [public/app.js](public/app.js)의 `syncFloorLandmarks()`가 좌석도 위치를 자동 갱신하도록 합니다.
+  3. **기존 좌석 키(`hall:0`~`hall:87`, `solo:0`, `duo:0..1`, `team:0..4`, `squad:0..5`)는 D1 예약/배달과 직결되므로 임의로 변경·삭제하지 않습니다.**
+
+---
+
+### ② 순수 픽셀아트 제작 지침 (외부 이미지 0장 원칙)
+> **원칙:** PC방 홀·가구·캐릭터·실풀기 퍼즐에는 **외부 PNG/JPG/WebP/AI 그림을 사용하지 않습니다.** 모든 픽셀은 해상도와 무관하게 `image-rendering: pixelated` + 정수 스케일로 선명해야 합니다.
+
+- **캔버스 & 팔레트 규격 ([public/pixel-tiles.js](public/pixel-tiles.js)):**
+  - 논리 해상도는 **`1152×768`** (정수 확대 시 FHD `2×`, 4K `3~4×`)로 유지합니다.
+  - 외곽선은 순수 검정(`#000000`) 대신 따뜻한 다크 플럼(`#261c29`) 1px로 마감합니다.
+  - 모든 가구·바닥·소품은 4단계 **Hue-Shifting** 팔레트(`w0..w4`, `c0..c4`, `g0..g4`, `r0..r3`)와 베벨 하이라이트·접지 그림자를 갖추어야 하며, 단색 사각형이나 `ctx.arc()`/`ellipse()` 수학 도형으로 뭉개지 않습니다.
+  - 빛 번짐은 블러(`shadowBlur`, 흐린 그라데이션) 대신 `drawDitherGlow()`(Bayer 4×4 디더링)를 사용합니다.
+- **가구별 디테일·방향 일치 기준:**
+  - **PC 좌석 (`paintDeskSet`, `paintChairFront`):** 측면 좌석(`left` / `right`)은 본체가 모니터 화면을 가리지 않도록 데스크 뒤편 코너에 분리 배치하고, 키보드·마우스는 의자 방향(수직 배열)과 맞춥니다. 의자 좌판·팔걸이·등받이(`chairFront`)는 빈틈(`|__` 분리) 없이 하나의 가구로 맞물려야 합니다.
+  - **소파·탁자 (`paintCouch`, `paintSofaTable`):** 소파 내부 방석은 반드시 팔걸이 안쪽 폭(`[x + 7, x + w - 7]`) 안에서 동적 분할해 프레임 밖으로 삐져나오지 않게 합니다.
+  - **바닥 타일 (`buildWoodPattern`, `buildStonePattern`):** 패턴 반복 시 투명 빈틈이 생기지 않도록 먼저 바탕색으로 캔버스를 채운 뒤 어긋난 판자를 그립니다.
+
+---
+
+### ③ 캐릭터 스프라이트 & 화살표 옷장 UI 지침
+- **순수 도트 매트릭스 ([public/avatar-sprites.js](public/avatar-sprites.js)):**
+  - `pellipse()` 등 수학 도형 사용 금지. `HEAD_FRONT`, `HEAD_SIDE`, `HAIR_FRONT`처럼 명시적 픽셀 매트릭스와 1px 외곽선 패스로 48×48프레임(7열×11행 시트)을 생성합니다.
+  - `AVATAR_WARDROBE`와 6자리 16진 코드(`encodeAvatarCode`/`normalizeAvatarCode`) 스키마는 D1 저장·테스트와 호환되도록 유지합니다.
+- **옷장 UI ([app/cafe.html](app/cafe.html), [public/walk.js](public/walk.js), [public/walk.css](public/walk.css)):**
+  - 부위별 선택은 작은 칩 버튼 나열 대신 **`.wardrobe-stepper` (`[◀]` · 현재 스타일/색상/인덱스 · `[▶]`)** 형태를 유지하고, `#wardrobe-rot-left`/`#wardrobe-rot-right`로 4방향(정면·오른쪽·뒷모습·왼쪽)을 즉시 회전 미리보기할 수 있어야 합니다.
+
+---
+
+### ④ 미니게임·런처·랭킹 개발 지침
+- **게임 런처 기본 상태:** `#pc-desktop`을 열 때 `#pc-launcher`는 기본 `hidden` 상태여야 하며(`pc.css` `.pc-launcher[hidden] { display: none !important; }`), `[data-launcher]` 버튼 클릭으로만 열립니다.
+- **구조 분리 및 자원 정리:**
+  - 순수 게임 규칙·상태 엔진은 `.mjs`(`solitaire-engine.mjs`, `knit-unravel-engine.mjs` 등)로 분리해 브라우저 없이 Node 단위 테스트가 가능하게 작성합니다.
+  - 모든 미니게임은 `dialog`가 닫히거나(`close` 이벤트) 탭이 비활성화(`document.hidden`)될 때 `requestAnimationFrame`과 `setInterval`을 즉시 정지해야 합니다.
+- **스도쿠 / 솔리테어 / Knit Unravel 핵심 규칙:**
+  - **스도쿠:** 고정 숫자(`[data-given]`), 사용자 입력(`[data-user]`), 중복 오류(`[data-conflict]`)가 배경·글자색·밑줄로 한눈에 구분되고 Undo(`#sudoku-undo`, `Ctrl+Z`)를 지원합니다.
+  - **Knit Unravel:** 상단 니트 도안(`KNIT_PATTERNS`)의 색상별 총 스티치 수와 하단 실패 총 용량의 합은 **스테이지 생성 시 100% 일치**해야 하며, 도우미 `가위` 사용 시에도 해당 색상 스티치를 함께 정리해 클리어 불가능(데드락)을 방지합니다.
+- **랭킹 연동:** 새 게임을 추가할 때는 [lib/cafe-arcade.mjs](lib/cafe-arcade.mjs)의 `validGames`에 게임 ID를 등록하고 `mountLeaderboardBox()`를 연결합니다.
+
+---
+
+### ⑤ 모바일·카메라·터치 UX 지침
+- **풀뷰포트 카메라 ([public/camera.js](public/camera.js)):** 모바일 세로 화면(`390×844`)에서도 `worldHeight >= viewport.clientHeight`를 보장해 화면 하단에 빈 검은 여백이 남지 않게 합니다.
+- **터치 영역 및 비겹침 ([public/walk.css](public/walk.css), [public/game-shell.css](public/game-shell.css), [public/chat.css](public/chat.css), [public/pc.css](public/pc.css)):**
+  - 모바일 터치 버튼은 최소 `44px` 이상 확보하고, `touch-action: manipulation` / `none`을 적용해 더블탭 확대를 막습니다.
+  - 플로어 화면에서 `#cafe-joystick`(좌측), `.walk-controls`(하단), `#cafe-chat-controls`(우측 상단 위)가 겹치지 않아야 하며, PC 착석 시 조이스틱은 자동 숨김(`syncMobileJoystickVisibility`) 처리됩니다.
+  - 모든 미니게임 `dialog`는 모바일 가로 폭(`390px`)에서 가로 스크롤(`scrollWidth > innerWidth`)이 발생하지 않아야 합니다.
+
+---
+
+### ⑥ 테스트·시각 검수·배포 체크리스트
+코드 수정 후 커밋·푸시 전에 반드시 아래를 순서대로 확인하세요:
+1. **단위 테스트 전체 통과:**
+   ```sh
+   node --test tests/*.test.mjs
+   ```
+2. **라이브 스모크 대상 등록:** `public/`에 새 JS/CSS/MJS 파일을 추가했다면 [tests/smoke-live-game.mjs](tests/smoke-live-game.mjs) 검증 목록에 파일명을 추가합니다.
+3. **브라우저 실화면 검수:** 데스크톱 FHD(`1920×1080`)와 모바일(`390×844`)에서 콘솔/런타임 에러 `0`건, 가구 확대 캡처(의자/모니터/소파 삐져나옴 없음), 좌석도 마커 일치, 미니게임 플레이 정상 여부를 스크린샷으로 직접 확인합니다.
+4. **배포 확인:** `main` 브랜치 푸시 후 `.github/workflows/deploy.yml` (`Deploy Gilmotungi PC Bang`) 성공과 `https://motoongpc.com` 응답(`HTTP 200` 및 해시 일치)을 확인합니다.
+
+---
 
 ## GitHub에서 배포하기
 
-GitHub에 소스를 올리고 **Actions**에서 Cloudflare Workers로 배포합니다. 방문자 위치와 좌석은 D1에 저장되므로, 정적 파일만 제공하는 GitHub Pages로는 같이 돌아다니는 기능을 사용할 수 없어요.
+GitHub에 소스를 올리고 **Actions**에서 Cloudflare Workers로 배포합니다. 방문자 위치와 좌석은 D1에 저장되므로, 정적 파일만 제공하는 GitHub Pages로는 멀티플레이·좌석 예약 기능을 사용할 수 없어요.
 
 1. Cloudflare에서 빈 D1 데이터베이스를 만들고 이름과 ID를 복사하세요. Workers의 `workers.dev` 하위 도메인이 없다면 설정하세요.
 2. 프로젝트 파일을 GitHub 저장소에 올리세요. 숨김 폴더 `.github`와 `.openai`도 포함하세요.
@@ -32,7 +106,7 @@ GitHub에 소스를 올리고 **Actions**에서 Cloudflare Workers로 배포합�
 
 4. 기본 브랜치에서 **Actions → Deploy Gilmotungi PC Bang → Run workflow**를 누르세요. 워크플로가 테이블을 준비하고 배포합니다. 실행 로그 마지막에 새 주소가 표시됩니다.
 
-이 절차로 만든 `workers.dev` 주소는 외부에 공개되며, 기본 설정은 **베타 초대제**로서 초대코드 인증 사용자만 앱에 입장할 수 있습니다. 관리자가 **정식 공개**로 전환하면 모든 사용자가 초대코드 없이 입장할 수 있습니다. 기존 Sites 주소나 그곳의 좌석 데이터는 연결되지 않습니다.
+이 절차로 만든 `workers.dev` 주소는 외부에 공개되며, 기본 설정은 **베타 초대제**로서 초대코드 인증 사용자만 앱에 입장할 수 있습니다. 관리자가 **정식 공개**로 전환하면 모든 사용자가 초대코드 없이 입장할 수 있습니다.
 
 ## 베타 초대제 ↔ 정식 공개 전환
 
@@ -45,13 +119,11 @@ GitHub에 소스를 올리고 **Actions**에서 Cloudflare Workers로 배포합�
 ## 초대코드 발급·관리
 
 - 배포 후 `/admin/login`으로 접속하여 GitHub Actions Secret `NEON_ADMIN_PASSWORD`에 설정한 비밀번호로 로그인하세요.
-- `/admin`에서 메모·사용 가능 횟수·유효 기간을 지정해 초대코드를 발급하세요. 새로 발급한 코드는 **발급 목록 → 코드 보기 → 코드 복사**에서 다시 꺼낼 수 있습니다. 원문을 보관하기 전에 발급한 코드는 새 코드로 발급해 전달하세요.
-- 사용자는 베타 기간 `/invite`에서 최초 1회 코드를 입력합니다. 서버 인증 기록에는 만료일을 두지 않으며, 같은 브라우저로 PC방에 재방문하면 인증 쿠키가 자동 연장됩니다. 관리자가 코드를 회수하지 않는 한 계속 이용하도록 설계했습니다.
-- 브라우저 쿠키 자체는 1년 단위로 자동 갱신됩니다. **1년 이상 방문하지 않거나 브라우저/기기에서 쿠키를 삭제하면** 재인증이 필요할 수 있습니다. 기본 1회용 코드는 재사용 불가이므로 새 코드 발급이 필요합니다. 이는 브라우저의 개인정보 보호·쿠키 만료 정책에 따른 제약입니다.
-- 관리자는 코드를 회수할 수 있습니다. 회수하면 해당 코드로 인증한 기존 세션도 차단됩니다. 관리자 세션은 12시간 유지됩니다.
-- 입장 검증에는 SHA-256 해시를 사용합니다. 다시 표시할 원문은 AES-GCM으로 암호화해 별도 테이블에 저장합니다. GitHub Actions 배포가 Worker의 `NEON_INVITE_VAULT_KEY`를 최초 한 번 생성합니다. 이 키를 잃으면 기존 원문을 복구할 수 없습니다.
-- 초대 기능은 접근 제어를 위한 것으로 별도의 개인 계정 복구 기능은 없습니다. 한 사용자가 여러 기기에서 이용해야 한다면 코드 사용 횟수를 늘리거나 별도 코드를 발급하세요.
-- 배포 스크립트는 기존 D1에 `0002_invitation_access` 마이그레이션을 자동 적용합니다. 관리자 비밀번호가 빠지거나 D1이 연결되지 않으면 앱 접근을 기본적으로 차단합니다.
+- `/admin`에서 메모·사용 가능 횟수·유효 기간을 지정해 초대코드를 발급하세요. 새로 발급한 코드는 **발급 목록 → 코드 보기 → 코드 복사**에서 다시 꺼낼 수 있습니다.
+- 사용자는 베타 기간 `/invite`에서 최초 1회 코드를 입력합니다. 서버 인증 기록에는 만료일을 두지 않으며, 같은 브라우저로 재방문하면 인증 쿠키가 자동 연장됩니다.
+- **1년 이상 방문하지 않거나 브라우저/기기에서 쿠키를 삭제하면** 재인증이 필요할 수 있으므로 새 코드 발급이 필요합니다.
+- 관리자는 코드를 회수할 수 있으며, 회수하면 해당 코드로 인증한 기존 세션도 차단됩니다. 관리자 세션은 12시간 유지됩니다.
+- 입장 검증에는 SHA-256 해시를 사용하고, 원문은 AES-GCM으로 암호화해 별도 테이블에 저장합니다 (`NEON_INVITE_VAULT_KEY` 분실 시 기존 원문 복구 불가).
 
 ## 로컬에서 실행하기
 
@@ -73,6 +145,6 @@ npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-
 npm start
 ```
 
-로컬 관리자 로그인에는 `NEON_ADMIN_PASSWORD`(16자 이상)가 필요합니다. 새 코드를 발급하려면 로컬 전용 `NEON_INVITE_VAULT_KEY`도 Worker 실행 환경에 지정하세요.
+로컬 관리자 로그인에는 `NEON_ADMIN_PASSWORD`(16자 이상)가 필요하며, 새 코드를 발급하려면 로컬 전용 `NEON_INVITE_VAULT_KEY`도 Worker 실행 환경에 지정하세요.
 
-매점 메뉴는 [snack-menu.json](public/snack-menu.json)에서 관리합니다. 새 항목은 고유한 `id`를 사용하고, 품절은 `"available": false`로 표시합니다. 메뉴를 변경한 뒤 다시 배포하면 화면과 주문 검증에 함께 적용됩니다.
+매점 메뉴는 [snack-menu.json](public/snack-menu.json)에서 관리합니다. 새 항목은 고유한 `id`를 사용하고, 품절은 `"available": false`로 표시합니다.

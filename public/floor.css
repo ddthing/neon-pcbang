@@ -37,7 +37,7 @@
 }
 .floor-map-marker { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); }
 .floor-bank {
-  position: absolute; z-index: 1; left: var(--x); top: 13.5%; bottom: 32%;
+  position: absolute; z-index: 1; left: var(--x); top: var(--top, 13.5%); bottom: var(--bottom, 32%);
   width: 8%; transform: translateX(-50%); display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 4px;
 }
 .floor-bank h3 { justify-self: center; }

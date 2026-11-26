@@ -38,7 +38,7 @@ try {
         "renewal-layout.mjs", "renewal-effects.mjs", "renewal-slice-art.mjs",
         "renewal-seat-picker.mjs", "renewal-slice.html", "renewal-slice.js", "walk.js",
         "app.js", "pc.css", "sudoku.js", "solitaire.js", "solitaire-engine.mjs",
-        "knit-unravel.js", "knit-unravel-engine.mjs", "pixel-tiles.js", "avatar-sprites.js",
+        "knit-unravel.js", "knit-unravel-engine.mjs", "cafe-layout.js", "pixel-tiles.js", "avatar-sprites.js",
       ].map(async (path) => {
         const expected = await readFile(new URL("../public/" + path, import.meta.url));
         const response = await request("/" + path, { headers });

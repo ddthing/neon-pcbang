@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="./cafe-delivery.css">
   <link rel="stylesheet" href="./cafe-art.css">
   <link rel="stylesheet" href="./cafe-interface.css">
+  <script src="./cafe-layout.js" defer></script>
   <script src="./pixel-tiles.js" defer></script>
   <script src="./cafe-art.js" defer></script>
   <script src="./boot.js" defer></script>
@@ -302,11 +303,12 @@
                     <use href="./room-bays.svg#room-squad"/><text x="1401" y="657">6인룸</text>
                   </a>
                 </svg>
-                <span class="floor-map-marker" style="--x:11%;--y:11%">실내 흡연구역</span>
-                <span class="floor-map-marker" style="--x:86%;--y:10%">야외 흡연구역</span>
-                <span class="floor-map-marker" style="--x:11%;--y:71%">오픈키친</span>
-                <span class="floor-map-marker" style="--x:26%;--y:85%">키오스크</span>
-                <span class="floor-map-marker" style="--x:49%;--y:88%">입구</span>
+                <span class="floor-map-marker" data-landmark="booth" style="--x:11%;--y:25%">실내 흡연구역</span>
+                <span class="floor-map-marker" data-landmark="terrace" style="--x:90%;--y:23%">야외 흡연구역</span>
+                <span class="floor-map-marker" data-landmark="lounge" style="--x:19.8%;--y:40%">대기 라운지</span>
+                <span class="floor-map-marker" data-landmark="counter" style="--x:12.6%;--y:71%">오픈키친</span>
+                <span class="floor-map-marker" data-landmark="kiosk" style="--x:26%;--y:80%">키오스크</span>
+                <span class="floor-map-marker" data-landmark="entrance" style="--x:33.7%;--y:91%">입구</span>
               </div>
             </div>
           </div>

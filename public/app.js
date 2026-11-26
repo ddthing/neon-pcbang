@@ -33,15 +33,16 @@ function saveState(key, value) {
   } catch {}
 }
 
-const hallBanks = [
-  { letter: "A", x: [428, 491] },
-  { letter: "B", x: [651, 714] },
-  { letter: "C", x: [892, 955] },
-  { letter: "D", x: [1133, 1196] }
+const layoutSource = window.cafeLayout;
+const hallBanks = layoutSource?.hallBanks ?? [
+  { letter: "A", x: [428, 491], spineX: 231 },
+  { letter: "B", x: [651, 714], spineX: 343 },
+  { letter: "C", x: [892, 955], spineX: 463 },
+  { letter: "D", x: [1133, 1196], spineX: 584 },
 ];
-const hallRows = [196, 244, 291, 338, 386, 434, 481, 529, 577, 626, 675];
-const bankSize = hallRows.length * 2;
-const spaces = {
+const hallRows = layoutSource?.hallRows ?? [196, 244, 291, 338, 386, 434, 481, 529, 577, 626, 675];
+const bankSize = layoutSource?.bankSize ?? (hallRows.length * 2);
+const spaces = layoutSource?.spaces ?? {
   hall: {
     label: "일반석",
     positions: hallBanks.flatMap(({ x }) => hallRows.flatMap((y) => x.map((column) => [column / 15.36, y / 10.24])))
@@ -504,6 +505,12 @@ function appendSeatGroup(parent, label, spaceId, count, first = 0, letter = "") 
   if (letter) {
     const [left, right] = hallBanks[first / bankSize].x;
     group.style.setProperty("--x", (left + right) / 30.72 + "%");
+    if (hallRows.length) {
+      const topPct = Math.max(4, (hallRows[0] / 10.24) - 5.6);
+      const bottomPct = Math.max(8, 100 - ((hallRows[hallRows.length - 1] / 10.24) + 2.5));
+      group.style.setProperty("--top", `${topPct.toFixed(1)}%`);
+      group.style.setProperty("--bottom", `${bottomPct.toFixed(1)}%`);
+    }
   } else {
     heading.className = "pc-sr-only";
   }
@@ -546,6 +553,25 @@ for (const [index, bank] of hallBanks.entries()) {
 for (const id of ["solo", "duo", "team", "squad"]) {
   appendSeatGroup($("#floor-rooms"), spaces[id].label, id, spaces[id].positions.length);
 }
+function syncFloorLandmarks() {
+  const lm = window.cafeLayout?.landmarks;
+  if (!lm) return;
+  const setPos = (key, xPct, yPct, label) => {
+    const el = document.querySelector(`.hall-seat-map [data-landmark="${key}"]`);
+    if (!el) return;
+    el.style.setProperty("--x", `${xPct.toFixed(1)}%`);
+    el.style.setProperty("--y", `${yPct.toFixed(1)}%`);
+    if (label) el.textContent = label;
+  };
+  const { toPct } = window.cafeLayout;
+  const b = toPct(lm.booth.x, lm.booth.y); setPos("booth", b.xPct, b.yPct, lm.booth.label);
+  const t = toPct(lm.terrace.x, lm.terrace.y); setPos("terrace", t.xPct, t.yPct, lm.terrace.label);
+  const l = toPct(lm.lounge.x + lm.lounge.w / 2, lm.lounge.y + lm.lounge.h / 2); setPos("lounge", l.xPct, l.yPct, lm.lounge.label);
+  const c = toPct(lm.counter.x + lm.counter.w / 2, lm.counter.y + lm.counter.h * 0.65); setPos("counter", c.xPct, c.yPct, lm.counter.label);
+  const k = toPct(lm.kiosk.x + lm.kiosk.w / 2, lm.kiosk.y + lm.kiosk.h / 2); setPos("kiosk", k.xPct, k.yPct, lm.kiosk.label);
+  const e = toPct(lm.entrance.x + lm.entrance.w / 2, lm.entrance.y + lm.entrance.h * 0.5); setPos("entrance", e.xPct, e.yPct, lm.entrance.label);
+}
+syncFloorLandmarks();
 
 function showFloorView(roomId) {
   const inside = Boolean(roomId);

@@ -333,129 +333,187 @@
     ctx.restore();
   }
 
-  // Pixel PC Desk + Mechanical Keyboard + Mouse + Gaming Monitor + Tower + Chair
+  // Pixel PC Desk + Side/Front Oriented Monitor + Non-Overlapping PC Tower + Mechanical Keyboard + Mouse + Chair
   function paintDeskSet(ctx, seat, night) {
     const { x, y, direction, key } = seat;
     const side = direction !== "up";
     const sign = direction === "left" ? -1 : 1;
-    const center = side ? Math.round(x + sign * 20) : x;
-    const front = side ? y - 4 : y - 33;
-    const width = side ? 39 : 111;
+    const center = side ? Math.round(x + sign * 21) : x;
+    const front = side ? y - 2 : y - 33;
+    const width = side ? 42 : 112;
     const left = center - Math.floor(width / 2);
-    const depth = side ? 23 : 36;
     const right = left + width;
+    const depth = side ? 30 : 36;
+    const topY = front - depth;
 
     // Grounded contact shadow under desk legs
     ctx.fillStyle = "rgba(38, 28, 41, 0.28)";
-    ctx.fillRect(left + 3, front + 12, width - 6, 4);
+    ctx.fillRect(left + 3, front + 11, width - 6, 4);
 
     // Desk apron & carved legs
     ctx.fillStyle = PAL.k;
-    ctx.fillRect(left + 1, front - 4, width - 2, 18);
+    ctx.fillRect(left + 2, front - 3, width - 4, 16);
     ctx.fillStyle = PAL.w1;
-    ctx.fillRect(left + 2, front - 3, width - 4, 15);
-    // Leg posts with highlight edge
+    ctx.fillRect(left + 3, front - 2, width - 6, 14);
     ctx.fillStyle = PAL.w0;
-    ctx.fillRect(left + 4, front + 4, 7, 9);
-    ctx.fillRect(right - 11, front + 4, 7, 9);
+    ctx.fillRect(left + 5, front + 4, 6, 8);
+    ctx.fillRect(right - 11, front + 4, 6, 8);
     ctx.fillStyle = PAL.w2;
-    ctx.fillRect(left + 5, front + 5, 2, 7);
-    ctx.fillRect(right - 10, front + 5, 2, 7);
+    ctx.fillRect(left + 6, front + 5, 2, 6);
+    ctx.fillRect(right - 10, front + 5, 2, 6);
 
-    // Desk surface top with 4-tone wood grain & rounded pixel bevel
+    // Desk surface top with 4-tone wood grain & rounded chamfered bevel
     ctx.fillStyle = PAL.k;
-    ctx.fillRect(left, front - depth, width, depth + 2);
+    ctx.fillRect(left + 1, topY, width - 2, depth + 2);
+    ctx.fillRect(left, topY + 1, width, depth);
     ctx.fillStyle = PAL.w3;
-    ctx.fillRect(left + 1, front - depth + 1, width - 2, depth);
-    // Top-edge chamfer highlight + front edge warm trim
+    ctx.fillRect(left + 1, topY + 1, width - 2, depth - 1);
     ctx.fillStyle = PAL.w4;
-    ctx.fillRect(left + 2, front - depth + 2, width - 4, 2);
+    ctx.fillRect(left + 2, topY + 2, width - 4, 2);
     ctx.fillStyle = PAL.p1;
     ctx.fillRect(left + 2, front - 2, width - 4, 2);
     ctx.fillStyle = PAL.w2;
     ctx.fillRect(left + 2, front - 4, width - 4, 2);
-    // Subtle wood plank grain marks on desk surface
-    ctx.fillStyle = PAL.w2;
-    ctx.fillRect(left + 8, front - depth + 8, 12, 1);
-    ctx.fillRect(right - 22, front - depth + 11, 10, 1);
-    if (!side) {
+    ctx.fillRect(left + 7, topY + 7, 10, 1);
+    ctx.fillRect(right - 19, topY + 10, 9, 1);
+
+    let scr;
+    if (side) {
+      // Deskmat oriented cleanly for side-facing player
+      const matX = sign === 1 ? left + 4 : right - 26;
+      const matY = topY + 6;
+      ctx.fillStyle = PAL.k;
+      ctx.fillRect(matX, matY, 22, 21);
+      ctx.fillStyle = PAL.c0;
+      ctx.fillRect(matX + 1, matY + 1, 20, 19);
+      ctx.fillStyle = PAL.t2;
+      ctx.fillRect(matX + 1, matY + 19, 20, 1);
+
+      // Vertical mechanical keyboard (columns of keys facing left/right!)
+      const kx = sign === 1 ? matX + 3 : matX + 10;
+      const ky = matY + 2;
+      ctx.fillStyle = PAL.k;
+      ctx.fillRect(kx, ky, 9, 14);
+      ctx.fillStyle = PAL.c1;
+      ctx.fillRect(kx + 1, ky + 1, 7, 12);
+      for (let dy = 2; dy < 12; dy += 3) {
+        ctx.fillStyle = dy === 5 ? PAL.r3 : PAL.p2;
+        ctx.fillRect(kx + 2, ky + dy, 2, 2);
+        ctx.fillStyle = PAL.p1;
+        ctx.fillRect(kx + 5, ky + dy, 2, 2);
+      }
+
+      // Ergonomic Gaming Mouse tucked next to keyboard
+      const msX = sign === 1 ? matX + 13 : matX + 3;
+      const msY = matY + 11;
+      ctx.fillStyle = PAL.k;
+      ctx.fillRect(msX, msY, 6, 7);
+      ctx.fillStyle = PAL.p2;
+      ctx.fillRect(msX + 1, msY + 1, 4, 5);
+      ctx.fillStyle = PAL.t3;
+      ctx.fillRect(msX + 2, msY + 2, 2, 1);
+
+      // Widescreen angled Gaming Monitor on back half (non-overlapping!)
+      const mx = sign === 1 ? right - 22 : left + 4;
+      const my = topY + 6;
+      const mw = 18;
+      const mh = 17;
+      // Stand arm & base plate tucked under screen
+      ctx.fillStyle = PAL.c0;
+      ctx.fillRect(mx + 6, my + mh, 6, 3);
+      ctx.fillStyle = PAL.c2;
+      ctx.fillRect(mx + 4, my + mh + 2, 10, 2);
+      // Monitor frame + bevel
+      ctx.fillStyle = PAL.k;
+      ctx.fillRect(mx - 1, my - 1, mw + 2, mh + 2);
+      ctx.fillStyle = PAL.c2;
+      ctx.fillRect(mx, my, mw, mh);
+      ctx.fillStyle = PAL.c3;
+      ctx.fillRect(mx + 1, my + 1, mw - 2, 1);
+      ctx.fillStyle = PAL.t0;
+      ctx.fillRect(mx + 3, my + 3, mw - 6, mh - 7);
+      ctx.fillStyle = PAL.t3;
+      ctx.fillRect(mx + mw - 5, my + mh - 2, 2, 1);
+
+      // Compact Mini-ITX PC Tower perched above desk corner, completely clear of monitor!
+      const pcX = sign === 1 ? right - 13 : left + 1;
+      const pcY = topY - 12;
+      ctx.fillStyle = PAL.k;
+      ctx.fillRect(pcX, pcY, 12, 15);
+      ctx.fillStyle = PAL.c1;
+      ctx.fillRect(pcX + 1, pcY + 1, 10, 13);
+      ctx.fillStyle = PAL.c3;
+      ctx.fillRect(pcX + 2, pcY + 1, 8, 2);
+      ctx.fillStyle = PAL.t0;
+      ctx.fillRect(pcX + 3, pcY + 4, 6, 8);
+      ctx.fillStyle = night ? PAL.t3 : PAL.t2;
+      ctx.fillRect(pcX + 4, pcY + 5, 4, 2);
+      ctx.fillRect(pcX + 4, pcY + 9, 4, 2);
+      ctx.fillStyle = PAL.r3;
+      ctx.fillRect(pcX + 9, pcY + 2, 1, 1);
+
+      scr = { key, x: mx + 3, y: my + 3, w: mw - 6, h: mh - 7 };
+    } else {
       // Stitched RGB/charcoal desk mat under keyboard & mouse
       ctx.fillStyle = PAL.k;
-      ctx.fillRect(x - 27, front - depth + 14, 54, 15);
+      ctx.fillRect(x - 27, topY + 14, 54, 15);
       ctx.fillStyle = PAL.c0;
-      ctx.fillRect(x - 26, front - depth + 15, 52, 13);
+      ctx.fillRect(x - 26, topY + 15, 52, 13);
       ctx.fillStyle = PAL.t2;
-      ctx.fillRect(x - 26, front - depth + 27, 52, 1);
-    }
+      ctx.fillRect(x - 26, topY + 27, 52, 1);
 
-    // Monitor with metallic bezel, stand neck & indicator LED
-    const mx = side ? center + sign * 4 - 11 : center - 26;
-    const my = front - depth - (side ? 6 : 22);
-    const mw = side ? 22 : 52;
-    const mh = side ? 17 : 34;
-    ctx.fillStyle = PAL.k;
-    ctx.fillRect(mx - 1, my - 1, mw + 2, mh + 2);
-    ctx.fillStyle = PAL.c2;
-    ctx.fillRect(mx, my, mw, mh);
-    ctx.fillStyle = PAL.c3;
-    ctx.fillRect(mx + 1, my + 1, mw - 2, 1);
-    ctx.fillStyle = PAL.c1;
-    ctx.fillRect(mx + 1, my + mh - 2, mw - 2, 1);
-    ctx.fillStyle = PAL.t0;
-    ctx.fillRect(mx + 3, my + 3, mw - 6, mh - 7);
-    ctx.fillStyle = PAL.t3;
-    ctx.fillRect(mx + mw - 5, my + mh - 2, 2, 1);
-    // Monitor stand neck + pedestal foot
-    ctx.fillStyle = PAL.c0;
-    ctx.fillRect(mx + Math.floor(mw / 2) - 4, my + mh + 1, 8, 4);
-    ctx.fillStyle = PAL.c2;
-    ctx.fillRect(mx + Math.floor(mw / 2) - 7, my + mh + 4, 14, 2);
-
-    // Mechanical Keyboard (individual keycap row texture)
-    const kx = side ? x + (sign === 1 ? 1 : -22) : x - 21;
-    const ky = side ? front - 8 : y - 38;
-    const kw = side ? 21 : 40;
-    ctx.fillStyle = PAL.k;
-    ctx.fillRect(kx, ky, kw, 8);
-    ctx.fillStyle = PAL.c1;
-    ctx.fillRect(kx + 1, ky + 1, kw - 2, 6);
-    for (let dx = 2; dx < kw - 2; dx += 3) {
-      ctx.fillStyle = PAL.p2;
-      ctx.fillRect(kx + dx, ky + 2, 2, 2);
-      ctx.fillStyle = dx === Math.floor(kw / 2) - 1 ? PAL.r3 : PAL.p1;
-      ctx.fillRect(kx + dx, ky + 5, 2, 1);
-    }
-
-    // Gaming Mouse + RGB/Wood Tower + Ceramic Mug
-    if (side) {
+      // Monitor with metallic bezel, stand neck & indicator LED
+      const mx = center - 26;
+      const my = topY - 22;
+      const mw = 52;
+      const mh = 34;
       ctx.fillStyle = PAL.k;
-      ctx.fillRect(center + sign * 10 - 3, front - 8, 6, 7);
-      ctx.fillStyle = PAL.p2;
-      ctx.fillRect(center + sign * 10 - 2, front - 7, 4, 5);
-      // Side PC Tower
-      const tx = center + sign * 12 - 5;
-      ctx.fillStyle = PAL.k;
-      ctx.fillRect(tx, my - 2, 10, 19);
+      ctx.fillRect(mx - 1, my - 1, mw + 2, mh + 2);
+      ctx.fillStyle = PAL.c2;
+      ctx.fillRect(mx, my, mw, mh);
+      ctx.fillStyle = PAL.c3;
+      ctx.fillRect(mx + 1, my + 1, mw - 2, 1);
       ctx.fillStyle = PAL.c1;
-      ctx.fillRect(tx + 1, my - 1, 8, 17);
-      ctx.fillStyle = night ? PAL.t3 : PAL.y3;
-      ctx.fillRect(tx + 3, my + 2, 4, 4);
-      ctx.fillRect(tx + 3, my + 8, 4, 4);
-    } else {
-      // Mouse
-      ctx.fillStyle = PAL.k;
-      ctx.fillRect(x + 17, front - depth + 16, 7, 9);
-      ctx.fillStyle = PAL.p2;
-      ctx.fillRect(x + 18, front - depth + 17, 5, 7);
+      ctx.fillRect(mx + 1, my + mh - 2, mw - 2, 1);
+      ctx.fillStyle = PAL.t0;
+      ctx.fillRect(mx + 3, my + 3, mw - 6, mh - 7);
       ctx.fillStyle = PAL.t3;
-      ctx.fillRect(x + 20, front - depth + 18, 1, 2);
-      // Coaster + mug on left corner
+      ctx.fillRect(mx + mw - 5, my + mh - 2, 2, 1);
+      ctx.fillStyle = PAL.c0;
+      ctx.fillRect(mx + Math.floor(mw / 2) - 4, my + mh + 1, 8, 4);
+      ctx.fillStyle = PAL.c2;
+      ctx.fillRect(mx + Math.floor(mw / 2) - 7, my + mh + 4, 14, 2);
+
+      // Mechanical Keyboard
+      const kx = x - 21;
+      const ky = y - 38;
+      const kw = 40;
+      ctx.fillStyle = PAL.k;
+      ctx.fillRect(kx, ky, kw, 8);
+      ctx.fillStyle = PAL.c1;
+      ctx.fillRect(kx + 1, ky + 1, kw - 2, 6);
+      for (let dx = 2; dx < kw - 2; dx += 3) {
+        ctx.fillStyle = PAL.p2;
+        ctx.fillRect(kx + dx, ky + 2, 2, 2);
+        ctx.fillStyle = dx === Math.floor(kw / 2) - 1 ? PAL.r3 : PAL.p1;
+        ctx.fillRect(kx + dx, ky + 5, 2, 1);
+      }
+
+      // Mouse & Mug
+      ctx.fillStyle = PAL.k;
+      ctx.fillRect(x + 17, topY + 16, 7, 9);
+      ctx.fillStyle = PAL.p2;
+      ctx.fillRect(x + 18, topY + 17, 5, 7);
+      ctx.fillStyle = PAL.t3;
+      ctx.fillRect(x + 20, topY + 18, 1, 2);
+
       ctx.fillStyle = PAL.w1;
-      ctx.fillRect(left + 8, front - depth + 18, 8, 7);
+      ctx.fillRect(left + 8, topY + 18, 8, 7);
       ctx.fillStyle = PAL.p3;
-      ctx.fillRect(left + 9, front - depth + 17, 6, 6);
+      ctx.fillRect(left + 9, topY + 17, 6, 6);
       ctx.fillStyle = PAL.w0;
-      ctx.fillRect(left + 10, front - depth + 18, 4, 2);
+      ctx.fillRect(left + 10, topY + 18, 4, 2);
+
       // Tempered-glass Gaming PC Tower on right
       const pcX = x + 31;
       const pcY = my + 5;
@@ -470,84 +528,201 @@
       ctx.fillRect(pcX + 5, pcY + 13, 8, 5);
       ctx.fillStyle = PAL.r3;
       ctx.fillRect(pcX + 4, pcY + 25, 3, 2);
+
+      scr = { key, x: mx + 3, y: my + 3, w: mw - 6, h: mh - 7 };
     }
 
-    // Gaming Chair base (cushion + 5-star caster legs behind character)
+    // Cohesive 3/4 Gaming Chair Seat Cushion + 5-star caster legs + Side Armrests
     const even = Number(key.split(":")[1]) % 2 === 0;
     const chairCol = even ? PAL.c2 : PAL.d;
     const chairHi = even ? PAL.c3 : PAL.v;
-    ctx.fillStyle = "rgba(38, 28, 41, 0.3)";
+    const chairSh = even ? PAL.c1 : PAL.s;
+    ctx.fillStyle = "rgba(38, 28, 41, 0.32)";
     ctx.fillRect(x - 13, y + 3, 26, 5);
+    // 5-star wheelbase
     ctx.fillStyle = PAL.c0;
-    ctx.fillRect(x - 9, y, 18, 3);
+    ctx.fillRect(x - 10, y + 1, 20, 3);
     ctx.fillRect(x - 2, y - 7, 4, 9);
-    // Cushioned seat pan
+    // Seat cushion rounded contour
     ctx.fillStyle = PAL.k;
+    ctx.fillRect(x - 11, y - 15, 22, 13);
     ctx.fillRect(x - 12, y - 14, 24, 11);
     ctx.fillStyle = chairCol;
+    ctx.fillRect(x - 10, y - 14, 20, 11);
     ctx.fillRect(x - 11, y - 13, 22, 9);
     ctx.fillStyle = chairHi;
-    ctx.fillRect(x - 10, y - 13, 20, 2);
+    ctx.fillRect(x - 9, y - 13, 18, 2);
+    ctx.fillStyle = chairSh;
+    ctx.fillRect(x - 10, y - 5, 20, 2);
+    // Padded side armrests wrapping toward backrest
+    if (side) {
+      const armX = direction === "right" ? x - 11 : x + 4;
+      ctx.fillStyle = PAL.k;
+      ctx.fillRect(armX, y - 15, 7, 4);
+      ctx.fillStyle = chairSh;
+      ctx.fillRect(armX + 1, y - 14, 5, 2);
+    } else {
+      ctx.fillStyle = PAL.k;
+      ctx.fillRect(x - 13, y - 14, 3, 8);
+      ctx.fillRect(x + 10, y - 14, 3, 8);
+      ctx.fillStyle = chairSh;
+      ctx.fillRect(x - 12, y - 13, 2, 6);
+      ctx.fillRect(x + 10, y - 13, 2, 6);
+    }
 
-    return { key, x: mx + 3, y: my + 3, w: mw - 6, h: mh - 7 };
+    return scr;
   }
 
-  // Sculpted Racing/Cozy Chair Backrest (foreground depth element when seated)
-  function paintChairFront(ctx, w, h, key) {
+  // Sculpted Rounded Gaming Chair Backrest (hugs seat cushion seamlessly with zero gap)
+  function paintChairFront(ctx, w, h, key, direction = "up") {
     const even = Number(key.split(":")[1]) % 2 === 0;
     const body = even ? PAL.c2 : PAL.d;
     const hi = even ? PAL.c3 : PAL.v;
     const sh = even ? PAL.c1 : PAL.s;
     const strap = even ? PAL.p1 : PAL.r3;
 
-    // Headrest top crown
+    // Rounded ergonomic outline (clipped corners)
     ctx.fillStyle = PAL.k;
-    ctx.fillRect(3, 0, w - 6, h - 4);
-    // Backrest wing bolsters
-    ctx.fillRect(0, 5, w, h - 6);
+    ctx.fillRect(3, 0, w - 6, h - 1);
+    ctx.fillRect(1, 2, w - 2, h - 4);
+    ctx.fillRect(0, 5, w, h - 8);
+
+    // Main curved padded shell
     ctx.fillStyle = body;
-    ctx.fillRect(4, 1, w - 8, h - 6);
-    ctx.fillRect(1, 6, w - 2, h - 9);
-    // Lumbar/headrest cushion & stitch detail
+    ctx.fillRect(4, 1, w - 8, h - 3);
+    ctx.fillRect(2, 3, w - 4, h - 6);
+    ctx.fillRect(1, 6, w - 2, h - 10);
+
+    // Top headrest highlight & stitched cushion pillow strap
     ctx.fillStyle = hi;
     ctx.fillRect(4, 2, w - 8, 3);
     ctx.fillStyle = strap;
-    ctx.fillRect(5, 5, w - 10, 2);
-    // Side bolster shading
+    ctx.fillRect(Math.min(5, Math.floor(w / 4)), 5, Math.max(4, w - Math.min(10, Math.floor(w / 2))), 2);
+
+    // Wing bolsters & lumbar base contour
     ctx.fillStyle = hi;
-    ctx.fillRect(2, 8, 2, h - 13);
+    ctx.fillRect(2, 8, 2, Math.max(4, h - 14));
     ctx.fillStyle = sh;
-    ctx.fillRect(w - 4, 8, 2, h - 13);
+    ctx.fillRect(w - 4, 8, 2, Math.max(4, h - 14));
     ctx.fillRect(2, h - 5, w - 4, 3);
+    if (direction !== "up") {
+      // Side armrest pad fused smoothly into backrest base
+      const ax = direction === "right" ? w - 4 : 1;
+      ctx.fillStyle = sh;
+      ctx.fillRect(ax, h - 8, 3, 5);
+    }
   }
 
-  // Tufted Lounge Sofa
+  // Plush Bounded Lounge Sofa (zero cushion overflow + rounded rolled armrests)
   function paintCouch(ctx, x, y, w, berry = false) {
     const fill = berry ? PAL.d : PAL.r2;
     const hi = berry ? PAL.v : PAL.r3;
     const sh = berry ? PAL.s : PAL.r1;
     const h = 34;
-    ctx.fillStyle = "rgba(38, 28, 41, 0.3)";
-    ctx.fillRect(x + 2, y + 4, w, h - 2);
+    // Soft floor drop shadow
+    ctx.fillStyle = "rgba(38, 28, 41, 0.30)";
+    ctx.fillRect(x + 2, y + 4, w - 2, h - 1);
+    // Wooden stubby legs
+    ctx.fillStyle = PAL.w0;
+    ctx.fillRect(x + 3, y + h - 2, 4, 3);
+    ctx.fillRect(x + w - 7, y + h - 2, 4, 3);
+    // Rounded pixel corner body
     ctx.fillStyle = PAL.k;
-    ctx.fillRect(x, y, w, h);
+    ctx.fillRect(x + 1, y, w - 2, h);
+    ctx.fillRect(x, y + 1, w, h - 2);
     ctx.fillStyle = fill;
-    ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
-    // Rolled back & armrests
+    ctx.fillRect(x + 2, y + 1, w - 4, h - 2);
+    ctx.fillRect(x + 1, y + 2, w - 2, h - 4);
+    // Plump backrest bolster
     ctx.fillStyle = hi;
-    ctx.fillRect(x + 3, y + 2, w - 6, 7);
+    ctx.fillRect(x + 5, y + 2, w - 10, 7);
     ctx.fillStyle = PAL.k;
-    ctx.fillRect(x + 6, y + 11, w - 12, 16);
-    for (let dx = 7; dx < w - 14; dx += 20) {
-      ctx.fillStyle = fill;
-      ctx.fillRect(x + dx, y + 12, 18, 14);
-      ctx.fillStyle = hi;
-      ctx.fillRect(x + dx + 1, y + 12, 16, 2);
-      ctx.fillStyle = sh;
-      ctx.fillRect(x + dx + 1, y + 24, 16, 2);
-    }
+    ctx.fillRect(x + 5, y + 9, w - 10, 1);
+    // Rolled left & right armrests
+    ctx.fillStyle = hi;
+    ctx.fillRect(x + 2, y + 4, 4, h - 8);
+    ctx.fillRect(x + w - 6, y + 4, 4, h - 8);
     ctx.fillStyle = sh;
-    ctx.fillRect(x + 2, y + h - 4, w - 4, 2);
+    ctx.fillRect(x + 5, y + 10, 1, h - 14);
+    ctx.fillRect(x + w - 6, y + 10, 1, h - 14);
+    // Strictly bounded seat cushions inside [x + 7, x + w - 7]
+    const pad = 7;
+    const gap = 2;
+    const innerW = w - pad * 2;
+    const count = Math.max(2, Math.round(innerW / 24));
+    const cw = Math.floor((innerW - gap * (count - 1)) / count);
+    const totalW = count * cw + (count - 1) * gap;
+    const startX = x + Math.floor((w - totalW) / 2);
+    ctx.fillStyle = PAL.k;
+    ctx.fillRect(startX - 1, y + 10, totalW + 2, 18);
+    for (let i = 0; i < count; i++) {
+      const cx = startX + i * (cw + gap);
+      ctx.fillStyle = fill;
+      ctx.fillRect(cx, y + 11, cw, 16);
+      ctx.fillStyle = hi;
+      ctx.fillRect(cx + 1, y + 11, cw - 2, 2);
+      ctx.fillStyle = sh;
+      ctx.fillRect(cx + 1, y + 24, cw - 2, 3);
+      // Tuft stitch dimple
+      ctx.fillStyle = sh;
+      ctx.fillRect(cx + Math.floor(cw / 2) - 1, y + 17, 2, 2);
+    }
+    // Lower skirt shading
+    ctx.fillStyle = sh;
+    ctx.fillRect(x + 3, y + h - 4, w - 6, 3);
+  }
+
+  // Crafted Oak Coffee Table with Open Magazine, Coaster & Handled Mug
+  function paintSofaTable(ctx, x, y) {
+    const w = 48, h = 32;
+    ctx.fillStyle = "rgba(38, 28, 41, 0.28)";
+    ctx.fillRect(x + 3, y + 5, w - 2, h - 1);
+    // Recessed legs beneath tabletop
+    ctx.fillStyle = PAL.w0;
+    ctx.fillRect(x + 4, y + h - 4, 5, 5);
+    ctx.fillRect(x + w - 9, y + h - 4, 5, 5);
+    // Bevelled oak tabletop
+    ctx.fillStyle = PAL.k;
+    ctx.fillRect(x + 1, y, w - 2, h - 2);
+    ctx.fillRect(x, y + 1, w, h - 4);
+    ctx.fillStyle = PAL.w1;
+    ctx.fillRect(x + 1, y + 2, w - 2, h - 5);
+    ctx.fillStyle = PAL.w3;
+    ctx.fillRect(x + 2, y + 2, w - 4, h - 9);
+    ctx.fillStyle = PAL.w4;
+    ctx.fillRect(x + 3, y + 3, w - 6, 2);
+    ctx.fillStyle = PAL.w2;
+    ctx.fillRect(x + 7, y + 18, 11, 1);
+
+    // Open Magazine / Manga on left
+    ctx.fillStyle = PAL.k;
+    ctx.fillRect(x + 5, y + 7, 17, 13);
+    ctx.fillStyle = PAL.p3;
+    ctx.fillRect(x + 6, y + 8, 7, 11);
+    ctx.fillRect(x + 14, y + 8, 7, 11);
+    ctx.fillStyle = PAL.w0;
+    ctx.fillRect(x + 13, y + 8, 1, 11);
+    ctx.fillStyle = PAL.c2;
+    ctx.fillRect(x + 7, y + 10, 5, 3);
+    ctx.fillStyle = PAL.r2;
+    ctx.fillRect(x + 15, y + 10, 5, 4);
+    ctx.fillStyle = PAL.w2;
+    ctx.fillRect(x + 7, y + 15, 5, 1);
+    ctx.fillRect(x + 15, y + 16, 4, 1);
+
+    // Round Terracotta Coaster + Handled Ceramic Mug on right
+    ctx.fillStyle = PAL.r1;
+    ctx.fillRect(x + 29, y + 11, 11, 9);
+    ctx.fillStyle = PAL.r2;
+    ctx.fillRect(x + 30, y + 12, 9, 7);
+    ctx.fillStyle = PAL.k;
+    ctx.fillRect(x + 31, y + 8, 7, 9);
+    ctx.fillRect(x + 38, y + 10, 3, 5); // mug handle outline
+    ctx.fillStyle = PAL.p3;
+    ctx.fillRect(x + 32, y + 9, 5, 7);
+    ctx.fillRect(x + 37, y + 11, 3, 3);
+    ctx.fillStyle = PAL.w0;
+    ctx.fillRect(x + 33, y + 10, 3, 2); // hot coffee crema
   }
 
   // Open Kitchen Fridge, Cooking Station, Snack Cabinet & Counter
@@ -642,6 +817,7 @@
     paintDeskSet,
     paintChairFront,
     paintCouch,
+    paintSofaTable,
     paintFridge,
     paintCookingRange,
     paintCabinet,

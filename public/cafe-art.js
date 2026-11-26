@@ -187,12 +187,11 @@
     rect(ctx, x + 4, y + 26, 11, 2, PAL.v);
   }
   function sofaTable(ctx, x, y) {
+    if (T?.paintSofaTable) {
+      T.paintSofaTable(ctx, x, y);
+      return;
+    }
     frame(ctx, x, y, 46, 30, PAL.w1);
-    rect(ctx, x + 3, y + 3, 40, 18, PAL.w3);
-    frame(ctx, x + 8, y + 8, 15, 10, PAL.c1);
-    rect(ctx, x + 11, y + 11, 9, 2, PAL.p2);
-    frame(ctx, x + 28, y + 6, 9, 9, PAL.p3);
-    rect(ctx, x + 37, y + 8, 3, 3, PAL.p2);
   }
   function counterApron() {
     const front = document.createElement("canvas");
@@ -234,6 +233,8 @@
   let hallDoors = [];
 
   function hallway(night) {
+    const CL = window.cafeLayout;
+    const lm = CL?.landmarks;
     rect(base, 0, 0, WIDTH, HEIGHT, "#2a2236");
     floor(base, S(35), S(52), S(698), S(422), false, night);
     floor(base, S(32), S(460), S(704), S(52), true, night);
@@ -243,7 +244,9 @@
     rect(base, S(25), S(52), S(10), S(394), PAL.d);
     rect(base, S(733), S(52), S(10), S(394), PAL.d);
 
-    const alcoves = [[43, 106, 77, 103], [43, 238, 77, 56], [657, 165, 69, 53], [657, 307, 69, 47]];
+    const alcoves = lm?.alcoves?.map((a) => [a.x, a.y, a.w, a.h]) ?? [
+      [43, 106, 77, 103], [43, 238, 77, 56], [657, 165, 69, 53], [657, 307, 69, 47],
+    ];
     for (const [x, y, w, h] of alcoves) {
       frame(base, S(x), S(y), S(w), S(h), PAL.s);
       floor(base, S(x + 4), S(y + 4), S(w - 8), S(h - 8), true, night);
@@ -251,57 +254,60 @@
     }
     for (const { x, y } of hallDoors) door(base, x, y, S(25));
 
-    // Bay center cable-spine wood beams with pendant marker bars
-    for (const x of [231, 343, 463, 584]) {
+    // Bay center cable-spine wood beams (derived from cafeLayout.hallBanks)
+    const spines = CL?.hallBanks?.map((b) => b.spineX) ?? [231, 343, 463, 584];
+    for (const x of spines) {
       frame(base, S(x) - 5, S(87), 10, S(283), PAL.d);
       rect(base, S(x) - 2, S(89), 4, S(277), PAL.w3);
       for (let y = S(95); y < S(367); y += 36) rect(base, S(x) - 3, y, 7, 3, PAL.r3);
     }
 
     // Waiting lounge rug + sofas + coffee table
-    rug(base, S(126), S(159), S(52), S(95), PAL.v, PAL.p0);
-    couch(base, S(131), S(163), S(42), false);
-    couch(base, S(131), S(224), S(42), false);
-    sofaTable(base, S(140), S(193));
+    const lg = lm?.lounge ?? { x: 126, y: 159, w: 52, h: 95 };
+    rug(base, S(lg.x), S(lg.y), S(lg.w), S(lg.h), PAL.v, PAL.p0);
+    couch(base, S(lg.x + 5), S(lg.y + 4), S(lg.w - 10), false);
+    couch(base, S(lg.x + 5), S(lg.y + lg.h - 30), S(lg.w - 10), false);
+    sofaTable(base, S(lg.x + 11), S(lg.y + 33));
 
     // Open Kitchen Snack Zone
-    floor(base, S(48), S(295), S(99), S(56), true, night);
-    cabinet(base, S(49), S(296), S(55), S(38));
-    if (T) T.paintFridge(base, S(111), S(295));
-    if (T) T.paintCookingRange(base, S(106), S(336));
-    frame(base, S(48), S(281), S(90), S(15), PAL.s);
-    rect(base, S(52), S(283), S(71), 2, PAL.y3);
-    for (const [x, w] of [[61, 12], [77, 9], [90, 17]]) {
-      rect(base, S(x), S(287), S(w), 3, PAL.p3);
-      rect(base, S(x), S(290), S(w - 4), 2, PAL.r3);
+    const ct = lm?.counter ?? { x: 48, y: 295, w: 99, h: 93 };
+    floor(base, S(ct.x), S(ct.y), S(ct.w), S(56), true, night);
+    cabinet(base, S(ct.x + 1), S(ct.y + 1), S(55), S(38));
+    if (T) T.paintFridge(base, S(ct.x + 63), S(ct.y));
+    if (T) T.paintCookingRange(base, S(ct.x + 58), S(ct.y + 41));
+    frame(base, S(ct.x), S(ct.y - 14), S(90), S(15), PAL.s);
+    rect(base, S(ct.x + 4), S(ct.y - 12), S(71), 2, PAL.y3);
+    for (const [dx, w] of [[13, 12], [29, 9], [42, 17]]) {
+      rect(base, S(ct.x + dx), S(ct.y - 8), S(w), 3, PAL.p3);
+      rect(base, S(ct.x + dx), S(ct.y - 5), S(w - 4), 2, PAL.r3);
     }
-    counter(base, S(48), S(352), S(99));
-    frame(base, S(61), S(359), S(13), S(8), PAL.c1);
-    rect(base, S(80), S(358), S(9), S(6), PAL.r1);
-    for (const x of [120, 125, 130]) {
-      frame(base, S(x), S(358), 6, 9, PAL.p3, PAL.w1);
-      rect(ctxOrBase(), S(x) + 1, S(359), 4, 2, PAL.r3);
+    counter(base, S(ct.x), S(ct.y + 57), S(ct.w));
+    frame(base, S(ct.x + 13), S(ct.y + 64), S(13), S(8), PAL.c1);
+    rect(base, S(ct.x + 32), S(ct.y + 63), S(9), S(6), PAL.r1);
+    for (const dx of [72, 77, 82]) {
+      frame(base, S(ct.x + dx), S(ct.y + 63), 6, 9, PAL.p3, PAL.w1);
+      rect(base, S(ct.x + dx) + 1, S(ct.y + 64), 4, 2, PAL.r3);
     }
-    function ctxOrBase() { return base; }
-    plant(base, S(110), S(350), 0, night);
+    plant(base, S(ct.x + 62), S(ct.y + 55), 0, night);
 
     // Self-service Kiosk
-    if (T) T.paintKiosk(base, S(186), S(386));
+    const ks = lm?.kiosk ?? { x: 186, y: 386 };
+    if (T) T.paintKiosk(base, S(ks.x), S(ks.y));
 
     // Main Entrance & Welcome Mat
-    rug(base, S(224), S(432), S(71), S(29), PAL.c1, PAL.p0);
-    doorway = { x: S(241), y: S(457), w: S(36) };
+    const en = lm?.entrance ?? { x: 241, y: 457, w: 36, rugX: 224, rugY: 432, rugW: 71, rugH: 29 };
+    rug(base, S(en.rugX), S(en.rugY), S(en.rugW), S(en.rugH), PAL.c1, PAL.p0);
+    doorway = { x: S(en.x), y: S(en.y), w: S(en.w) };
     door(base, doorway.x, doorway.y, doorway.w);
-    frame(base, S(240), S(446), S(38), S(9), PAL.t1);
-    rect(base, S(243), S(449), S(32), 2, PAL.t3);
-    if (T) T.drawDitherGlow(base, S(259), S(490), 22, 12, PAL.t3, night ? 0.24 : 0.1);
+    frame(base, S(en.x - 1), S(en.y - 11), S(en.w + 2), S(9), PAL.t1);
+    rect(base, S(en.x + 2), S(en.y - 8), S(en.w - 4), 2, PAL.t3);
+    if (T) T.drawDitherGlow(base, S(en.x + Math.floor(en.w / 2)), S(en.y + 33), 22, 12, PAL.t3, night ? 0.24 : 0.1);
 
-    for (const [x, y] of [
+    const plants = lm?.plants ?? [
       [170, 449], [327, 449], [651, 449], [99, 448], [145, 83],
       [267, 386], [382, 386], [500, 386], [623, 386], [687, 405],
-    ]) {
-      plant(base, S(x), S(y), x % 3, night);
-    }
+    ];
+    for (const [x, y] of plants) plant(base, S(x), S(y), x % 3, night);
     for (const x of [22, 724]) rect(base, S(x), S(447), S(21), S(30), PAL.s);
   }
 
@@ -436,9 +442,9 @@
   function chairFront(seat) {
     const { x, y, key, direction } = seat;
     const side = direction !== "up";
-    const w = side ? S(9) : S(22);
+    const w = side ? S(10) : S(24);
     const h = side ? S(19) : S(18);
-    const left = side ? x + (direction === "right" ? -S(13) : S(4)) : x - Math.floor(w / 2);
+    const left = side ? (direction === "right" ? x - S(11) : x + 1) : x - Math.floor(w / 2);
     const top = y - S(17);
     const element = document.createElement("canvas");
     element.className = "cafe-art-chair";
@@ -453,7 +459,7 @@
       zIndex: String(Math.round(yPercent(y) * 10) + 1),
     });
     const ctx = element.getContext("2d");
-    if (T) T.paintChairFront(ctx, w, h, key);
+    if (T) T.paintChairFront(ctx, w, h, key, direction);
     avatars.append(element);
   }
 

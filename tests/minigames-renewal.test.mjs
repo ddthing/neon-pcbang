@@ -262,27 +262,38 @@ test("Arcade Leaderboard supports solitaire and knit games", async () => {
   }
 });
 
-test("Pure-pixel hall tiles, pure-pixel avatar matrices, and arrow-stepper wardrobe are active with zero math blobs", () => {
+test("Pure-pixel hall tiles, single-source layout sync, pure-pixel avatar matrices, arrow-stepper wardrobe & README guidelines exist cleanly", () => {
   const html = readFileSync(new URL("../app/cafe.html", import.meta.url), "utf8");
   const pcCss = readFileSync(new URL("../public/pc.css", import.meta.url), "utf8");
   const shellCss = readFileSync(new URL("../public/game-shell.css", import.meta.url), "utf8");
   const walkCss = readFileSync(new URL("../public/walk.css", import.meta.url), "utf8");
   const walkJs = readFileSync(new URL("../public/walk.js", import.meta.url), "utf8");
+  const appJs = readFileSync(new URL("../public/app.js", import.meta.url), "utf8");
   const cafeArt = readFileSync(new URL("../public/cafe-art.js", import.meta.url), "utf8");
+  const cafeLayout = readFileSync(new URL("../public/cafe-layout.js", import.meta.url), "utf8");
   const pixelTiles = readFileSync(new URL("../public/pixel-tiles.js", import.meta.url), "utf8");
   const avatarJs = readFileSync(new URL("../public/avatar-sprites.js", import.meta.url), "utf8");
+  const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
 
+  assert.match(html, /<script src="\.\/cafe-layout\.js" defer><\/script>/);
   assert.match(html, /<script src="\.\/pixel-tiles\.js" defer><\/script>/);
+  assert.match(html, /data-landmark="entrance"/);
   assert.match(html, /id="wardrobe-rot-left"/);
   assert.match(html, /id="wardrobe-rot-right"/);
   assert.match(html, /id="knit-loom"/);
   assert.match(html, /id="knit-boost-slot"/);
+  assert.match(appJs, /syncFloorLandmarks/);
+  assert.match(appJs, /window\.cafeLayout/);
+  assert.match(cafeLayout, /window\.cafeLayout =/);
   assert.match(walkJs, /className = "wardrobe-stepper"/);
   assert.match(walkCss, /\.wardrobe-stepper/);
   assert.match(cafeArt, /const WIDTH = 1152;\s*\r?\n\s*const HEIGHT = 768;/);
+  assert.match(pixelTiles, /paintSofaTable/);
   assert.match(pixelTiles, /window\.cafePixelTiles =/);
   assert.ok(!avatarJs.includes("pellipse"), "avatar-sprites.js must use pixel matrices instead of math ellipses");
   assert.match(pcCss, /\.sudoku-cell\[data-given\]/);
   assert.match(pcCss, /\.pc-launcher\[hidden\]/);
   assert.match(shellCss, /\.cafe-joystick\[hidden\]/);
+  assert.match(readme, /공동개발자 필독 지침/);
+  assert.match(readme, /Single Source of Truth/);
 });
