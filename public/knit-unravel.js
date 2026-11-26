@@ -7,6 +7,7 @@ import {
   YARN_PALETTE,
   createKnitStage,
   findKnitHint,
+  findPairPartner,
   isCellReachable,
   isKnitStuck,
   isKnitWon,
@@ -40,7 +41,14 @@ export function initKnitUnravel() {
   const lctx = loomCanvas.getContext("2d");
   lctx.imageSmoothingEnabled = false;
 
-  mountLeaderboardBox(dialog, "knit", () => `stage${currentStage}`, (s, m) => m || `${s}점`);
+  // 선택 규칙: "path"(기본, 빈 칸 길이 열린 실) / "column"(맨 위 실만 + 아래 실타래가 위로 올라옴)
+  const ruleBtn = document.getElementById("knit-rule");
+  const ruleKey = "neon-pcbang-knit-rule";
+  let rule = "path";
+  try { if (localStorage.getItem(ruleKey) === "column") rule = "column"; } catch {}
+  const rankMode = () => `stage${currentStage}${rule === "column" ? "-col" : ""}`;
+
+  mountLeaderboardBox(dialog, "knit", rankMode, (s, m) => m || `${s}점`);
 
   for (let i = 1; i <= KNIT_STAGE_COUNT; i++) {
     const opt = document.createElement("option");
@@ -50,7 +58,7 @@ export function initKnitUnravel() {
   }
 
   let currentStage = 1;
-  let game = createKnitStage(1);
+  let game = createKnitStage(1, { rule });
   let hintCell = null;
   let wonHandled = false;
   let lastPullAt = 0;
@@ -260,7 +268,7 @@ export function initKnitUnravel() {
       window.cafeAudioPlay?.("chime");
       window.recordCafeStamp?.("game");
       statusEl.textContent = `🎉 ${game.stage}단계 「${game.patternName}」 완성! (+${game.score}점)`;
-      submitArcadeScore("knit", game.score, { mode: `stage${game.stage}`, metric: `${game.stage}탄 ${doneRatio}%` });
+      submitArcadeScore("knit", game.score, { mode: rankMode(), metric: `${game.stage}탄 ${doneRatio}%` });
     } else if (!wonHandled && isKnitStuck(game)) {
       statusEl.textContent = "⚠️ 도크가 막혔어요! 되돌리기, +1 슬롯 또는 가위 도우미를 사용해 보세요.";
     }
@@ -291,7 +299,14 @@ export function initKnitUnravel() {
           btn.classList.add("spool", reach || canGlove ? "reachable" : "blocked");
           if (cell.mystery) btn.classList.add("mystery");
           if (cell.ice > 0) btn.classList.add("frozen");
-          if (cell.pairId) btn.classList.add("paired");
+          if (cell.pairId) {
+            btn.classList.add("paired");
+            // 짝이 바로 옆/위아래에 붙어 있으면 두 칸을 잇는 밧줄 띠를 그린다(색이 아닌 모양으로 구분).
+            const partner = findPairPartner(game.tray, r, c);
+            if (partner && Math.abs(partner.r - r) + Math.abs(partner.c - c) === 1) {
+              btn.dataset.link = partner.c > c ? "right" : partner.c < c ? "left" : partner.r > r ? "down" : "up";
+            }
+          }
           btn.style.background = cell.mystery ? "#6b6375" : pal.fill;
           btn.style.color = !cell.mystery && (cell.color === "w" || cell.color === "y" || cell.color === "l")
             ? "#261c29"
@@ -306,9 +321,27 @@ export function initKnitUnravel() {
             btn.textContent = String(cell.remaining);
           }
 
+          if (cell.pairId) {
+            // 매듭 뱃지: 같은 번호끼리 한 쌍
+            const knot = document.createElement("span");
+            knot.className = "knit-knot";
+            knot.setAttribute("aria-hidden", "true");
+            knot.textContent = String(cell.pairId);
+            btn.append(knot);
+          }
+          if (!reach && !canGlove) {
+            // 자물쇠 표시: 아직 꺼낼 수 없는 실타래
+            const lock = document.createElement("span");
+            lock.className = "knit-lock";
+            lock.setAttribute("aria-hidden", "true");
+            btn.append(lock);
+          }
+
           btn.setAttribute(
             "aria-label",
-            `${cell.mystery ? "미스터리" : pal.name} 실타래 (${cell.remaining}코)${reach ? ", 이동 가능" : ", 막혀 있음"}`
+            `${cell.mystery ? "미스터리" : pal.name} 실타래 (${cell.remaining}코)` +
+              `${cell.pairId ? `, ${cell.pairId}번 매듭으로 묶인 한 쌍` : ""}${cell.ice > 0 ? ", 얼음" : ""}` +
+              `${reach ? ", 이동 가능" : ", 막혀 있음"}`
           );
 
           btn.addEventListener("click", () => {
@@ -334,6 +367,7 @@ export function initKnitUnravel() {
               if (res.reason === "frozen") statusEl.textContent = "얼음 실타래예요! 통로가 먼저 열린 뒤 녹일 수 있어요.";
               else if (res.reason === "pair_needs_two") statusEl.textContent = "끈으로 묶인 2개의 실타래는 도크 빈칸이 2개 필요해요!";
               else if (res.reason === "dock_full") statusEl.textContent = "위쪽 실타래 도크가 꽉 찼어요! 가위나 +1 슬롯을 써보세요.";
+              else if (rule === "column") statusEl.textContent = "각 줄의 맨 위 실타래만 꺼낼 수 있어요. 위를 꺼내면 아래가 올라와요!";
               else statusEl.textContent = "위쪽 출구 행까지 빈 칸 길이 열려 있어야 꺼낼 수 있어요!";
               return;
             }
@@ -398,12 +432,18 @@ export function initKnitUnravel() {
 
   function loadStage(stage) {
     currentStage = stage;
-    game = createKnitStage(stage);
+    game = createKnitStage(stage, { rule });
     hintCell = null;
     wonHandled = false;
     flyingBeads = [];
     sparks = [];
-    statusEl.textContent = `🧶 ${game.patternName} — 위쪽 통로와 이어진 실패를 눌러 실을 풀어보세요!`;
+    if (ruleBtn) {
+      ruleBtn.setAttribute("aria-pressed", String(rule === "column"));
+      ruleBtn.textContent = rule === "column" ? "줄 세우기 ON" : "줄 세우기 OFF";
+    }
+    statusEl.textContent = rule === "column"
+      ? `🧶 ${game.patternName} — 각 줄의 맨 위 실타래를 눌러 실을 풀어보세요! 아래 실타래가 위로 올라와요.`
+      : `🧶 ${game.patternName} — 위쪽 통로와 이어진 실패를 눌러 실을 풀어보세요!`;
     renderDockAndHud();
     renderTray();
     drawLoom();
@@ -412,6 +452,12 @@ export function initKnitUnravel() {
 
   selectEl.addEventListener("change", () => loadStage(Number(selectEl.value) || 1));
   resetBtn.addEventListener("click", () => loadStage(currentStage));
+  ruleBtn?.addEventListener("click", () => {
+    rule = rule === "column" ? "path" : "column";
+    try { localStorage.setItem(ruleKey, rule); } catch {}
+    loadStage(currentStage);
+    document.dispatchEvent(new CustomEvent("arcade-leaderboard-mode-changed", { detail: { game: "knit" } }));
+  });
   undoBtn.addEventListener("click", () => {
     if (undoKnit(game)) {
       hintCell = null;
