@@ -13,7 +13,7 @@
 1. **렌더 레이어 결합 ([`public/renewal-slice.js`](../public/renewal-slice.js)):** Track B의 Y-정렬 `depthList` 및 마지막 2프레임 의자 등받이 가림 앞에 Track E의 `renderFloorLightingAndSplashes`를 배치해 바닥·스콘스 조명·물튐이 캐릭터/가구를 덮지 않게 정리하고, `renderTraySteamAndSeatHighlight`를 뒤에 두어 활성 트레이 증기와 좌석 강조를 선명히 유지했다.
 2. **모션 감소 상태 단일화:** Track B의 식물·키오스크 `reduced` 플래그도 `effectiveReducedMotion()`을 참조하도록 통합해 `모션 감소` QA 토글과 OS 설정이 모든 요소에 함께 적용된다.
 3. **모바일 상단 HUD 겹침 수정 ([`public/renewal-slice.css`](../public/renewal-slice.css)):** `390×844` 폭에서 좌측 `.hud-top-left`가 우측 `패널 숨기기` 버튼과 겹치지 않도록 `max-width: calc(100vw - 118px)` 및 `flex-wrap: wrap`을 적용했다.
-4. **배포 파이프라인 확장 ([`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml), [`tests/smoke-live-game.mjs`](../tests/smoke-live-game.mjs)):** `main` 푸시 시 `public/**`, `lib/**`, `app/**` 변경이 자동 배포·스모크 검증(`renewal-layout.mjs`, `renewal-effects.mjs`, `renewal-slice-art.mjs`, `renewal-seat-picker.mjs`, `renewal-slice.html`, `walk.js` 포함)까지 실행되도록 연결했다.
+4. **배포 파이프라인 확장 ([`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml), [`tests/smoke-live-game.mjs`](../tests/smoke-live-game.mjs), [`worker/index.ts`](../worker/index.ts)):** `main` 푸시 시 `public/**`, `lib/**`, `app/**` 변경이 자동 배포·스모크 검증(`renewal-layout.mjs`, `renewal-effects.mjs`, `renewal-slice-art.mjs`, `renewal-seat-picker.mjs`, `renewal-slice.html`, `walk.js` 포함)까지 실행되도록 연결했고, Workers Assets의 `.html` 확장자 제거 리다이렉트(`307 → /renewal-slice`)가 [`worker/index.ts`](../worker/index.ts) 확장자 필터에 막혀 `404`를 내던 실운영 오류를 수정해 `/renewal-slice`와 `/renewal-slice.html` 모두 `200`으로 서빙되게 해결했다.
 
 ## 통합 검수 결과
 

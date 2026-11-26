@@ -10,6 +10,7 @@ on:
       - "app/**"
       - "lib/**"
       - "public/**"
+      - "worker/**"
       - "tests/invite-gate.test.mjs"
       - "tests/smoke-live-login.mjs"
       - "tests/smoke-live-game.mjs"

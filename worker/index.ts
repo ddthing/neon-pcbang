@@ -9,6 +9,17 @@ const worker = {
     if (access) return access;
     // When Worker-first static asset routing is enabled, explicitly forward assets.
     const pathname = new URL(request.url).pathname;
+    if ((pathname === "/renewal-slice" || pathname === "/renewal-slice.html") && env.ASSETS) {
+      const first = await env.ASSETS.fetch(request);
+      const loc = first.headers.get("location");
+      if (first.status >= 300 && first.status < 400 && loc) {
+        return env.ASSETS.fetch(new Request(new URL(loc, request.url), request));
+      }
+      if (pathname === "/renewal-slice" && first.status === 404) {
+        return env.ASSETS.fetch(new Request(new URL("/renewal-slice.html", request.url), request));
+      }
+      return first;
+    }
     if (pathname !== "/" && pathname !== "/world.js" && !pathname.startsWith("/api/") && /\.[a-z0-9]+$/i.test(pathname) && env.ASSETS) {
       return env.ASSETS.fetch(request);
     }
