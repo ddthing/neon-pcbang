@@ -11,6 +11,7 @@ import {
   moveCards,
   stepAutoComplete,
   undoSolitaire,
+  wasteFanCount,
 } from "./solitaire-engine.mjs";
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
 
@@ -174,11 +175,11 @@ export function initSolitaire() {
     });
     topRow.append(stockBtn);
 
-    // Waste (spread up to 3 top cards cleanly so 3-card draw shows all 3)
+    // Waste: 3장 뽑기는 위 3장을 부채꼴로, 1장 뽑기는 맨 위 1장만 보여 준다.
     const wasteWrap = document.createElement("div");
     wasteWrap.className = "sol-pile sol-waste-fan";
     if (game.waste.length) {
-      const visible = game.waste.slice(-3);
+      const visible = game.waste.slice(-wasteFanCount(drawCount));
       visible.forEach((card, idx) => {
         const isTop = idx === visible.length - 1;
         const el = cardEl(card, { kind: "waste" }, isTop && isSelectedSource("waste"), isTop && isHintSource("waste"));
