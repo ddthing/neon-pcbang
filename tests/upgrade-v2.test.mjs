@@ -85,6 +85,30 @@ function postJson(url, body) {
   });
 }
 
+test("two visitors reserving the same renewal seat get one confirmation and a usable conflict snapshot", async () => {
+  const { db, sqlite } = makeFullV2Db();
+  const seat = "hall:0";
+  const visitors = [randomUUID(), randomUUID()];
+  const reserve = (token, key) => presence(postJson("https://pcbang.test/api/presence", {
+    token, name: "시안 검수", action: "reserve", seat: key, x: 33, y: 81,
+  }), db, {}, baseTime);
+  try {
+    const responses = await Promise.all(visitors.map((token) => reserve(token, seat)));
+    assert.deepEqual(responses.map((response) => response.status).sort(), [200, 409]);
+    const loserIndex = responses.findIndex((response) => response.status === 409);
+    const snapshot = await responses[loserIndex].json();
+    assert.equal(snapshot.mine, null);
+    assert.equal(snapshot.visitors.filter((visitor) => visitor.seat === seat).length, 1);
+    assert.equal(snapshot.visitors.some((visitor) => visitor.seat === "hall:1"), false);
+
+    const retry = await reserve(visitors[loserIndex], "hall:1");
+    assert.equal(retry.status, 200);
+    assert.equal((await retry.json()).mine, "hall:1");
+  } finally {
+    sqlite.close();
+  }
+});
+
 test("seated visitor keeps PC seat & tray while taking a break in Smoking Booth and Night Terrace with isolated zone chat", async () => {
   const { db, sqlite } = makeFullV2Db();
   try {
