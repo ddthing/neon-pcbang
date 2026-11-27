@@ -36,6 +36,8 @@ try {
         "cafe-art.js", "cafe-art.css", "cafe-interface.css", "camera.js",
         "cafe-map.mjs", "cafe-clock.mjs", "cafe-board.js", "omok-rules.mjs", "boot.js",
         "assets/chars/clerk.png", "assets/original/cream-frame.png",
+        "assets/downtown/catalog.json", "assets/downtown/sprites/objects.png",
+        "assets/fx/overlays/rain_light_strip.png", "assets/foods/soda_coke.png",
         "cafe-delivery.js", "food-pixels.js", "assets/original/workstations.png",
         "renewal-layout.mjs", "renewal-effects.mjs", "renewal-slice-art.mjs",
         "renewal-seat-picker.mjs", "renewal-slice.html", "renewal-slice.js", "walk.js",

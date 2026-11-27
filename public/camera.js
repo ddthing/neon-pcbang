@@ -12,6 +12,7 @@ export function createCafeCamera(scene) {
   const pointers = new Map();
   let mode;
   let zoom = 3;
+  let desktopZoom = null;
   let focus = center;
   let bounds;
   let lastSeat;
@@ -59,7 +60,12 @@ export function createCafeCamera(scene) {
       manual = false;
       zoom = 3;
     }
-    const scale = mode ? zoom : Math.max(1, Math.floor(Math.min(width / WORLD.width, height / WORLD.height)));
+    const fitScale = Math.max(1, Math.floor(Math.min(width / WORLD.width, height / WORLD.height)));
+    const scale = mode
+      ? zoom
+      : desktopZoom !== null
+        ? clamp(desktopZoom, 1, 3)
+        : width >= 960 ? Math.max(2, fitScale) : fitScale;
     const pixel = scale;
     const worldWidth = WORLD.width * pixel;
     const worldHeight = WORLD.height * pixel;
@@ -69,7 +75,7 @@ export function createCafeCamera(scene) {
     scene.style.setProperty("--camera-width", worldWidth + "px");
     scene.style.setProperty("--camera-height", worldHeight + "px");
     viewport.style.setProperty("--world-pixel", pixel + "px");
-    recenter(mode ? focus : center);
+    recenter(mode || worldWidth > width || worldHeight > height ? focus : center);
   }
 
   function follow(point, seat) {
@@ -78,7 +84,8 @@ export function createCafeCamera(scene) {
       if (seat) manual = false;
       lastSeat = seat;
     }
-    if (!point || !mode || manual || dragging) return;
+    const canPan = mode || (bounds && (bounds.worldWidth > bounds.width || bounds.worldHeight > bounds.height));
+    if (!point || !canPan || manual || dragging) return;
     focus = point;
     recenter(point);
   }
@@ -103,7 +110,8 @@ export function createCafeCamera(scene) {
     button.addEventListener("click", () => quickView(QUICK_VIEWS[button.dataset.cameraTo]));
   });
   viewport.addEventListener("pointerdown", (event) => {
-    if (!mode || event.button !== 0 || !scene.contains(event.target)) return;
+    const canPan = mode || (bounds && (bounds.worldWidth > bounds.width || bounds.worldHeight > bounds.height));
+    if (!canPan || event.button !== 0 || !scene.contains(event.target)) return;
     cancelAnimationFrame(frame);
     const point = { x: event.clientX, y: event.clientY };
     pointers.set(event.pointerId, { ...point, origin: point });
@@ -169,6 +177,15 @@ export function createCafeCamera(scene) {
     event.preventDefault();
     event.stopImmediatePropagation();
   }, true);
+  viewport.addEventListener("wheel", (event) => {
+    if (mode || !scene.contains(event.target)) return;
+    if (document.querySelectorAll?.("dialog[open]")?.length) return;
+    event.preventDefault();
+    keepFocus();
+    const current = desktopZoom ?? Number(viewport.dataset.cameraScale || 2);
+    desktopZoom = clamp(current + (event.deltaY < 0 ? 1 : -1), 1, 3);
+    resize();
+  }, { passive: false });
 
   fullscreen.addEventListener("click", async () => {
     try {
