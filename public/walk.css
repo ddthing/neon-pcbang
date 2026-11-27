@@ -287,7 +287,7 @@ body.cafe-fullscreen { overflow: hidden; background: #261b1e; }
     animation: avatar-typing .8s steps(4, end) infinite;
   }
   .cafe-visitor[data-pose] .cafe-sprite {
-    animation: avatar-break 2.8s steps(2, end) infinite;
+    animation: avatar-break 1.35s steps(2, end) infinite;
   }
   .cafe-vapor i {
     animation: vapor-rise 2.7s ease-out infinite;

@@ -128,9 +128,16 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
   const side = dir === "left" || dir === "right";
   const back = dir === "up";
   const sitting = action === "sit" || action === "eat";
-  const stride = action === "walk" || action === "carry" ? [0, 1, 2, 0, -1, -2][frame % 6] : 0;
+  const isWalk = action === "walk" || action === "carry";
+  const isSmoke = action === "smoke";
+  const isCoffee = action === "coffee";
+  const isCandy = action === "candy";
+  const fMod = frame % 2;
+  const stride = isWalk ? [0, 1, 2, 0, -1, -2][frame % 6] : 0;
+  const legSpread = isWalk && side ? [0, 1, 2, 0, -1, -2][frame % 6] : 0;
   const drop = sitting ? 4 : action === "sit-transition" ? frame + 1 : 0;
-  const top = 3 + drop - Number(Math.abs(stride) === 2);
+  const headBob = isWalk ? (Math.abs(stride) === 2 ? -1 : stride === 0 ? 0 : 0) : (isSmoke || isCoffee || isCandy) && fMod === 1 ? 1 : 0;
+  const top = 3 + drop + headBob;
   const face = pastel(skin.base, .16);
   const hairColor = pastel(hair.base);
   const clothes = pastel(outfit.body, .44);
@@ -146,13 +153,17 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
     }
   };
 
+  // Legs & expressive stride shoes
   const hips = 24 + Math.floor(drop / 2);
-  for (const [x, step] of [[side ? 5 : 4, stride], [side ? 8 : 9, -stride]]) {
-    const shoeY = sitting ? 28 : 29 - Math.max(0, step);
-    block(x, hips, 3, shoeY - hips, OUTLINE);
-    block(x + 1, hips, 1, shoeY - hips, LAVENDER);
-    block(x, shoeY, 4, 2, OUTLINE);
-    block(x + 1, shoeY, 2, 1, CREAM);
+  const leftLegX = (side ? 5 : 4) + legSpread;
+  const rightLegX = (side ? 8 : 9) - legSpread;
+  for (const [lx, step] of [[leftLegX, stride], [rightLegX, -stride]]) {
+    const lift = isWalk ? Math.max(0, step) : 0;
+    const shoeY = sitting ? 28 : 29 - lift;
+    block(lx, hips, 3, Math.max(1, shoeY - hips), OUTLINE);
+    block(lx + 1, hips, 1, Math.max(1, shoeY - hips), LAVENDER);
+    block(lx, shoeY, 4, 2, OUTLINE);
+    block(lx + 1, shoeY, 2, 1, CREAM);
   }
   block(side ? 4 : 3, top + 12, side ? 8 : 10, 11 - Math.floor(drop / 2), OUTLINE);
   block(side ? 5 : 4, top + 13, side ? 6 : 8, 9 - Math.floor(drop / 2), clothes);
@@ -162,14 +173,56 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
     block(6, top + 18, 4, 1, accent);
   }
 
-  const handLift = sitting ? frame % 2
-    : ["coffee", "candy", "smoke", "carry", "lift"].includes(action) ? 3
-    : ["cook", "plate", "serve"].includes(action) ? 2 + frame % 2 : 0;
-  for (const x of side ? [9] : [2, 11]) {
-    const arm = top + 15 - handLift;
-    block(x, arm, 3, 6, OUTLINE);
-    block(x + 1, arm + 1, 1, 3, clothes);
-    point(x + 1, arm + 4, face);
+  // Opposite-phase arm swing when walking + expressive break poses!
+  if (isSmoke || isCoffee || isCandy) {
+    // Left relaxed arm at side / pocket
+    block(2, top + 15, 3, 6, OUTLINE);
+    block(3, top + 16, 1, 3, clothes);
+    point(3, top + 19, face);
+    // Right animated action arm (inhale vs exhale / sip vs hold)
+    const rightArmY = top + (fMod === 0 ? (isSmoke ? 10 : 12) : (isCoffee || isCandy ? 10 : 14));
+    block(11, rightArmY, 3, 5, OUTLINE);
+    block(12, rightArmY + 1, 1, 2, clothes);
+    point(12, rightArmY + 1, face);
+    if (isSmoke) {
+      if (fMod === 0) {
+        // Inhale: cigarette raised near mouth with warm glowing ember
+        block(10, top + 9, 3, 1, CREAM);
+        point(13, top + 9, "#e6915c");
+      } else {
+        // Exhale: cigarette lowered at side + visible pastel smoke curl drifting up
+        block(13, rightArmY, 3, 1, CREAM);
+        point(15, rightArmY, "#e6915c");
+        point(10, top + 7, CREAM);
+        point(11, top + 5, LAVENDER);
+        point(12, top + 3, CREAM);
+        point(13, top + 1, LAVENDER);
+      }
+    } else if (isCoffee) {
+      const cupY = fMod === 0 ? top + 12 : top + 9;
+      block(11, cupY, 3, 4, OUTLINE);
+      block(11, cupY + 1, 3, 2, "#a67e68");
+      block(11, cupY, 3, 1, CREAM);
+      point(12, cupY - 2, CREAM);
+      point(13, cupY - 4, LAVENDER);
+    } else if (isCandy) {
+      const candY = fMod === 0 ? top + 11 : top + 9;
+      block(11, candY + 2, 1, 3, CREAM);
+      block(11, candY, 3, 2, PINK);
+    }
+  } else {
+    const swing = isWalk ? Math.round(stride * 1.1) : 0;
+    const sideSwingX = isWalk && side ? -stride : 0;
+    const arms = side
+      ? [[9 + sideSwingX, top + 15 - Math.abs(swing)]]
+      : [[2, top + 15 + swing], [11, top + 15 - swing]];
+    for (const [armX, baseArmY] of arms) {
+      const sitBump = sitting ? frame % 2 : ["carry", "lift"].includes(action) ? 3 : ["cook", "plate", "serve"].includes(action) ? 2 + fMod : 0;
+      const arm = baseArmY - sitBump;
+      block(armX, arm, 3, 6, OUTLINE);
+      block(armX + 1, arm + 1, 1, 3, clothes);
+      point(armX + 1, arm + 4, face);
+    }
   }
 
   head.forEach((row, y) => [...row].forEach((pixel, x) => {
@@ -202,7 +255,12 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
   if (!back) {
     const eyes = side ? [10] : [5, 10];
     for (const x of eyes) {
-      point(x, top + 7, OUTLINE);
+      if ((isSmoke && fMod === 0) || ((isCoffee || isCandy) && fMod === 1)) {
+        // Relaxed squinting eyes during inhale / sip
+        block(x - 1, top + 7, 2, 1, OUTLINE);
+      } else {
+        point(x, top + 7, OUTLINE);
+      }
       point(x + (x < 8 ? -1 : 1), top + 9, PINK);
       if (cfg.accessory === 1 || cfg.accessory === 2) {
         block(x - 1, top + 6, 3, 1, OUTLINE);
@@ -210,7 +268,11 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
         point(x + 1, top + 7, OUTLINE);
       }
     }
-    point(side ? 13 : 8, top + 9, OUTLINE);
+    if (isSmoke && fMod === 1) {
+      block(8, top + 9, 2, 1, OUTLINE); // Exhale O-mouth
+    } else {
+      point(side ? 13 : 8, top + 9, OUTLINE);
+    }
   }
   if (cfg.accessory >= 3) block(5, top + 12, 6, 2, PINK);
   if (hat.color) {
@@ -261,7 +323,6 @@ export function drawAvatarSheet(canvas, avatarCode) {
 
 export function getAvatarSheetUrl(avatarCode, fallbackColor = 0) {
   const key = encodeAvatarCode(normalizeAvatarCode(avatarCode, fallbackColor));
-  if (BUILTIN_AVATAR_CODES.has(key)) return "./assets/chars/" + key + ".png";
   if (!spriteCache.has(key)) {
     const canvas = document.createElement("canvas");
     drawAvatarSheet(canvas, key);

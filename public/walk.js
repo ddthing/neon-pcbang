@@ -1,5 +1,5 @@
 import "./app.js";
-import { clearSegmentInSpace, entrance, kiosk, pathTo, routeToSeat, roomPortals, relaxPortals, relaxZones } from "./world.js";
+import { canWalkInSpace, clearSegmentInSpace, entrance, kiosk, pathTo, routeToSeat, roomPortals, relaxPortals, relaxZones } from "./world.js";
 import { LANDMARKS, SEATS, center, toPercent } from "./cafe-map.mjs";
 import { createCafeCamera } from "./camera.js";
 import { AVATAR_WARDROBE, encodeAvatarCode, getAvatarSheetUrl, normalizeAvatarCode, renderAvatarPortrait, renderAvatarPreview } from "./avatar-sprites.js";
@@ -622,9 +622,16 @@ function exitRelaxZone() {
   const mySeat = seating.current();
   if (!mySeat) {
     const portal = relaxPortals[prevZone] || entrance;
-    location.x = portal.x;
-    location.y = portal.y + 2.2;
-    dirName = "down";
+    const candidates = [
+      { x: portal.x, y: portal.y + 2.2 },
+      { x: portal.x, y: portal.y },
+      { x: portal.x, y: portal.y - 2.2 },
+      entrance,
+    ];
+    const safePoint = candidates.find((pt) => canWalkInSpace(pt.x, pt.y, "hall")) || entrance;
+    location.x = safePoint.x;
+    location.y = safePoint.y;
+    dirName = prevZone === "terrace" ? "up" : "down";
   } else {
     dirName = "up";
   }

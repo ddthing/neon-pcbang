@@ -9,6 +9,7 @@ import {
   entrance,
   entranceThreshold,
   pathTo,
+  relaxPortals,
   relaxZones,
   routeToSeat,
 } from "../lib/cafe-world.mjs";
@@ -48,7 +49,9 @@ test("strictTarget click mode rejects walls and obstacles instead of warping to 
   );
 });
 
-test("booth and terrace pathfinding uses continuous collision checks around every obstacle", () => {
+test("booth and terrace portals stay walkable on return and relax areas stay obstacle-safe", () => {
+  assert.equal(canWalk(relaxPortals.booth.x, relaxPortals.booth.y), true);
+  assert.equal(canWalk(relaxPortals.terrace.x, relaxPortals.terrace.y), true);
   for (const space of ["booth", "terrace"]) {
     const cfg = relaxZones[space];
     const origin = { x: cfg.door.x, y: cfg.door.y - 2 };

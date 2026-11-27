@@ -1,4 +1,4 @@
-import { FLOOR, HALL_BANKS, LANDMARKS, ROOMS, WORLD, center, roomPartitions, toPercent, toPixels } from "./cafe-map.mjs";
+import { FLOOR, LANDMARKS, ROOMS, WORLD, center, roomPartitions, toPercent, toPixels } from "./cafe-map.mjs";
 
 const T = window.cafePixelTiles;
 const { PAL } = T;
@@ -226,9 +226,6 @@ function paintHall() {
     layer.dataset.seat = seat.key;
     T.chairFront(layer.getContext("2d"), seat);
     foreground(layer, x, y, seat.foot.y);
-  }
-  for (const bank of HALL_BANKS) {
-    T.deskDivider(base, bank.x, bank.seamY, bank.w);
   }
 }
 
