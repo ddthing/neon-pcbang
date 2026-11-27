@@ -82,6 +82,44 @@
 .floor-ticket span, .floor-ticket small { color: #5d594f; font-size: 11px; }
 .floor-ticket strong { color: #456151; font-size: 22px; }
 
+.floor-scroll .hall-seat-map {
+  border: 2px solid #5c4742;
+  background: #ecdcc8;
+  color: #5c4742;
+}
+.hall-seat-map #floor-banks { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.floor-room-footprint {
+  position: absolute;
+  border: 2px solid #a08caa;
+  background: #e2d6ed;
+  pointer-events: none;
+}
+.floor-map-room, .floor-seat[data-map-seat] {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  transform: translate(-50%, -50%);
+  min-height: 22px;
+  min-width: 24px;
+  padding: 2px;
+  border: 1px solid #5c4742;
+  border-radius: 0;
+  color: #5c4742;
+  background: #f7efe5;
+  pointer-events: auto;
+  font-size: 10px;
+}
+.floor-map-room { z-index: 3; min-width: max-content; padding-inline: 4px; }
+.floor-seat[data-map-seat]:is(:hover, [aria-pressed="true"], .my-seat) { background: #c8b6e2; }
+.floor-room {
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  gap: 8px;
+  background: #e2d6ed;
+}
+.floor-room[hidden] { display: none; }
+.floor-room .floor-seat { width: 100%; max-width: 68px; min-height: 44px; }
+.floor-map-marker { background: #f7efe5; color: #5c4742; border-radius: 0; }
+
 @media (max-width: 760px) {
   .floor-layout { grid-template-columns: minmax(0, 1fr); }
   .floor-instruction { display: none; }

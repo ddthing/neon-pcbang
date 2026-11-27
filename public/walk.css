@@ -17,13 +17,13 @@
 }
 .cafe-visitor.away-desk { opacity: .48; filter: saturate(.65); }
 
-/* Cozy 48x48 pixel-art 4x7 sprite sheet renderer */
+/* Native 16×32 frames with seven columns and thirteen pose rows. */
 .cafe-sprite {
   position: absolute;
   inset: 0;
   background-repeat: no-repeat;
-  background-size: 700% 1100%;
-  background-position: calc(var(--sprite-col, 0) * 16.666667%) calc(var(--sprite-row, 0) * 10%);
+  background-size: 700% 1300%;
+  background-position: calc(var(--sprite-col, 0) * 16.666667%) calc(var(--sprite-row, 0) * 8.333333%);
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }

@@ -24,15 +24,13 @@
   <link rel="stylesheet" href="./cafe-delivery.css">
   <link rel="stylesheet" href="./cafe-art.css">
   <link rel="stylesheet" href="./cafe-interface.css">
-  <script src="./cafe-layout.js" defer></script>
   <script src="./pixel-tiles.js" defer></script>
-  <script src="./cafe-art.js" defer></script>
   <script src="./boot.js" defer></script>
   <script src="./audio-engine.js" defer></script>
   <script src="./lucian-motion.js" defer></script>
   <script src="./visit.js" defer></script>
   <script src="./cafe-screen-shapes.js" defer></script>
-  <script src="./app.js" defer></script>
+  <script src="./app.js" type="module"></script>
   <script src="./wallpaper.js" defer></script>
   <script src="./chat.js" type="module"></script>
   <script src="./cafe-delivery.js" type="module"></script>
@@ -40,6 +38,7 @@
   <script src="./weather.js" type="module"></script>
   <script src="./ambience.js" type="module"></script>
   <script src="./corner-shop.js" type="module"></script>
+  <script src="./cafe-board.js" type="module"></script>
   <title>길모퉁이PC방 · 우리 동네 픽셀 PC방</title>
 </head>
 <body class="cafe-fullscreen">
@@ -122,6 +121,12 @@
             </div>
           </div>
         </div>
+        <nav class="cafe-camera-nav" aria-label="매장 화면 빠르게 이동">
+          <button type="button" data-camera-to="hall">메인홀</button>
+          <button type="button" data-camera-to="counter">매점</button>
+          <button type="button" data-camera-to="rooms">룸</button>
+          <button type="button" data-camera-to="booth">흡연구역</button>
+        </nav>
         <div class="scene-viewport">
           <div class="scene" data-space="lobby" tabindex="0" aria-label="매장 이동 화면. 방향키 또는 W A S D로 움직이세요.">
             <img id="lobby-art" data-src="./pcbang-cozy-hall.png" width="1536" height="1024" draggable="false" alt="우드 바닥의 포근한 픽셀 아트 PC방에 1인·2인·5인·6인 게임룸, 오픈키친 매점, 실내 흡연구역, 야외 흡연구역이 보이는 모습" hidden>
@@ -138,8 +143,10 @@
             </div>
             <div id="cafe-delivery-trays" class="cafe-delivery-trays"></div>
             <button id="seat-marker" class="seat-marker mono" type="button" hidden></button>
-            <button id="kiosk-pin" class="kiosk-pin" type="button" aria-label="입구 키오스크에서 자리 고르기"><span>자리 선택기</span></button>
-            <button class="stage-room-door snack-counter" type="button" data-open="snacks">매점 · 오픈키친</button>
+            <button id="kiosk-pin" class="world-target" type="button" aria-label="입구 키오스크에서 자리 고르기" data-tip="자리 선택기"></button>
+            <button id="cafe-board-pin" class="world-target" type="button" data-open="cafe-board" aria-label="게시판 열기" data-tip="게시판"></button>
+            <div class="world-seat-targets" id="world-seat-targets"></div>
+            <button class="world-target snack-counter" type="button" data-open="snacks" aria-label="매점 · 오픈키친" data-tip="매점 · 오픈키친"></button>
             <div id="room-doors" aria-label="구역 입구"></div>
           </div>
           <button class="proximity-prompt" id="proximity-prompt" type="button" hidden></button>
@@ -168,6 +175,7 @@
             <button class="walk-button" id="open-wardrobe" type="button">👕 캐릭터</button>
             <button class="walk-button" id="cafe-wave" type="button"><svg aria-hidden="true"><use href="./icons.svg#pixel-wave"/></svg>인사</button>
             <button class="walk-button" id="cafe-menu-open" type="button"><svg aria-hidden="true"><use href="./icons.svg#pixel-menu"/></svg>메뉴</button>
+            <button class="walk-button" id="quick-board" type="button" data-open="cafe-board">게시판</button>
           </div>
         </div>
         <div class="cafe-chat-controls" id="cafe-chat-controls">
@@ -191,7 +199,7 @@
         <p class="walk-guests" id="cafe-guests" hidden></p>
         <div class="room-foot">
           <p><svg aria-hidden="true"><use href="./icons.svg#cursor"/></svg><span id="room-hint">입구 왼쪽의 우드 키오스크를 눌러보세요.</span></p>
-          <span class="mono" id="room-count">102석</span>
+          <span class="mono" id="room-count">41석</span>
         </div>
       </section>
 
@@ -204,7 +212,7 @@
             <p class="kiosk-label mono">길모퉁이PC방 · 2F</p>
             <h2 id="kiosk-title" tabindex="-1">어디에 앉을까요?</h2>
             <p class="kiosk-copy" id="kiosk-copy">전체 좌석도에서 앉고 싶은 자리를 골라요.</p>
-            <div class="kiosk-counts" id="kiosk-counts"><span><strong>88</strong> 일반석</span><span><strong>14</strong> 룸 좌석</span></div>
+            <div class="kiosk-counts" id="kiosk-counts"><span><strong>22</strong> 일반석</span><span><strong>19</strong> 룸 좌석</span></div>
             <div id="stage-seated" hidden>
               <div class="ticket"><span class="mono">MY SEAT</span><strong id="ticket-seat"></strong><small>이용 시간 <time class="mono" id="session-time">00:00</time> · <b data-gpoints>150 G</b></small></div>
               <button class="primary enter" id="open-monitor" type="button"><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg> 내 PC 열기</button>
@@ -281,7 +289,7 @@
       <div class="floor-map">
         <div id="floor-overview">
           <div class="floor-toolbar">
-            <p><strong>전체 102석</strong><span>일반석 88 · 룸 좌석 14</span></p>
+            <p><strong>전체 41석</strong><span>일반석 22 · 룸 좌석 19</span></p>
             <button class="floor-control" id="floor-zoom" type="button" aria-pressed="false">＋ 확대</button>
           </div>
           <div class="floor-scroll" id="floor-scroll" role="region" aria-label="전체 좌석도" tabindex="0">
@@ -769,6 +777,29 @@
   </dialog>
 
   <!-- SNACK BAR 2.0 -->
+  <dialog id="cafe-board" aria-labelledby="cafe-board-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><h2 id="cafe-board-title">길모퉁이 게시판</h2><button class="close" type="button" data-close aria-label="게시판 닫기">×</button></div>
+      <label>상태로 보기
+        <select id="cafe-board-filter">
+          <option value="">전체</option><option value="pending">대기</option><option value="accepted">반영</option>
+          <option value="closed">꺼져</option><option value="held">보류</option>
+        </select>
+      </label>
+      <section id="cafe-board-posts" aria-label="게시글" aria-live="polite"></section>
+      <details>
+        <summary>건의·오류 제보 쓰기</summary>
+        <form id="cafe-board-form">
+          <label>구분 <select name="kind"><option value="suggestion">건의</option><option value="bug">오류 제보</option></select></label>
+          <label>제목 <input name="title" minlength="2" maxlength="60" required></label>
+          <label>내용 <textarea name="detail" minlength="2" maxlength="600" rows="4" required></textarea></label>
+          <button type="submit">게시판에 등록</button>
+        </form>
+      </details>
+      <p id="cafe-board-message" role="status"></p>
+    </div>
+  </dialog>
+
   <dialog id="snacks" aria-labelledby="snacks-title">
     <div class="dialog-inner">
       <div class="dialog-head"><span class="panel-index mono"><span>SNACK BAR 2.0</span> / OPEN KITCHEN</span><button class="close" type="button" data-close aria-label="매점 닫기">×</button></div>
@@ -792,9 +823,12 @@
         <strong id="order-status" role="status"></strong>
         <p id="order-items"></p>
       </div>
+      <div class="shop-total"><span>주문 합계</span><strong id="order-cost">0 G</strong></div>
+      <p class="dialog-note" id="order-funds" role="status" hidden>G 포인트가 부족해요.</p>
       <button class="primary enter" id="place-order" type="button" disabled>내 자리로 주문하기</button>
       <p class="dialog-note" id="shop-feedback" role="status"></p>
       <p class="dialog-note">가상 매점 · 무료 체험 · 책상에 배달된 쟁반을 클릭해 맛있게 드세요!</p>
+      <p class="dialog-note asset-credit"><a href="https://alexkovacsart.itch.io/free-pixel-art-foods">음식 픽셀 아트 © alexkovacsart</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 화면에서 색 보정</p>
     </div>
   </dialog>
 

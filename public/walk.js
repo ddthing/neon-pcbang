@@ -1,4 +1,6 @@
-import { clearSegmentInSpace, entrance, kiosk, pathTo, routeToSeat, roomPortals, relaxPortals, relaxZones, canWalkInSpace } from "./world.js";
+import "./app.js";
+import { clearSegmentInSpace, entrance, kiosk, pathTo, routeToSeat, roomPortals, relaxPortals, relaxZones } from "./world.js";
+import { LANDMARKS, center, toPercent } from "./cafe-map.mjs";
 import { createCafeCamera } from "./camera.js";
 import { AVATAR_WARDROBE, encodeAvatarCode, getAvatarSheetUrl, normalizeAvatarCode, renderAvatarPortrait, renderAvatarPreview } from "./avatar-sprites.js";
 
@@ -12,7 +14,8 @@ const hudPortrait = document.getElementById("hud-avatar-portrait");
 const hudPlayerName = document.getElementById("hud-player-name");
 const hudProfileBtn = document.getElementById("hud-profile-btn");
 const proximityPrompt = document.getElementById("proximity-prompt");
-const snackCounterCoords = { x: 15.5, y: 72 };
+const snackCounterCoords = toPercent({ x: 526, y: 473 });
+const boardCoords = toPercent(center(LANDMARKS.board));
 const seating = window.cafeSeating;
 const camera = createCafeCamera(scene);
 const walkSpeed = 9.2;
@@ -62,7 +65,7 @@ const onboardKey = "neon-cafe-onboarded-v2";
 const token = read("sessionStorage", tokenKey) || crypto.randomUUID();
 save("sessionStorage", tokenKey, token);
 const arrival = parseInt(token.slice(1, 3), 16) % 8 || 0;
-const spawn = { x: entrance.x - 8 + (arrival % 4) * 5.5, y: entrance.y + (arrival >= 4 ? 1.6 : 0) };
+const spawn = { x: entrance.x - 2.4 + (arrival % 4) * 1.6, y: entrance.y + (arrival >= 4 ? 1.2 : 0) };
 const location = { ...spawn };
 const color = parseInt(token[0], 16) % 8 || 0;
 
@@ -202,10 +205,9 @@ function paint(key, data, point, walking, awayAtDesk = false) {
   let breakCol = -1;
   let seatDir = "";
   if (seatedHere) {
-    const [sSpace, sIdx] = String(data.seat).split(":");
-    seatDir = sSpace === "hall" ? (Number(sIdx) % 2 === 0 ? "right" : "left") : "up";
-    row = { up: 4, right: 5, left: 6 }[seatDir];
-    if (act === "eat") row += 4;
+    seatDir = seating.chair(data.seat)?.direction ?? "up";
+    row = { up: 4, right: 5, left: 6, down: 11 }[seatDir];
+    if (act === "eat") row += seatDir === "down" ? 1 : 4;
   } else if (!walking && (act === "smoke" || act === "coffee" || act === "candy")) {
     row = 7;
     breakCol = { coffee: 0, candy: 2, smoke: 4 }[act];
@@ -276,6 +278,9 @@ function getProximityTarget() {
   if (Math.hypot(location.x - snackCounterCoords.x, location.y - snackCounterCoords.y) < 7.5) {
     return { id: "snacks", label: "[E] 매점 · 오픈키친 열기", run: () => document.querySelector(".snack-counter")?.click() };
   }
+  if (Math.hypot(location.x - boardCoords.x, location.y - boardCoords.y) < 4) {
+    return { id: "board", label: "[E] 게시판 열기", run: () => document.getElementById("cafe-board-pin").click() };
+  }
   if (Math.hypot(location.x - relaxPortals.booth.x, location.y - relaxPortals.booth.y) < 7) {
     return { id: "booth", label: "[E] 실내 흡연구역 입장", run: () => enterRelaxZone("booth") };
   }
@@ -324,7 +329,7 @@ function drawSelf(walking = false) {
 
   const seat = phase === "walking" ? null : mine;
   const point = seat ? seating.position(seat) : location;
-  if (point && (!seat || seat.startsWith(space + ":"))) {
+  if (point && space === "hall") {
     const sprite = paint("mine", {
       name: name || "나", color, avatar: avatarCode, facing, waveUntil,
       seat, zone: activeZone, activity: myActivity,
@@ -344,11 +349,10 @@ function draw() {
 
   // Draw self if in displayedSpace
   const mySeat = seating.current();
-  const mySeatSpace = mySeat?.split(":")[0] || "hall";
-  if ((isOnBreak() && space === activeZone) || (!isOnBreak() && space === (mySeat ? mySeatSpace : "hall")) || seating.phase()) {
+  if ((isOnBreak() && space === activeZone) || (!isOnBreak() && space === "hall") || seating.phase()) {
     drawSelf(wasWalking);
     visible.add("mine");
-  } else if (isOnBreak() && mySeat && mySeatSpace === space) {
+  } else if (isOnBreak() && mySeat && space === "hall") {
     // Show "away on break" marker at my own desk if viewing seat space
     const deskPoint = seating.position(mySeat);
     if (deskPoint) {
@@ -372,8 +376,7 @@ function draw() {
       visible.add(peer.id);
       continue;
     }
-    const seatSpace = peer.seat?.split(":")[0] || "hall";
-    if (seatSpace !== space) continue;
+    if (space !== "hall") continue;
     const target = peer.seat ? seating.position(peer.seat) : peer;
     if (!target) continue;
     paint(peer.id, peer, target, false, peerBreak && Boolean(peer.seat));
@@ -591,14 +594,10 @@ window.cafeWorld = {
       sprite.node.classList.remove("standing");
     }
     if (key !== seating.current()) return;
-    const [space, index] = key.split(":");
-    const point = seating.position(key);
-    const hall = point && space === "hall";
-    const aisle = hall && point.x + (Number(index) % 2 ? 3.4 : -3.4);
-    const portal = roomPortals[space];
+    const chair = seating.chair(key);
     stoodFromSeat = key;
-    Object.assign(location, hall && canWalkInSpace(aisle, point.y) ? { x: aisle, y: point.y } : (portal || entrance));
-    dirName = hall ? (Number(index) % 2 ? "right" : "left") : "down";
+    Object.assign(location, chair?.stand ?? entrance);
+    dirName = { up: "down", down: "up", left: "right", right: "left" }[chair?.direction] ?? "down";
   },
   syncNow: () => send("sync").catch(disconnected),
   getProfile: () => ({ name: name || "손님", avatar: avatarCode, token }),

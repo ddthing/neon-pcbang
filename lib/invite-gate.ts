@@ -355,6 +355,10 @@ async function blockedLogin(db: DB, request: Request) {
   return Boolean(record && record.count >= 5 && record.reset_at > Date.now());
 }
 /** Returns a response for access-controlled routes, or null to continue normal routing. */
+export async function cafeBoardAdmin(request: Request, db: DB | undefined) {
+  return Boolean(db && (await currentSession(db, request))?.role === "admin");
+}
+
 export async function gate(request: Request, env: GateEnv): Promise<Response | null> {
   const url = new URL(request.url);
   const path = url.pathname;

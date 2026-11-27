@@ -1,4 +1,8 @@
+import "./app.js";
 import { deliveryRoutePoint, routeForDelivery } from "./world.js";
+import { setFoodPixel } from "./food-pixels.js";
+import { createClerkSprite } from "./avatar-sprites.js";
+import { WORLD, seatFor, toPercent } from "./cafe-map.mjs";
 
 const scene = document.querySelector(".scene");
 const clerk = document.getElementById("cafe-delivery-clerk");
@@ -17,14 +21,6 @@ let requestedArrival = null;
 let confirmedArrival = null;
 let biteTimer = 0;
 
-// Exact sprite indices in snacks-atlas.png (6 cols x 4 rows of 24x24)
-export const SNACK_SPRITE_INDEX = {
-  jjagyechi: 0, rabokki: 1, spammayo: 2, chickenmayo: 3, ramyeon: 4, rice: 5,
-  dumplings: 6, curry: 7, skewer: 8, hotdog: 9, tornado: 10, cheeseball: 11,
-  menbosha: 12, fries: 13, toast: 14, bungeoppang: 15, eolbaksa: 16, ashatchu: 17,
-  tea: 18, cola: 19, misutgaru: 20, beads: 21, coffee: 22, "corner-ade": 23,
-};
-
 let trip = null;
 let route = null;
 let trays = [];
@@ -39,39 +35,25 @@ function currentSpace() {
 }
 
 function servicePosition(key) {
-  const chair = seating.position(key);
-  const art = window.cafeArt;
-  if (!chair || !art) return chair;
-  const [space, index] = key.split(":");
-  const side = space === "hall";
-  const offset = side && Number(index) % 2 ? 1 : -1;
-  return art.place({ x: chair.x + offset * 22 / 768 * 100,
-    y: chair.y + (side ? 6 : 8) / 512 * 100 });
-}
-
-function setSnackSpritePos(el, itemId) {
-  const idx = SNACK_SPRITE_INDEX[itemId] ?? 4;
-  const col = idx % 6;
-  const row = Math.floor(idx / 6);
-  el.style.setProperty("--snack-x", (col * 20) + "%");
-  el.style.setProperty("--snack-y", (row * 33.3333) + "%");
+  const seat = seatFor(key);
+  return seat && toPercent(seat.stand);
 }
 
 function fillCarryTray(foods = []) {
   carryTray.replaceChildren(...foods.slice(0, 3).map(id => {
     const sprite = document.createElement("i");
     sprite.className = "pixel-snack-icon";
-    setSnackSpritePos(sprite, id);
+    setFoodPixel(sprite, id);
     return sprite;
   }));
 }
 
-function placeCarryTray(point, key, reach = 0, pawY = 29) {
+function placeCarryTray(point, key, reach = 0, handHeight = 14) {
   if (!trip || trip.canServe === false) return;
   const world = window.cafeArt;
   const target = reach && seating.trayPosition(key);
-  const x = point.x - (point.facing || 1) * (world ? 10 / 768 * 100 : 1.2);
-  const y = point.y - (world ? (52 * .95 - pawY) / 512 * 100 : 4);
+  const x = point.x - (point.facing || 1) * (8 / WORLD.width * 100);
+  const y = point.y - (handHeight / WORLD.height * 100);
   const position = target ? { x: x + (target.x - x) * reach, y: y + (target.y - y) * reach } : { x, y };
   const snapped = world?.place(position) ?? position;
   carryTray.style.left = snapped.x + "%";
@@ -80,7 +62,7 @@ function placeCarryTray(point, key, reach = 0, pawY = 29) {
 }
 
 function createTray(entry, point, arriving) {
-  const isMine = seating.current() === entry.seat;
+  const isMine = !seating.phase() && seating.current() === entry.seat;
   const node = document.createElement(isMine ? "button" : "div");
   if (isMine) node.type = "button";
   node.className = "cafe-world-tray" + (isMine ? " is-mine" : "") + (entry.giftFrom ? " is-gift" : "");
@@ -105,7 +87,7 @@ function createTray(entry, point, arriving) {
     const cell = document.createElement("span");
     const sprite = document.createElement("i");
     sprite.className = "pixel-snack-icon";
-    setSnackSpritePos(sprite, item.id);
+    setFoodPixel(sprite, item.id);
     cell.append(sprite);
     if (item.count > 1) {
       const count = document.createElement("small");
@@ -158,7 +140,7 @@ function renderTrays(arrivals = new Set()) {
   const space = currentSpace();
   const bySeat = new Map();
   for (const entry of trays) {
-    if (!entry.seat.startsWith(space + ":") || !entry.items.length || clearingOrders.has(entry.key)) continue;
+    if (space !== "hall" || !seatFor(entry.seat) || !entry.items.length || clearingOrders.has(entry.key)) continue;
     const previous = bySeat.get(entry.seat);
     if (!previous || entry.readyAt > previous.readyAt) bySeat.set(entry.seat, entry);
   }
@@ -175,7 +157,7 @@ function renderTrays(arrivals = new Set()) {
     const node = createTray(entry, point, arrivals.has(entry.key));
     paintedTrays.set(entry.key, node);
     trayLayer.append(node);
-    if (arrivals.has(entry.key) && entry.giftFrom && seating.current() === entry.seat) {
+    if (arrivals.has(entry.key) && entry.giftFrom && !seating.phase() && seating.current() === entry.seat) {
       window.cafeAudioPlay?.("chime");
       const note = entry.giftNote ? ` "${entry.giftNote}"` : "";
       document.querySelector(".u070")?.dispatchEvent(new CustomEvent("pcbang-notice", {
@@ -229,7 +211,7 @@ function paintTrip() {
     renderStationedClerk(mode);
     if (inHall && mode !== "cook") {
       const point = window.cafeArt?.kitchenClerk ?? { x: 11.9, y: 73.2 };
-      placeCarryTray(point, trip.seat, 0, mode === "lift" ? 26 : 31);
+      placeCarryTray(point, trip.seat, 0, mode === "lift" ? 16 : 14);
     }
     wake = setTimeout(paintTrip, Math.min(80, remaining));
     return;
@@ -288,7 +270,7 @@ function refreshPlayback() {
   paintTrip();
 }
 
-clerkBody.innerHTML = `<span class="cafe-clerk-sprite" aria-hidden="true"></span>`;
+clerkBody.append(createClerkSprite());
 if (window.cafeArt) document.getElementById("cafe-avatars").append(clerk);
 
 document.addEventListener("cafe-delivery-sync", ({ detail }) => {

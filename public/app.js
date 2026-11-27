@@ -1,3 +1,6 @@
+import "./cafe-layout.js";
+import "./cafe-art.js";
+import { LANDMARKS, ROOMS, SEATS, center, seatCode, seatFor, toPercent } from "./cafe-map.mjs";
 "use strict";
 
 const $ = (selector) => document.querySelector(selector);
@@ -33,41 +36,7 @@ function saveState(key, value) {
   } catch {}
 }
 
-const layoutSource = window.cafeLayout;
-const hallBanks = layoutSource?.hallBanks ?? [
-  { letter: "A", x: [428, 491], spineX: 231 },
-  { letter: "B", x: [651, 714], spineX: 343 },
-  { letter: "C", x: [892, 955], spineX: 463 },
-  { letter: "D", x: [1133, 1196], spineX: 584 },
-];
-const hallRows = layoutSource?.hallRows ?? [196, 244, 291, 338, 386, 434, 481, 529, 577, 626, 675];
-const bankSize = layoutSource?.bankSize ?? (hallRows.length * 2);
-const spaces = layoutSource?.spaces ?? {
-  hall: {
-    label: "일반석",
-    positions: hallBanks.flatMap(({ x }) => hallRows.flatMap((y) => x.map((column) => [column / 15.36, y / 10.24])))
-  },
-  solo: {
-    label: "1인석",
-    alt: "따뜻한 회색 칸막이와 게이밍 PC 한 대가 있는 픽셀 아트 1인석",
-    positions: [[53.1, 38.8]]
-  },
-  duo: {
-    label: "2인석",
-    alt: "옅은 세이지색 의자와 게이밍 PC 두 대가 나란히 놓인 픽셀 아트 2인석",
-    positions: [[36.8, 40.5], [65.2, 40.5]]
-  },
-  team: {
-    label: "5인룸",
-    alt: "회보라색 의자와 게이밍 PC 다섯 대가 한 줄로 놓인 픽셀 아트 팀 룸",
-    positions: [[22.1, 40.4], [37.8, 40.4], [53.3, 40.4], [69.1, 40.4], [84.6, 40.4]]
-  },
-  squad: {
-    label: "6인룸",
-    alt: "회색 의자와 게이밍 PC 여섯 대가 두 줄로 놓인 픽셀 아트 스쿼드 룸",
-    positions: [[32.8, 22.7], [53.6, 22.7], [74.7, 22.7], [28.7, 49.4], [53.3, 49.4], [77.8, 49.4]]
-  }
-};
+const { spaces } = window.cafeLayout;
 
 const room = readState(roomKey, { space: null, seat: null, since: null, snack: "", order: null });
 if (room.seat !== null && !room.space) {
@@ -75,6 +44,10 @@ if (room.seat !== null && !room.space) {
   const firstSeat = { solo: 0, duo: 1, team: 3 };
   room.space = legacySpace;
   room.seat -= firstSeat[legacySpace];
+  saveState(roomKey, room);
+}
+if (room.space && !seatFor(room.space + ":" + room.seat)) {
+  Object.assign(room, { space: null, seat: null, since: null, snack: "", order: null });
   saveState(roomKey, room);
 }
 let storedFocus = null;
@@ -149,31 +122,9 @@ function isSeated() {
   return Boolean(room.space) && (!seatJourney || seatJourney.phase === "booting");
 }
 
-function prepareRoomArt() {
-  if (!roomsArtwork.hasAttribute("src")) roomsArtwork.src = roomsArtwork.dataset.src;
-}
-function prepareZoneArt(zoneId) {
-  const el = zoneId === "booth" ? boothArtwork : terraceArtwork;
-  if (el && !el.hasAttribute("src")) el.src = el.dataset.src;
-}
-
-// The 88 computers share a packed sheet. Positions follow the glass calibration.
-const hardwareLayer = document.querySelector(".hall-hardware");
-for (const [index, polygon] of (window.cafeArt ? [] : cafeScreenShapes.hall).entries()) {
-  const x = Math.round(Math.min(...polygon.map(point => point[0])) / 2) - 3;
-  const y = Math.round(Math.min(...polygon.map(point => point[1])) / 2) - 2;
-  const col = Math.floor(index / 22) * 2 + index % 2;
-  const row = Math.floor(index % 22 / 2);
-  const hardware = document.createElement("span");
-  Object.assign(hardware.style, { left: x / 768 * 100 + "%", top: y / 512 * 100 + "%",
-    width: 22 / 768 * 100 + "%", height: 20 / 512 * 100 + "%",
-    backgroundSize: "800% 1100%", backgroundPosition: col / 7 * 100 + "% " + row * 10 + "%" });
-  hardwareLayer.append(hardware);
-}
-
 function renderMonitorPower(spaceId) {
   if (window.cafeArt) {
-    const key = isSeated() && room.space === spaceId ? room.space + ":" + room.seat : null;
+    const key = isSeated() && spaceId === "hall" && !activeBreakZone ? room.space + ":" + room.seat : null;
     const panel = key && window.cafeArt.screen(key);
     const away = new Set(awaySeats);
     if (key && activeBreakZone) away.add(key);
@@ -339,79 +290,26 @@ document.addEventListener("cafe-zone-counts", ({ detail }) => {
   }
 });
 
-// Each chair has a separate foreground sprite and a seated pose origin.
-const roomChairs = {
-  solo: [[205, 142, 69, 60]],
-  duo: [[141, 143, 62, 58], [258, 143, 62, 58]],
-  team: [[77, 136, 47, 43], [141, 136, 47, 43], [205, 136, 47, 43], [269, 136, 47, 43], [333, 136, 47, 43]],
-  squad: [[124, 86, 43, 22], [210, 86, 43, 22], [290, 86, 43, 22], [114, 162, 57, 54], [212, 162, 57, 54], [309, 162, 57, 54]]
-};
-function chairGeometry(key) {
-  const [space, index] = key.split(":");
-  const chair = roomChairs[space]?.[index];
-  if (!chair) return null;
-  const [cx, top, width, height] = chair;
-  const y = (top + height - 3) / 256 * 100;
-  return { x: cx / 384 * 100, y, size: width * 1.22 / 384 * 100,
-    depth: Math.round(y * 10), left: (cx - Math.floor(width / 2)) / 384 * 100,
-    top: top / 256 * 100, width: width / 384 * 100 };
-}
-
-function renderChairFronts(space) {
-  const layer = document.getElementById("cafe-avatars");
-  if (layer.dataset.furniture === space) return;
-  layer.dataset.furniture = space;
-  layer.querySelectorAll(".chair-front").forEach(node => node.remove());
-  for (const index of (roomChairs[space] ?? []).keys()) {
-    const chair = chairGeometry(space + ":" + index);
-    const node = document.createElement("img");
-    node.className = "chair-front";
-    node.alt = "";
-    node.src = "./sprites/chair-" + space + "-" + index + ".png";
-    Object.assign(node.style, { left: chair.left + "%", top: chair.top + "%",
-      width: chair.width + "%", zIndex: String(chair.depth) });
-    layer.append(node);
-  }
-}
-
 function renderRoom() {
   const view = activeBreakZone ?? seatJourney?.space ?? room.space ?? "lobby";
-  const space = spaces[view];
+  const space = spaces[seatJourney?.seat.space ?? view];
   const seated = isSeated();
-  const inSubRoom = Boolean(space) && view !== "hall";
   const inBooth = view === "booth";
   const inTerrace = view === "terrace";
-  const inSpecial = inSubRoom || inBooth || inTerrace;
+  const inSpecial = inBooth || inTerrace;
 
   const scene = $(".scene");
-  const oldView = scene.dataset.space;
-  scene.dataset.space = view;
-  if (window.cafeArt) {
-    const area = view === "lobby" ? "hall" : view;
-    const seats = (spaces[area]?.positions ?? []).map((_, index) => {
-      const key = area + ":" + index;
-      const point = window.cafeSeating.position(key);
-      return { key, point, direction: area === "hall" ? (index % 2 ? "left" : "right") : "up" };
-    });
-    window.cafeArt.show(area, seats);
-    if (oldView !== view) window.cafeArt.openDoor();
-  } else {
-    renderChairFronts(view);
-    const hall = $("#lobby-art");
-    if (!inSpecial) hall.src ||= hall.dataset.src;
-    hall.hidden = inSpecial;
-    if (inSubRoom) prepareRoomArt();
-    if (inBooth) prepareZoneArt("booth");
-    if (inTerrace) prepareZoneArt("terrace");
-    roomsArtwork.hidden = !inSubRoom;
-    roomsArtwork.alt = inSubRoom ? space.alt : "";
-    boothArtwork.hidden = !inBooth;
-    terraceArtwork.hidden = !inTerrace;
-  }
+  const area = inBooth || inTerrace ? view : "hall";
+  const oldArea = scene.dataset.space;
+  scene.dataset.space = area;
+  window.cafeArt.show(area, area === "hall" ? SEATS : []);
+  if (oldArea !== area) window.cafeArt.openDoor();
 
   $("#cafe-joystick").hidden = Boolean((room.space && !activeBreakZone) || seatJourney);
   $("#kiosk-pin").hidden = inSpecial;
+  $("#cafe-board-pin").hidden = inSpecial;
   $("#room-doors").hidden = inSpecial || Boolean(seatJourney);
+  $("#world-seat-targets").hidden = inSpecial || Boolean(seatJourney);
   $("#quick-return-seat").hidden = !(activeBreakZone && seated);
   $("#game-view-pc").hidden = !seated || Boolean(activeBreakZone);
 
@@ -420,7 +318,7 @@ function renderRoom() {
     : (space?.label ?? "PC방 입구");
   $("#room-count").textContent = inBooth ? "환기 가동 중"
     : inTerrace ? "우리 동네 · 밀크커피 자판기"
-    : inSubRoom ? "정원 " + space.positions.length + "명" : "102석";
+    : "41석";
   $("#kiosk-title").textContent = seated ? "자리를 잡았어요!" : "어디에 앉을까요?";
   $("#kiosk-copy").textContent = seated
     ? (activeBreakZone ? "자리는 안전하게 맡아뒀어요. 편히 쉬다 오세요!" : "빗소리 들으며 편히 쉬어가세요.")
@@ -434,7 +332,7 @@ function renderRoom() {
   }
   renderSeatJourney();
   renderRelaxHud();
-  renderMonitorPower(inBooth || inTerrace ? view : inSubRoom ? view : "hall");
+  renderMonitorPower(area);
 
   const marker = $("#seat-marker");
   marker.hidden = !seated || Boolean(seatJourney) || Boolean(activeBreakZone);
@@ -477,12 +375,18 @@ function renderFloorSelection() {
   for (const seat of floorSeats.values()) {
     const mine = isMySeat(seat);
     const occupied = !mine && occupiedSeats.has(seat.key);
-    seat.button.classList.toggle("my-seat", mine);
-    seat.button.classList.toggle("taken", occupied);
-    seat.button.disabled = occupied;
+    for (const button of seat.buttons) {
+      button.classList.toggle("my-seat", mine);
+      button.classList.toggle("taken", occupied);
+      button.disabled = occupied;
+      button.setAttribute("aria-pressed", seat === selectedSeat);
+      button.setAttribute("aria-label", seat.label + " " + seat.code + (mine ? ", 내 자리" : occupied ? ", 이용 중" : ""));
+    }
+    if (seat.worldButton) {
+      seat.worldButton.disabled = occupied;
+      seat.worldButton.setAttribute("aria-pressed", mine);
+    }
     seat.option.disabled = occupied;
-    seat.button.setAttribute("aria-pressed", seat === selectedSeat);
-    seat.button.setAttribute("aria-label", seat.label + " " + seat.code + (mine ? ", 내 자리" : occupied ? ", 이용 중" : ""));
   }
   const mine = selectedSeat && isMySeat(selectedSeat);
   const taken = selectedSeat && occupiedSeats.has(selectedSeat.key);
@@ -496,109 +400,137 @@ function renderFloorSelection() {
   if (floorSelect.value !== (selectedSeat?.key ?? "")) floorSelect.value = selectedSeat?.key ?? "";
 }
 
-function appendSeatGroup(parent, label, spaceId, count, first = 0, letter = "") {
-  const group = document.createElement("div");
-  group.className = letter ? "floor-bank" : "floor-room";
-  group.dataset.space = spaceId;
-  const heading = document.createElement("h3");
-  heading.textContent = letter ? letter + "열" : label;
-  if (letter) {
-    const [left, right] = hallBanks[first / bankSize].x;
-    group.style.setProperty("--x", (left + right) / 30.72 + "%");
-    if (hallRows.length) {
-      const topPct = Math.max(4, (hallRows[0] / 10.24) - 5.6);
-      const bottomPct = Math.max(8, 100 - ((hallRows[hallRows.length - 1] / 10.24) + 2.5));
-      group.style.setProperty("--top", `${topPct.toFixed(1)}%`);
-      group.style.setProperty("--bottom", `${bottomPct.toFixed(1)}%`);
-    }
-  } else {
-    heading.className = "pc-sr-only";
-  }
-  group.append(heading);
-  const grid = document.createElement("div");
-  grid.className = "floor-seat-grid";
-  group.append(grid);
-  parent.append(group);
-
+const overview = $("#floor-banks");
+const map = overview.parentElement;
+map.querySelectorAll("svg").forEach((node) => node.remove());
+const details = $("#floor-rooms");
+for (const [spaceId, { label }] of Object.entries(spaces)) {
   const options = document.createElement("optgroup");
   options.label = label;
   floorOptions.push({ spaceId, options });
-  for (let i = 0; i < count; i++) {
-    const index = first + i;
-    const code = letter + seatId(i);
-    const key = spaceId + ":" + index;
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "floor-seat mono";
-    if (letter) button.tabIndex = -1;
-    button.textContent = code;
-    grid.append(button);
+  const panel = document.createElement("div");
+  panel.className = "floor-room";
+  panel.dataset.space = spaceId;
+  for (const entry of SEATS.filter((seat) => seat.space === spaceId)) {
+    const { key, index, room } = entry;
+    const code = seatCode(entry);
     const option = document.createElement("option");
-    const seat = { space: spaceId, index, code, key, label, button, option };
-    floorSeats.set(key, seat);
-    button.addEventListener("click", () => {
-      selectedSeat = seat;
-      $("#floor-feedback").textContent = "";
-      renderFloorSelection();
-    });
     option.value = key;
-    option.textContent = code + " · " + label;
+    option.textContent = [code, ROOMS.find(({ id }) => id === room)?.label ?? label].join(" · ");
     options.append(option);
+    const buttons = [];
+    const seat = { space: spaceId, index, key, code, label, room, button: null, buttons, option };
+    for (const container of spaceId === "hall" ? [overview] : [overview, panel]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "floor-seat mono";
+      button.textContent = code;
+      if (container === overview) {
+        const { x, y } = toPercent(entry.foot);
+        button.style.setProperty("--x", x + "%");
+        button.style.setProperty("--y", y + "%");
+        button.dataset.mapSeat = "";
+      }
+      button.addEventListener("click", () => {
+        selectedSeat = seat;
+        $("#floor-feedback").textContent = "";
+        renderFloorSelection();
+      });
+      container.append(button);
+      buttons.push(button);
+    }
+    seat.button = buttons[0];
+    floorSeats.set(key, seat);
   }
+  if (spaceId !== "hall") details.append(panel);
 }
-
-for (const [index, bank] of hallBanks.entries()) {
-  appendSeatGroup($("#floor-banks"), bank.letter + "열 일반석", "hall", bankSize, index * bankSize, bank.letter);
-}
-for (const id of ["solo", "duo", "team", "squad"]) {
-  appendSeatGroup($("#floor-rooms"), spaces[id].label, id, spaces[id].positions.length);
+for (const suite of ROOMS) {
+  const button = document.createElement("button");
+  const { x, y } = toPercent({ x: suite.rect.x + suite.rect.w / 2, y: suite.rect.y + 8 });
+  button.type = "button";
+  button.className = "floor-map-room";
+  button.textContent = suite.label;
+  button.style.setProperty("--x", x + "%");
+  button.style.setProperty("--y", y + "%");
+  button.addEventListener("click", () => showFloorView(suite.space, suite.id));
+  const outline = document.createElement("span");
+  outline.className = "floor-room-footprint";
+  const anchors = toPercent(suite.rect);
+  const sizes = toPercent({ x: suite.rect.w, y: suite.rect.h });
+  Object.assign(outline.style, { left: anchors.x + "%", top: anchors.y + "%", width: sizes.x + "%", height: sizes.y + "%" });
+  map.prepend(outline);
+  map.append(button);
 }
 function syncFloorLandmarks() {
-  const lm = window.cafeLayout?.landmarks;
-  if (!lm) return;
-  const setPos = (key, xPct, yPct, label) => {
-    const el = document.querySelector(`.hall-seat-map [data-landmark="${key}"]`);
-    if (!el) return;
-    el.style.setProperty("--x", `${xPct.toFixed(1)}%`);
-    el.style.setProperty("--y", `${yPct.toFixed(1)}%`);
-    if (label) el.textContent = label;
-  };
-  const { toPct } = window.cafeLayout;
-  const b = toPct(lm.booth.x, lm.booth.y); setPos("booth", b.xPct, b.yPct, lm.booth.label);
-  const t = toPct(lm.terrace.x, lm.terrace.y); setPos("terrace", t.xPct, t.yPct, lm.terrace.label);
-  const l = toPct(lm.lounge.x + lm.lounge.w / 2, lm.lounge.y + lm.lounge.h / 2); setPos("lounge", l.xPct, l.yPct, lm.lounge.label);
-  const c = toPct(lm.counter.x + lm.counter.w / 2, lm.counter.y + lm.counter.h * 0.65); setPos("counter", c.xPct, c.yPct, lm.counter.label);
-  const k = toPct(lm.kiosk.x + lm.kiosk.w / 2, lm.kiosk.y + lm.kiosk.h / 2); setPos("kiosk", k.xPct, k.yPct, lm.kiosk.label);
-  const e = toPct(lm.entrance.x + lm.entrance.w / 2, lm.entrance.y + lm.entrance.h * 0.5); setPos("entrance", e.xPct, e.yPct, lm.entrance.label);
+  for (const [id, geometry] of Object.entries(LANDMARKS)) {
+    const el = map.querySelector(`[data-landmark="${id}"]`);
+    if (!el) continue;
+    const { x, y } = toPercent(center(geometry));
+    el.style.setProperty("--x", x + "%");
+    el.style.setProperty("--y", y + "%");
+    el.textContent = geometry.label;
+  }
 }
 syncFloorLandmarks();
 
-function showFloorView(roomId) {
+function addWorldTarget(container, label, point, activate) {
+  const target = document.createElement("button");
+  target.type = "button";
+  target.className = "world-target";
+  target.style.left = point.x + "%";
+  target.style.top = point.y + "%";
+  target.setAttribute("aria-label", label);
+  target.dataset.tip = label;
+  container.append(target);
+  target.addEventListener("click", () => activate(target));
+  return target;
+}
+
+for (const entry of SEATS) {
+  const seat = floorSeats.get(entry.key);
+  seat.worldButton = addWorldTarget($("#world-seat-targets"), seat.code + " · " + seat.label, toPercent(entry.foot), () => {
+    if (seatJourney || bookingSeat) return;
+    if (isMySeat(seat)) {
+      leaveSeat();
+      return;
+    }
+    selectedSeat = seat;
+    renderFloorSelection();
+    $("#enter").click();
+  });
+}
+
+function showFloorView(roomId, suiteId) {
   const inside = Boolean(roomId);
   floor.dataset.room = roomId ?? "";
   $("#floor-overview").hidden = inside;
   $("#floor-room-view").hidden = !inside;
   for (const panel of $("#floor-rooms").children) panel.hidden = panel.dataset.space !== roomId;
   if (inside) {
-    $("#floor-room-title").textContent = spaces[roomId].label;
-    $("#floor-room-count").textContent = "좌석 " + spaces[roomId].positions.length + "개";
+    const suite = ROOMS.find(({ id }) => id === suiteId);
+    $("#floor-room-title").textContent = suite?.label ?? spaces[roomId].label;
+    $("#floor-room-count").textContent = "좌석 " + (suite ? SEATS.filter(({ room }) => room === suite.id).length : spaces[roomId].positions.length) + "개";
+  }
+  for (const seat of floorSeats.values()) {
+    if (seat.buttons[1]) seat.buttons[1].hidden = Boolean(suiteId && suiteId !== seat.room);
+    seat.option.hidden = Boolean(suiteId && suiteId !== seat.room);
   }
   $("#floor-instruction").textContent = inside
     ? "이 룸에서 이용할 자리를 골라주세요."
     : "일반석을 고르거나 룸 영역을 눌러 내부 좌석을 보세요.";
   floorSelect.replaceChildren(floorSelect.options[0],
-    ...floorOptions.filter(({ spaceId }) => spaceId === (roomId ?? "hall")).map(({ options }) => options));
+    ...floorOptions.filter(({ spaceId }) => !roomId || spaceId === roomId).map(({ options }) => options));
   selectedSeat = null;
   $("#floor-feedback").textContent = "";
   renderFloorSelection();
   if (floor.open) revealCafeView($(inside ? "#floor-room-view" : "#floor-overview"), inside ? 1 : -1);
 }
 
-function openFloor(roomId, origin) {
+function openFloor(roomId, origin, suiteId) {
   if (seatJourney || floor.open) return;
   const source = cafeWindowOrigin(origin);
   if (hub.open) hub.close();
-  showFloorView(roomId);
+  showFloorView(roomId, suiteId);
   openCafeWindow(floor, origin, source);
   $(roomId ? "#floor-room-title" : "#floor-title").focus({ preventScroll: true });
 }
@@ -721,7 +653,6 @@ $("#enter").addEventListener("click", async () => {
     room.seat = seat.index;
     room.since ??= Date.now();
     saveState(roomKey, room);
-    if (seat.space !== "hall") prepareRoomArt();
     window.prepareCafeWallpaper?.();
     floor.close();
     renderRoom();
@@ -1111,6 +1042,7 @@ $("#timer-reset").addEventListener("click", () => {
 window.addEventListener("pagehide", closeFocusAudio);
 
 const localTime = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul",
   hour: "2-digit",
   minute: "2-digit",
   hourCycle: "h23"
@@ -1196,66 +1128,28 @@ connectCafeSwitch(document.querySelector(".top-actions .u013"), async (enabled) 
 });
 
 window.cafeSeating = {
-  placeRoomDoors(portals, relaxPortals = {}) {
-    window.cafeArt?.placeDoors(portals, relaxPortals);
+  placeRoomDoors(_portals, relaxPortals = {}) {
     const container = $("#room-doors");
     container.replaceChildren();
-    for (const [id, point] of Object.entries(portals)) {
-      const door = document.createElement("button");
-      door.type = "button";
-      door.className = "stage-room-door";
-      door.dataset.room = id;
-      door.textContent = spaces[id].label;
-      door.setAttribute("aria-label", spaces[id].label + " 입구");
-      door.style.setProperty("--x", point.x + "%");
-      door.style.setProperty("--y", point.y + "%");
-      door.addEventListener("click", () => openFloor(id, door));
-      container.append(door);
+    for (const room of ROOMS) {
+      const { x, y } = toPercent({ x: room.door.x + 8, y: room.door.y + 8 });
+      addWorldTarget(container, room.label + " 입구", { x, y }, (button) => openFloor(room.space, button, room.id));
     }
     for (const [zoneId, point] of Object.entries(relaxPortals)) {
-      const door = document.createElement("button");
-      door.type = "button";
-      door.className = "stage-room-door";
-      door.dataset.relax = zoneId;
-      door.textContent = (zoneId === "booth" ? "🚬 " : "🌙 ") + point.label;
-      door.setAttribute("aria-label", point.label + " 입장");
-      door.style.setProperty("--x", point.x + "%");
-      door.style.setProperty("--y", point.y + "%");
-      door.addEventListener("click", () => window.cafeWorld?.enterRelaxZone?.(zoneId));
-      container.append(door);
+      addWorldTarget(container, point.label + " 입장", point, () => window.cafeWorld?.enterRelaxZone?.(zoneId));
     }
-    document.addEventListener("cafe-zone-counts", ({ detail }) => {
-      for (const [zoneId, point] of Object.entries(relaxPortals)) {
-        const btn = container.querySelector(`[data-relax="${zoneId}"]`);
-        if (!btn) continue;
-        const n = detail.counts?.[zoneId] || 0;
-        btn.textContent = (zoneId === "booth" ? "🚬 " : "🌙 ") + point.label + (n ? ` (${n})` : "");
-      }
-    });
   },
   current: () => room.space ? room.space + ":" + room.seat : null,
   phase: () => seatJourney?.phase ?? null,
   label(key) { return floorSeats.get(key)?.code ?? null; },
-  chair: chairGeometry,
-  trayPosition(key) {
-    const placement = window.cafeArt?.tray(key);
-    if (placement) return placement;
-    const seat = floorSeats.get(key);
-    if (!seat) return null;
-    const [x, y] = spaces[seat.space].positions[seat.index];
-    if (seat.space === "hall") return { x: x + (seat.index % 2 ? -1.2 : 1.2), y: y - 1 };
-    const chair = chairGeometry(key);
-    return { x: chair.x - chair.width * .43, y: chair.top - 1 };
+  chair(key) {
+    const seat = seatFor(key);
+    return seat && { ...toPercent(seat.foot), direction: seat.direction, stand: toPercent(seat.stand) };
   },
+  trayPosition(key) { return window.cafeArt.tray(key); },
   position(key) {
-    const chair = chairGeometry(key);
-    if (chair) return { x: chair.x, y: chair.y };
-    const seat = floorSeats.get(key);
-    if (!seat) return null;
-    const [x, y] = spaces[seat.space].positions[seat.index];
-    return seat.space === "hall"
-      ? { x: x + (seat.index % 2 ? 2 : -2), y: y + 2.6 }
-      : { x, y: { solo: 74, duo: 70, team: 68, squad: seat.index < 3 ? 33 : 76 }[seat.space] };
+    const seat = seatFor(key);
+    return seat && toPercent(seat.foot);
   },
   refresh(keys, peerList = []) {
     occupiedSeats = new Set(keys);
@@ -1270,6 +1164,7 @@ window.cafeSeating = {
     notify("연결이 끊긴 사이 다른 손님이 그 자리에 앉았어요.", "info");
   },
 };
+document.addEventListener("cafe-art-ready", renderRoom, { once: true });
 renderRoom();
 if (room.space) window.recordCafeStamp("seat");
 renderTimer();

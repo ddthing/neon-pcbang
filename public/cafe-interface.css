@@ -1,81 +1,289 @@
 .cafe-fullscreen {
-  --interface-ink: #292435;
-  --interface-plum: #47364e;
-  --interface-border: #916c80;
-  --interface-highlight: #d3a789;
-  --interface-paper: #ffe4ba;
-  --interface-screen: #42646a;
+  --interface-ink: #5c4742;
+  --interface-border: #5c4742;
+  --interface-highlight: #f4c2d7;
+  --interface-paper: #f7efe5;
+  --interface-screen: #c8b6e2;
 }
+
+.cafe-fullscreen :is(img, canvas) { image-rendering: pixelated; }
 
 .cafe-fullscreen .room-head-left,
 .cafe-fullscreen .room-hud,
 .cafe-fullscreen .walk-controls,
 .cafe-fullscreen .relax-hud {
-  border: 1px solid var(--interface-border);
-  border-radius: 3px;
-  color: var(--interface-paper);
-  background: var(--interface-ink);
-  box-shadow: inset 0 1px var(--interface-highlight), 0 3px 0 #211a29;
+  border: 2px solid var(--interface-border);
+  border-radius: 0;
+  color: var(--interface-ink);
+  background: var(--interface-paper);
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .cafe-fullscreen .room-hud,
 .cafe-fullscreen .room-head-left { min-height: 44px; }
 .cafe-fullscreen .hud-player-card {
-  background: #e1ba9f;
-  color: #402d45;
-  box-shadow: inset 0 1px #ffe4ba;
+  background: var(--interface-screen);
+  color: var(--interface-ink);
+  border: 2px solid var(--interface-border);
+  border-radius: 0;
+  box-shadow: none;
 }
-.cafe-fullscreen #hud-avatar-portrait { background: #d8997c; }
-.cafe-fullscreen .window-title #room-title { color: var(--interface-paper); }
-.cafe-fullscreen .hud-clock { color: #ffe4ba; background: #34293e; }
+.cafe-fullscreen #hud-avatar-portrait { background: var(--interface-paper); border-radius: 0; }
+.cafe-fullscreen .window-title #room-title,
+.cafe-fullscreen .hud-player-meta small,
+.cafe-fullscreen .room-hud :is(a, .room-live) { color: var(--interface-ink); }
+.cafe-fullscreen .hud-clock { color: var(--interface-ink); background: var(--interface-screen); border-radius: 0; }
 
 .cafe-fullscreen .walk-controls { padding: 4px; }
 .cafe-fullscreen .game-view-actions { gap: 4px; }
 .cafe-fullscreen :is(.game-view-actions, .hud-icon-row, .cafe-chat-controls) .walk-button {
-  border: 1px solid #805b77;
-  border-radius: 2px;
-  color: var(--interface-paper);
-  background: var(--interface-plum);
-  box-shadow: inset 0 1px #a57b89, 0 2px 0 #20192a;
+  border: 2px solid var(--interface-border);
+  border-radius: 0;
+  color: var(--interface-ink);
+  background: var(--interface-paper);
+  box-shadow: none;
   font-size: clamp(11px, .78vw, 14px);
 }
 .cafe-fullscreen :is(.game-view-actions, .hud-icon-row, .cafe-chat-controls) .walk-button:hover {
-  border-color: var(--interface-highlight);
-  background: #65465d;
+  background: var(--interface-highlight);
 }
 .cafe-fullscreen :is(.game-view-actions, .hud-icon-row) .walk-button:is(.stage-key,[aria-pressed="true"]) {
-  border-color: #91b7a0;
   background: var(--interface-screen);
-  box-shadow: inset 0 1px #81ac9b, 0 2px 0 #20192a;
 }
 
 .cafe-fullscreen :is(.game-view-actions, .hud-icon-row, .room-head-left, .cafe-chat-controls) button:focus-visible {
-  outline: 2px solid #ffe1a1;
+  outline: 2px solid var(--interface-ink);
   outline-offset: 2px;
 }
-.cafe-fullscreen .stage-room-door {
-  border: 1px solid #bd9a9d;
-  border-radius: 2px;
-  background: #3d3048;
-  color: var(--interface-paper);
-  box-shadow: 0 2px #241c30;
+.cafe-fullscreen :is(
+  .stage-room-door, .proximity-prompt, .cafe-nickname, .cafe-activity-pill, .seat-journey,
+  .kiosk-pin span, .snack-counter, .seat-marker, .cafe-speech-bubble, .cafe-chat-feedback,
+  .cafe-chat-options-panel, .cafe-chat-mute-player, .cafe-chat-form input
+) {
+  border: 2px solid var(--interface-border);
+  border-radius: 0;
+  background: var(--interface-paper);
+  color: var(--interface-ink);
+  box-shadow: none;
 }
-.cafe-fullscreen .stage-room-door:hover { background: #59405b; }
+.scene[data-canvas-world] .kiosk-pin {
+  width: max(44px, 3.65%);
+  transform: translateX(-50%);
+}
+.scene[data-canvas-world] .kiosk-pin span { top: 100%; bottom: auto; }
+.scene[data-canvas-world] .kiosk-pin:hover { background: transparent; border-color: transparent; }
+.scene[data-canvas-world] .kiosk-pin:is(:hover, :focus-visible) span { background: var(--interface-screen); }
+.cafe-fullscreen .cafe-speech-bubble::after {
+  left: calc(50% - 4px);
+  bottom: -6px;
+  width: 8px;
+  height: 6px;
+  border: 2px solid var(--interface-border);
+  border-top: 0;
+  background: var(--interface-paper);
+  transform: none;
+}
+.cafe-fullscreen .cafe-chat-form input::placeholder { color: #6b5b7b; }
+.cafe-fullscreen :is(.stage-room-door, .proximity-prompt):hover { background: var(--interface-highlight); }
+.cafe-fullscreen .cafe-visitor.mine .cafe-nickname {
+  background: var(--interface-screen);
+  color: var(--interface-ink);
+}
+.cafe-fullscreen :is(.hud-icon-row, .game-view-actions, .hud-chat-pill) svg { color: currentColor; }
 
 .cafe-fullscreen :is(#floor-kiosk, #avatar-wardrobe, #snacks, #pc-desktop, #cafe-menu) {
+  border: 2px solid var(--interface-border);
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--interface-paper);
+  color: var(--interface-ink);
+}
+.cafe-fullscreen :is(.floor-top, .pc-statusbar, .pc-taskbar) { background: var(--interface-screen); color: var(--interface-ink); }
+.cafe-fullscreen #avatar-wardrobe :is(.dialog-inner, .wardrobe-stage, .wardrobe-stepper, .wardrobe-val, .wardrobe-name-row, .walk-button, input, .enter, #wardrobe-preview) {
+  background: var(--interface-paper);
+  color: var(--interface-ink);
+  border-radius: 0;
   border-color: var(--interface-border);
-  border-radius: 4px;
-  box-shadow: 0 0 0 2px #2d2536, 0 9px 24px #1d1729aa;
+  box-shadow: none;
 }
-.cafe-fullscreen :is(.floor-top, .pc-statusbar, .pc-taskbar) { background: #48354e; }
+.cafe-fullscreen #avatar-wardrobe :is(.panel-copy, .panel-index, .wardrobe-rotator span, .wardrobe-stage p, .wardrobe-stage strong, .wardrobe-stepper strong, .wardrobe-name-row label, .wardrobe-name, .wardrobe-idx) {
+  color: var(--interface-ink);
+}
+.cafe-fullscreen #avatar-wardrobe :is(#wardrobe-preview, .wardrobe-val, .walk-button[aria-pressed="true"], .enter) {
+  background: var(--interface-screen);
+}
+.asset-credit a { color: inherit; text-decoration: underline; }
+.cafe-fullscreen #snacks :is(.panel-copy, .panel-index, .panel-index span, .dialog-note, .menu-search, .snack-toppings, .order-receipt strong, .order-receipt p) {
+  color: var(--interface-ink);
+}
+.cafe-fullscreen #snacks :is(.walk-button, .close, .enter, .gpoint-badge, .menu-search input, .topping-chip, .order-controls button, #order-menu, #order-menu .snack-pixel-slot) {
+  border: 2px solid var(--interface-border);
+  border-radius: 0;
+  background: var(--interface-paper);
+  color: var(--interface-ink);
+  box-shadow: none;
+}
+.cafe-fullscreen #snacks :is(.enter, .gpoint-badge, .topping-chip[aria-pressed="true"], .order-controls button:hover, #order-menu .snack-pixel-slot) {
+  background: var(--interface-screen);
+}
+.cafe-fullscreen #order-menu {
+  --ux-surface: #f7efe5;
+  --ux-surface-2: #eee4f5;
+  --ux-ink: #5c4742;
+  --ux-ink-2: #5c4742;
+  --ux-ink-3: #6b5b7b;
+  --ux-line: #c9b7af;
+  --ux-accent: #5c4742;
+  --ux-shadow-strong: transparent;
+}
+.cafe-fullscreen #order-menu :is(.u242-ul, .u242-sc, .u242-cb, .u242-bd) { border-radius: 0; }
+.cafe-fullscreen #order-menu .u242-ul { background: var(--interface-screen); }
+.cafe-fullscreen #order-menu :is(.item-count, .u242-c) { color: var(--interface-ink); }
+.cafe-fullscreen #order-menu .snack-item-wrap { border-color: var(--ux-line); }
+.cafe-fullscreen #snacks :is(.order-receipt, .shop-delivery-progress) {
+  --ux-ink: #5c4742;
+  --ux-ink-3: #6b5b7b;
+  border: 2px solid var(--interface-border);
+  border-radius: 0;
+  background: var(--interface-paper);
+  color: var(--interface-ink);
+  box-shadow: none;
+}
 .cafe-fullscreen .pc-app {
-  border-radius: 2px;
-  border-color: #b4888d;
-  color: #34293e;
-  background: #f2d4b5;
+  border: 2px solid var(--interface-border);
+  border-radius: 0;
+  color: var(--interface-ink);
+  background: var(--interface-paper);
 }
-.cafe-fullscreen .pc-app:hover { background: #ffe4ba; }
-.cafe-fullscreen .pc-app:focus-visible { outline: 2px solid #4b666c; }
+.cafe-fullscreen .pc-app:hover { background: var(--interface-screen); }
+.cafe-fullscreen .pc-app:focus-visible { outline: 2px solid var(--interface-ink); }
+
+.world-seat-targets {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+.cafe-fullscreen .world-target {
+  position: absolute;
+  z-index: 3;
+  width: calc(16 * var(--world-pixel, 1px));
+  height: calc(16 * var(--world-pixel, 1px));
+  padding: 0;
+  transform: translate(-50%, -50%);
+  background: transparent;
+  border: 0;
+  pointer-events: auto;
+}
+.cafe-fullscreen :is(#cafe-board-pin, #kiosk-pin, .snack-counter).world-target {
+  width: calc(32 * var(--world-pixel, 1px));
+  height: calc(32 * var(--world-pixel, 1px));
+}
+.world-target::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 6px;
+  border: 2px solid #5c4742;
+  background: #f7efe5;
+  color: #5c4742;
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+  pointer-events: none;
+  visibility: hidden;
+}
+.world-target:is(:hover, :focus, :focus-visible)::after {
+  animation: cafe-tip 2.5s steps(1, end) forwards;
+}
+@keyframes cafe-tip {
+  from { visibility: visible; }
+  to { visibility: hidden; }
+}
+.cafe-fullscreen .seat-marker:not(:is(:hover, :focus-visible)) {
+  border-color: transparent;
+  background: transparent;
+  color: transparent;
+}
+.cafe-camera-nav { display: none; }
+.cafe-fullscreen .relax-hud:not([hidden]) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: min(100% - 16px, 510px);
+  bottom: max(76px, calc(72px + env(safe-area-inset-bottom)));
+}
+.cafe-fullscreen .relax-hud .relax-chip {
+  min-height: 44px;
+  padding: 4px;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  white-space: normal;
+  word-break: keep-all;
+  border: 2px solid var(--interface-border);
+  background: var(--interface-paper);
+  color: var(--interface-ink);
+  border-radius: 0;
+  box-shadow: none;
+}
+.cafe-fullscreen .relax-hud .relax-exit { background: var(--interface-screen); }
+.cafe-fullscreen .scene-viewport:has(.relax-hud:not([hidden])) .proximity-prompt {
+  display: none;
+}
+#cafe-board {
+  width: min(100% - 24px, 530px);
+  max-height: calc(100dvh - 24px);
+  color: var(--interface-ink);
+  background: var(--interface-paper);
+  border: 2px solid var(--interface-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+#cafe-board :is(.dialog-inner, form, label, #cafe-board-posts) { display: grid; gap: 8px; }
+#cafe-board :is(button, select, input, textarea, article) {
+  padding: 6px;
+  border: 2px solid var(--interface-border);
+  border-radius: 0;
+  color: var(--interface-ink);
+  background: var(--interface-paper);
+  box-shadow: none;
+}
+#cafe-board :is(button, summary, select) { min-height: 44px; }
+#cafe-board summary { cursor: pointer; padding: 8px 0; }
+#cafe-board-posts { max-height: 35dvh; overflow: auto; }
+#cafe-board article { overflow-wrap: anywhere; }
+
+@media (max-width: 768px), (pointer: coarse) {
+  .cafe-camera-nav {
+    position: fixed;
+    inset: max(71px, calc(64px + env(safe-area-inset-top))) 8px auto;
+    z-index: 21;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    max-width: 520px;
+    margin-inline: auto;
+  }
+  .cafe-camera-nav button {
+    min-height: 44px;
+    padding: 2px 4px;
+    border: 2px solid var(--interface-border);
+    border-radius: 0;
+    color: var(--interface-ink);
+    background: var(--interface-paper);
+    font-size: 12px;
+    font-weight: 750;
+  }
+  .cafe-fullscreen .game-view-actions { display: flex; flex-wrap: wrap; }
+  .cafe-fullscreen .relax-hud:not([hidden]) {
+    bottom: max(109px, calc(102px + env(safe-area-inset-bottom)));
+  }
+  .cafe-fullscreen .scene-viewport .cafe-joystick { display: none; }
+}
 
 @media (max-width: 620px) {
   .cafe-fullscreen .room-head { top: max(4px, env(safe-area-inset-top)); left: 6px; right: 6px; gap: 5px; }

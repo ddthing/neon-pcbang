@@ -1,9 +1,9 @@
 # 길모퉁이PC방
 
-내 위치의 날씨와 시간이 창밖으로 흐르는 **100% 순수 코드 픽셀아트** 온라인 PC방입니다. 같은 매장에 입장한 손님들이 실시간으로 걸어다니며 좌석을 고르고, 음식 배달을 시키고, 11종의 미니게임과 대전을 함께 즐길 수 있습니다.
+내 위치의 날씨와 시간이 창밖으로 흐르는 파스텔 픽셀아트 온라인 PC방입니다. 같은 매장에 입장한 손님들이 실시간으로 걸어다니며 좌석을 고르고, 음식 배달을 시키고, 11종의 미니게임과 대전을 함께 즐길 수 있습니다.
 
-- **순수 픽셀아트 월드 & 타일맵 (`1152×768`):** 외부 그림 파일이나 AI 이미지 없이 [pixel-tiles.js](public/pixel-tiles.js)와 [cafe-art.js](public/cafe-art.js)가 4단계 셰이딩·디더링·도트 매트릭스로 바닥·가구·PC·오픈키친·조명·창밖 날씨를 직접 그립니다.
-- **도트 매트릭스 캐릭터 & 화살표 옷장:** [avatar-sprites.js](public/avatar-sprites.js)가 4방향 48×48 도트 매트릭스 스프라이트(걷기·착석 타이핑·휴식·간식)를 생성하고, [walk.js](public/walk.js)에서 좌우 화살표 스태퍼와 4방향 회전으로 즉시 미리보며 갈아입을 수 있습니다.
+- **3/4 탑다운 월드 (`1152×768`)**는 16×16 PNG 타일과 가구를 렌더링 단계에서 파스텔로 보정합니다. [스프라이트 렌더러](public/pixel-tiles.js) · [매장 렌더러](public/cafe-art.js)
+- **캐릭터와 옷장**은 16×32 치비 스프라이트의 4방향 걷기·착석·휴식·간식 동작과 회전 미리보기를 지원합니다. [캐릭터](public/avatar-sprites.js) · [옷장](public/walk.js)
 - **휴식·흡연구역 2종 (좌석 유지 외출):** 매장 좌측 상단 **실내 흡연구역(`booth`)**과 우측 상단 **야외 흡연구역(`terrace`)**을 PC 자리를 반납하지 않고 오갈 수 있으며, 구역별 독립 채팅을 지원합니다.
 - **길모퉁이 매점 2.0 & 오픈키친:** 24종 메뉴([snack-menu.json](public/snack-menu.json)) 주문, 알바냥 서빙 배달([cafe-delivery.js](public/cafe-delivery.js)), 옆 자리 간식 선물을 지원합니다.
 - **길모퉁이 OS 2.0 & 미니게임 11종:** 런처 아이콘(`게임 런처` / 작업표시줄 `게임`)을 누를 때 열리며, 실시간 오목·알까기(`모퉁이 대국장`), 테트리스(`모퉁이 블록 드롭`), **코지 솔리테어**, **뜨개 실풀기(Knit Unravel)**, 붕어빵 포차, 매점 러시, 산성비, 지뢰찾기, 벽돌깨기 DX, 2048, 스도쿠(고정/입력 구분·Undo 지원)와 실시간 TOP 5 랭킹([lib/cafe-arcade.mjs](lib/cafe-arcade.mjs))을 제공합니다.
@@ -30,24 +30,31 @@
 
 ---
 
-### ② 순수 픽셀아트 제작 지침 (외부 이미지 0장 원칙)
-> **원칙:** PC방 홀·가구·캐릭터·실풀기 퍼즐에는 **외부 PNG/JPG/WebP/AI 그림을 사용하지 않습니다.** 모든 픽셀은 해상도와 무관하게 `image-rendering: pixelated` + 정수 스케일로 선명해야 합니다.
+### ② 16×16 파스텔 픽셀아트 제작 지침
 
-- **캔버스 & 팔레트 규격 ([public/pixel-tiles.js](public/pixel-tiles.js)):**
-  - 논리 해상도는 **`1152×768`** (정수 확대 시 FHD `2×`, 4K `3~4×`)로 유지합니다.
-  - 외곽선은 순수 검정(`#000000`) 대신 따뜻한 다크 플럼(`#261c29`) 1px로 마감합니다.
-  - 모든 가구·바닥·소품은 4단계 **Hue-Shifting** 팔레트(`w0..w4`, `c0..c4`, `g0..g4`, `r0..r3`)와 베벨 하이라이트·접지 그림자를 갖추어야 하며, 단색 사각형이나 `ctx.arc()`/`ellipse()` 수학 도형으로 뭉개지 않습니다.
-  - 빛 번짐은 블러(`shadowBlur`, 흐린 그라데이션) 대신 `drawDitherGlow()`(Bayer 4×4 디더링)를 사용합니다.
-- **가구별 디테일·방향 일치 기준:**
-  - **PC 좌석 (`paintDeskSet`, `paintChairFront`):** 측면 좌석(`left` / `right`)은 본체가 모니터 화면을 가리지 않도록 데스크 뒤편 코너에 분리 배치하고, 키보드·마우스는 의자 방향(수직 배열)과 맞춥니다. 의자 좌판·팔걸이·등받이(`chairFront`)는 빈틈(`|__` 분리) 없이 하나의 가구로 맞물려야 합니다.
-  - **소파·탁자 (`paintCouch`, `paintSofaTable`):** 소파 내부 방석은 반드시 팔걸이 안쪽 폭(`[x + 7, x + w - 7]`) 안에서 동적 분할해 프레임 밖으로 삐져나오지 않게 합니다.
-  - **바닥 타일 (`buildWoodPattern`, `buildStonePattern`):** 패턴 반복 시 투명 빈틈이 생기지 않도록 먼저 바탕색으로 캔버스를 채운 뒤 어긋난 판자를 그립니다.
+현재 매장 구현과 검수는 [Notion 브랜치 인수인계](docs/notion-implementation-handoff.md)를 따릅니다. 아래 1차 시안 배치 및 이전 좌석 수는 기록용입니다. [16×16 무료 픽셀 에셋 & 제미나이 가이드](https://app.notion.com/p/16-16-4241906cddf181b791a1deedbce972d0)
+
+- 가구·소품은 3/4 탑다운 PNG 스프라이트에서 가져옵니다. Downtown Eats & Nights를 인테리어 주 팩으로 쓰고, 100 Free Pixel Art Foods는 진열, 메뉴, 서비스 쟁반에 적용합니다. 창밖과 테라스의 날씨에는 Weather & Nature FX를 사용합니다.
+- 팩에 없는 PC 세트·키오스크·자판기와 매점 완제품은 같은 팔레트로 제작한 원본 PNG를 사용합니다. 원본 도안을 수정한 뒤 `node scripts/build-notion-sprites.mjs`로 PNG를 다시 만듭니다.
+- 16px 타일과 정수배 확대를 사용합니다. 캔버스 스무딩을 끄고, PNG 원본은 보존하며 색 보정은 렌더 단계에서 적용합니다.
+- 바탕은 크림 베이지 `#F7EFE5`와 라이트 우드, 포인트는 라벤더 `#C8B6E2`·베이비핑크 `#F4C2D7`·피치·민트를 씁니다. HUD·퀵버튼·툴팁은 2px 웜 브라운 `#5C4742` 테두리로 맞춥니다.
+- 착석 위치는 스프라이트의 방향별 앵커와 맞추고 의자 앞면은 별도로 그립니다. 자리의 화면과 쟁반 위치는 가구 렌더러에서 함께 계산합니다.
+
+게임을 빌드하거나 실행하기 전에 아래 세 팩을 공식 배포처에서 받아 압축을 풀고, 루트에서 경로를 순서대로 전달합니다. 스크립트가 PNG와 JSON을 `public/assets/`에 원본 이름으로 복사합니다.
+
+```sh
+node scripts/install-notion-art.mjs <DowntownEats_FREE> <Weather_FX> <Food_Icons>
+```
+
+- [Downtown Eats & Nights FREE · dotplays](https://dotplays.itch.io/downtown-eats-and-nights-16x16-top-down-interior-tileset)
+- [Weather & Nature FX · reodesuxz](https://reodesuxz.itch.io/free-pixel-weather-nature-fx-63-assets)
+- [100 Free Pixel Art Foods · alexkovacsart · CC BY 4.0](https://alexkovacsart.itch.io/free-pixel-art-foods)
 
 ---
 
 ### ③ 캐릭터 스프라이트 & 화살표 옷장 UI 지침
 - **순수 도트 매트릭스 ([public/avatar-sprites.js](public/avatar-sprites.js)):**
-  - `pellipse()` 등 수학 도형 사용 금지. `HEAD_FRONT`, `HEAD_SIDE`, `HAIR_FRONT`처럼 명시적 픽셀 매트릭스와 1px 외곽선(`#261c29`) + **2×3 반짝이 눈동자**로 48×48프레임(7열×11행 시트)을 생성합니다.
+  - 둥근 2등신 치비를 16×32 프레임(7열×13행 시트)에 그립니다. 점 눈과 작은 입, 웜 브라운 `#5C4742` 외곽선, 파스텔 의상을 사용합니다.
   - **7종 종족(`skins`):** `0: 사람`, `1: 고양이`, `2: 곰`, `3: 토끼`, `4: 쥐`, `5: 기린`, `6: 호랑이` (각 종족별 4톤 팔레트 + 귀·뿔·코·볼터치·줄무늬/점박이 픽셀 파츠).
   - **6자리 16진 코드(`AVATAR_WARDROBE`, `encodeAvatarCode`/`normalizeAvatarCode`):** 각 카테고리(`skins`, `hairs`, `hairColors`, `outfits`, `headsets`, `accessories`)는 6-니블(nibble) 규격 상 **최대 16개(0~15)** 이내로 유지해 D1 저장·테스트 호환성을 지킵니다.
 - **옷장 UI ([app/cafe.html](app/cafe.html), [public/walk.js](public/walk.js), [public/walk.css](public/walk.css)):**
@@ -152,6 +159,7 @@ npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0007_world_zones_and_avatars.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0008_snack_bar_v2.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0009_arcade_and_pvp.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0010_cafe_board.sql
 npm start
 ```
 

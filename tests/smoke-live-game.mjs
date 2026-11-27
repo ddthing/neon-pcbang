@@ -34,7 +34,7 @@ try {
       assert.match(await page.text(), /src="\.\/cafe-art\.js"/, "Game page must load the renewed renderer");
       await Promise.all([
         "cafe-art.js", "cafe-art.css", "cafe-interface.css", "camera.js",
-        "cafe-delivery.js", "sprites/cat-clerk-service.png",
+        "cafe-delivery.js", "food-pixels.js", "assets/original/workstations.png",
         "renewal-layout.mjs", "renewal-effects.mjs", "renewal-slice-art.mjs",
         "renewal-seat-picker.mjs", "renewal-slice.html", "renewal-slice.js", "walk.js",
         "app.js", "pc.css", "sudoku.js", "solitaire.js", "solitaire-engine.mjs",

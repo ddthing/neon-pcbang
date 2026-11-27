@@ -1,3 +1,7 @@
+import "./app.js";
+import { setFoodPixel } from "./food-pixels.js";
+import { createClerkSprite } from "./avatar-sprites.js";
+
 const $ = (selector, root = document) => root.querySelector(selector);
 const shop = $("#snacks");
 const boardDialog = $("#snack-board");
@@ -25,6 +29,8 @@ const element = (tag, className, content = "") => {
 };
 
 let data, catalog, sending = false, inFlight, retryId, order, pollTimer;
+let menuPrices = new Map();
+const totalPrice = () => [...cart].reduce((sum, [id, { count }]) => sum + (menuPrices.get(id) ?? 0) * count, 0);
 let clockOffset = 0, deliveryMotionTimer;
 try { order = JSON.parse(storage.get("sessionStorage", stateKey)); } catch {}
 const deliveredNotices = readDeliveryNotices();
@@ -68,13 +74,9 @@ const statusLabels = {
   canceled: "취소됨",
 };
 
-function makePixelIcon(spriteIndex = 4) {
+function makePixelIcon(itemId) {
   const icon = element("i", "pixel-snack-icon");
-  const col = spriteIndex % 6;
-  const row = Math.floor(spriteIndex / 6);
-  icon.style.setProperty("--snack-x", (col * 20) + "%");
-  icon.style.setProperty("--snack-y", (row * 33.3333) + "%");
-  icon.setAttribute("aria-hidden", "true");
+  setFoodPixel(icon, itemId);
   return icon;
 }
 
@@ -115,7 +117,7 @@ function createDeliveryProgress() {
 
   const clerk = element("span", "u087-clerk");
   clerk.setAttribute("aria-hidden", "true");
-  clerk.innerHTML = '<span class="cafe-clerk-sprite" style="width:26px;height:28px;display:block;background-position:0% 66.6667%"></span>';
+  clerk.append(createClerkSprite("carry"));
   const flag = element("span", "u087-flag");
   flag.innerHTML = '<svg viewBox="0 0 14 14"><path d="M3 7.4l2.6 2.6L11 4.6"/></svg>';
   clerk.append(flag);
@@ -189,7 +191,7 @@ function flyItem(item, source) {
   const endX = (target.left + target.width / 2 - parent.left) / scaleX - 12;
   const endY = (target.top + target.height / 2 - parent.top) / scaleY - 12;
   const flyer = element("span", "u051-fly");
-  flyer.append(makePixelIcon(item.sprite ?? 4));
+  flyer.append(makePixelIcon(item.id));
   flyer.style.left = x + "px";
   flyer.style.top = y + "px";
   shop.append(flyer);
@@ -216,8 +218,7 @@ function minuteLabel(timestamp) {
   }).format(timestamp);
 }
 
-function updateDeliveryProgress() {
-  if (!order) return;
+function updateDeliveryProgress(order) {
   const status = orderStatus(order);
   const newOrder = order.id !== progressOrderId;
   const changed = newOrder || status !== progressStage;
@@ -288,6 +289,11 @@ function updatePointsDisplay() {
 
 function updateShop() {
   const seat = currentSeat();
+  const order = currentOrder();
+  const cost = totalPrice();
+  const tooExpensive = cost > (data?.loyalty?.points ?? 150);
+  setText($("#order-cost"), cost + " G");
+  $("#order-funds").hidden = !tooExpensive;
   const orderState = order ? orderStatus(order) : "";
   const clerkReturning = Boolean(order && (orderState === "delivered" || orderState === "eaten") && order.returnAt > serverNow());
   const waiting = ["queued", "preparing", "delivering"].includes(orderState) || clerkReturning;
@@ -315,7 +321,7 @@ function updateShop() {
     }
   }
   rewardToggle.disabled = sending || (!rewardToggle.checked && quantity >= 30);
-  submit.disabled = !seat || sending || !quantity || waiting;
+  submit.disabled = !seat || sending || !quantity || waiting || tooExpensive;
   setText(submit, waiting
     ? clerkReturning ? "알바생이 카운터로 돌아오고 있어요."
       : { queued: "대기 순서 " + orderStatusLabel(order), preparing: "오픈키친 조리 중", delivering: "배달 중" }[orderState]
@@ -324,7 +330,7 @@ function updateShop() {
   if (order) {
     setText($("#order-status"), "주문 " + order.id.slice(0, 8).toUpperCase() + " · " + orderStatusLabel(order));
     setText($("#order-items"), lineText(Array.isArray(order.items) ? order.items : []));
-    updateDeliveryProgress();
+    updateDeliveryProgress(order);
   }
   setText($("#pc-order-summary"), order && orderState !== "eaten" && orderState !== "canceled"
     ? `${orderStatusLabel(order)} · ${lineText(order.items)}`
@@ -382,9 +388,11 @@ function renderCatalog() {
       const wrap = element("div", "snack-item-wrap");
       const row = element("article", "u242-it");
       const iconBox = element("i", "snack-pixel-slot");
-      iconBox.append(makePixelIcon(item.sprite ?? 4));
+      iconBox.append(makePixelIcon(item.id));
       const title = element("div", "");
-      title.append(element("b", "", item.name), element("span", "", item.copy));
+      const name = element("b", "snack-item-name", item.name);
+      name.append(element("small", "snack-item-price", item.price + " G"));
+      title.append(name, element("span", "", item.copy));
       const actions = element("div", "order-controls");
       const minus = element("button", "", "−");
       const count = element("span", "item-count", "0");
@@ -584,25 +592,27 @@ function stamp(index) {
   setTimeout(() => { stamping = false; updateCoupon(); }, 560);
 }
 
-function showDelivery(delivered) {
-  if (!delivered || wasDeliveryNotified(delivered.id)) return;
+function currentOrder() {
+  const seat = currentSeat();
+  return seat && order?.seat === seat ? order : null;
+}
+
+function notifyCurrentDelivery() {
+  const delivered = currentOrder();
+  if (!delivered || orderStatus(delivered) !== "delivered" || wasDeliveryNotified(delivered.id)) return;
   window.cafeAudioPlay?.("chime");
   const opened = [...document.querySelectorAll("dialog[open]")].at(-1);
   if (opened) {
     const banner = element("div", "delivery-banner");
-    const icon = element("span", "cafe-clerk-sprite");
-    icon.style.width = "26px";
-    icon.style.height = "28px";
-    banner.append(icon, element("strong", "", "고양이 알바생이 책상에 쟁반을 배달했어요!"));
+    const icon = createClerkSprite();
+    banner.append(icon, element("strong", "", seating.label(delivered.seat) + "에 쟁반을 배달했어요!"));
     banner.setAttribute("role", "status");
     opened.append(banner);
     setTimeout(() => banner.remove(), 3800);
   }
-  window.recordCafeStamp?.("snack");
 }
 
 function updateOwnOrder(incoming, now) {
-  const previous = order ? orderStatus(order) : null;
   if (!incoming) {
     order = null;
     storage.set("sessionStorage", stateKey, "");
@@ -615,10 +625,9 @@ function updateOwnOrder(incoming, now) {
     createdAt: Number.isFinite(incoming.createdAt) ? incoming.createdAt : now,
     items: Array.isArray(incoming.items) ? incoming.items : [],
   };
-  const changedOrder = order?.id !== next.id;
   order = next;
   storage.set("sessionStorage", stateKey, JSON.stringify(order));
-  if (order.status === "delivered" && (changedOrder || previous !== "delivered")) showDelivery(order);
+  notifyCurrentDelivery();
   updateShop();
 }
 
@@ -777,19 +786,23 @@ async function action(task) {
 submit.addEventListener("click", () => action(async () => {
   setText(shopFeedback, "주문을 보내고 있어요.");
   try {
+    const seat = currentSeat();
+    if (!seat) return;
     const result = await request("order", {
       id: retryId ||= crypto.randomUUID(),
+      seat,
       items: [...cart].map(([id, entry]) => ({ id, count: entry.count, options: [...entry.options] })),
       coupon: rewardToggle.checked,
     });
-    if (result.order) {
+    if (!result.rejected && result.order) {
       cart.clear();
       retryId = null;
       rewardToggle.checked = false;
       setText(shopFeedback, "");
       window.cafeAudioPlay?.("chime");
       window.cafeWorld?.syncNow?.();
-    } else setText(shopFeedback, "좌석이나 쿠폰 상태가 바뀌었거나 이미 조리 중인 주문이 있어요.");
+    } else setText(shopFeedback, result.reason === "insufficient_points"
+      ? "G 포인트가 부족해요." : "좌석이나 쿠폰 상태가 바뀌었거나 이미 조리 중인 주문이 있어요.");
     applyData(result, false, Boolean(result.rejected));
   } catch { setText(shopFeedback, "주문을 확인하지 못했어요. 다시 눌러주세요."); }
 }));
@@ -819,6 +832,8 @@ reduced.addEventListener("change", () => {
   if (reduced.matches) clearShopAnimations();
 });
 document.addEventListener("cafe-seat-phase", () => {
+  document.querySelectorAll(".delivery-banner").forEach((banner) => banner.remove());
+  retryId = null;
   updateShop();
   refresh();
 });
@@ -828,8 +843,9 @@ fetch("./snack-menu.json").then((response) => {
   return response.json();
 }).then((menu) => {
   catalog = menu;
+  menuPrices = new Map(menu.categories.flatMap(({ items }) => items.map(({ id, price }) => [id, price])));
   const rewardLabel = $("span", reward);
-  rewardLabel.replaceChildren(makePixelIcon(menu.reward.sprite ?? 23), document.createTextNode(" " + menu.reward.name + " 쿠폰 적용"));
+  rewardLabel.replaceChildren(makePixelIcon(menu.reward.id), document.createTextNode(" " + menu.reward.name + " 쿠폰 적용"));
   renderCatalog();
   initGiftModal();
 }).catch(() => menuBody.append(element("p", "shop-menu-empty", "매점 메뉴를 불러올 수 없어요. 새로고침해 주세요.")));

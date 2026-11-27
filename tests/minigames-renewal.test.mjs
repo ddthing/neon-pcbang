@@ -6,6 +6,7 @@ import test from "node:test";
 import { arcadeLeaderboard } from "../lib/cafe-arcade.mjs";
 import { simulateAlkkagiShot } from "../lib/cafe-pvp.mjs";
 import { AVATAR_WARDROBE } from "../public/avatar-sprites.js";
+import { setFoodPixel } from "../public/food-pixels.js";
 import { chooseAlkkagiAiShot, chooseOmokAiMove, hasFiveInARow } from "../public/pvp-ai.mjs";
 import {
   canAutoComplete,
@@ -265,7 +266,7 @@ test("Arcade Leaderboard supports solitaire and knit games", async () => {
   }
 });
 
-test("Pure-pixel hall tiles, single-source layout sync, pure-pixel avatar matrices, arrow-stepper wardrobe & README guidelines exist cleanly", () => {
+test("Sprite-based hall, shared layout, 16×32 avatars and wardrobe controls are wired in", () => {
   const html = readFileSync(new URL("../app/cafe.html", import.meta.url), "utf8");
   const pcCss = readFileSync(new URL("../public/pc.css", import.meta.url), "utf8");
   const shellCss = readFileSync(new URL("../public/game-shell.css", import.meta.url), "utf8");
@@ -290,10 +291,13 @@ test("Pure-pixel hall tiles, single-source layout sync, pure-pixel avatar matric
   assert.match(cafeLayout, /window\.cafeLayout =/);
   assert.match(walkJs, /className = "wardrobe-stepper"/);
   assert.match(walkCss, /\.wardrobe-stepper/);
-  assert.match(cafeArt, /const WIDTH = 1152;\s*\r?\n\s*const HEIGHT = 768;/);
-  assert.match(pixelTiles, /paintSofaTable/);
+  assert.match(cafeLayout, /world = \{ width: 1152, height: 768/);
+  assert.match(cafeArt, /T\.prop\(base, id/);
+  assert.match(pixelTiles, /downtown\/sprites\/objects\.png/);
+  assert.match(pixelTiles, /ctx\.imageSmoothingEnabled = false/);
   assert.match(pixelTiles, /window\.cafePixelTiles =/);
   assert.ok(!avatarJs.includes("pellipse"), "avatar-sprites.js must use pixel matrices instead of math ellipses");
+  assert.match(avatarJs, /const WIDTH = 16;\s*const HEIGHT = 32;/);
   assert.match(pcCss, /\.sudoku-cell\[data-given\]/);
   assert.match(pcCss, /\.pc-launcher\[hidden\]/);
   assert.match(shellCss, /\.cafe-joystick\[hidden\]/);
@@ -315,6 +319,33 @@ test("Cute pixel avatars support 7 species within 6-nibble hex bounds", () => {
   );
   for (const [key, list] of Object.entries(AVATAR_WARDROBE)) {
     assert.ok(list.length <= 16, `${key} exceeds 16 items for hex nibble encoding`);
+  }
+});
+
+test("Each current menu item uses a pack sprite or a tracked 16px dish sprite", () => {
+  const publicRoot = new URL("../public/", import.meta.url);
+  const catalog = JSON.parse(readFileSync(new URL("snack-menu.json", publicRoot)));
+  const dishes = [...catalog.categories.flatMap(({ items }) => items), catalog.reward];
+  const measure = (path) => {
+    const png = readFileSync(new URL(path, publicRoot));
+    assert.equal(png.subarray(1, 4).toString(), "PNG");
+    return [png.readUInt32BE(16), png.readUInt32BE(20)];
+  };
+  assert.deepEqual(measure("assets/original/workstations.png"), [80, 32]);
+  for (const { id } of dishes) {
+    const styles = new Map();
+    const node = {
+      style: { setProperty: (key, value) => styles.set(key, value) },
+      setAttribute() {},
+      toggleAttribute() {},
+    };
+    setFoodPixel(node, id);
+    const path = styles.get("--food-pixel").slice(7, -2);
+    if (id === "cola") assert.equal(path, "assets/foods/soda_coke.png");
+    else {
+      assert.equal(path, "assets/original/food/" + id + ".png");
+      assert.deepEqual(measure(path), [16, 16]);
+    }
   }
 });
 
