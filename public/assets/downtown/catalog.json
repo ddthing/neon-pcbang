@@ -1,0 +1,4244 @@
+{
+ "name": "Downtown Eats & Nights (working title) \u2013 caf\u00e9 asset test",
+ "tile": 16,
+ "scales": [
+  16,
+  32,
+  48
+ ],
+ "projection": "top-down 3/4 (1:1 oblique). Light from top-left.",
+ "objects": {
+  "chair_S": {
+   "id": "chair_S",
+   "type": "chair",
+   "facing": "S",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    3,
+    3,
+    10,
+    10
+   ],
+   "seats": [
+    {
+     "x": 8,
+     "y": 9,
+     "dir": "S"
+    }
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    240,
+    144
+   ],
+   "front": [
+    240,
+    0
+   ],
+   "shadow": [
+    224,
+    48
+   ]
+  },
+  "chair_W": {
+   "id": "chair_W",
+   "type": "chair",
+   "facing": "W",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    3,
+    3,
+    10,
+    10
+   ],
+   "seats": [
+    {
+     "x": 6,
+     "y": 8,
+     "dir": "W"
+    }
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    96,
+    192
+   ],
+   "front": [
+    176,
+    32
+   ],
+   "shadow": [
+    0,
+    64
+   ]
+  },
+  "chair_N": {
+   "id": "chair_N",
+   "type": "chair",
+   "facing": "N",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    3,
+    3,
+    10,
+    10
+   ],
+   "seats": [
+    {
+     "x": 7,
+     "y": 6,
+     "dir": "N"
+    }
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    112,
+    192
+   ],
+   "front": [
+    192,
+    32
+   ],
+   "shadow": [
+    48,
+    160
+   ]
+  },
+  "chair_E": {
+   "id": "chair_E",
+   "type": "chair",
+   "facing": "E",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    3,
+    3,
+    10,
+    10
+   ],
+   "seats": [
+    {
+     "x": 9,
+     "y": 7,
+     "dir": "E"
+    }
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    128,
+    208
+   ],
+   "front": [
+    208,
+    32
+   ],
+   "shadow": [
+    80,
+    160
+   ]
+  },
+  "stool_S": {
+   "id": "stool_S",
+   "type": "stool",
+   "facing": "S",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 12,
+   "solid": [
+    3,
+    5,
+    10,
+    7
+   ],
+   "seats": [
+    {
+     "x": 8,
+     "y": 8,
+     "dir": "S"
+    }
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    144,
+    208
+   ],
+   "front": [
+    224,
+    32
+   ],
+   "shadow": [
+    112,
+    160
+   ]
+  },
+  "armchair_S": {
+   "id": "armchair_S",
+   "type": "armchair",
+   "facing": "S",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    1,
+    2,
+    14,
+    12
+   ],
+   "seats": [
+    {
+     "x": 8,
+     "y": 9,
+     "dir": "S"
+    }
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    160,
+    208
+   ],
+   "front": [
+    240,
+    32
+   ],
+   "shadow": [
+    144,
+    160
+   ]
+  },
+  "armchair_W": {
+   "id": "armchair_W",
+   "type": "armchair",
+   "facing": "W",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    2,
+    1,
+    12,
+    14
+   ],
+   "seats": [
+    {
+     "x": 6,
+     "y": 8,
+     "dir": "W"
+    }
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    176,
+    208
+   ],
+   "front": [
+    0,
+    48
+   ],
+   "shadow": [
+    176,
+    160
+   ]
+  },
+  "armchair_N": {
+   "id": "armchair_N",
+   "type": "armchair",
+   "facing": "N",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    1,
+    2,
+    14,
+    12
+   ],
+   "seats": [
+    {
+     "x": 7,
+     "y": 6,
+     "dir": "N"
+    }
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    192,
+    208
+   ],
+   "front": [
+    16,
+    48
+   ],
+   "shadow": [
+    208,
+    160
+   ]
+  },
+  "armchair_E": {
+   "id": "armchair_E",
+   "type": "armchair",
+   "facing": "E",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    2,
+    1,
+    12,
+    14
+   ],
+   "seats": [
+    {
+     "x": 9,
+     "y": 7,
+     "dir": "E"
+    }
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    208,
+    208
+   ],
+   "front": [
+    32,
+    48
+   ],
+   "shadow": [
+    0,
+    192
+   ]
+  },
+  "sofa2_S": {
+   "id": "sofa2_S",
+   "type": "sofa2",
+   "facing": "S",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 32,
+   "h": 32,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    0,
+    2,
+    32,
+    12
+   ],
+   "seats": [
+    {
+     "x": 9,
+     "y": 10,
+     "dir": "S"
+    },
+    {
+     "x": 23,
+     "y": 10,
+     "dir": "S"
+    }
+   ],
+   "shadow_size": [
+    48,
+    32
+   ],
+   "atlas": [
+    176,
+    144
+   ],
+   "front": [
+    112,
+    0
+   ],
+   "shadow": [
+    64,
+    96
+   ]
+  },
+  "sofa2_W": {
+   "id": "sofa2_W",
+   "type": "sofa2",
+   "facing": "W",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    2
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    2,
+    0,
+    12,
+    32
+   ],
+   "seats": [
+    {
+     "x": 5,
+     "y": 9,
+     "dir": "W"
+    },
+    {
+     "x": 5,
+     "y": 23,
+     "dir": "W"
+    }
+   ],
+   "shadow_size": [
+    32,
+    48
+   ],
+   "atlas": [
+    224,
+    0
+   ],
+   "front": [
+    0,
+    0
+   ],
+   "shadow": [
+    80,
+    0
+   ]
+  },
+  "sofa2_N": {
+   "id": "sofa2_N",
+   "type": "sofa2",
+   "facing": "N",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 32,
+   "h": 32,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    0,
+    2,
+    32,
+    12
+   ],
+   "seats": [
+    {
+     "x": 22,
+     "y": 5,
+     "dir": "N"
+    },
+    {
+     "x": 8,
+     "y": 5,
+     "dir": "N"
+    }
+   ],
+   "shadow_size": [
+    48,
+    32
+   ],
+   "atlas": [
+    208,
+    144
+   ],
+   "front": [
+    144,
+    0
+   ],
+   "shadow": [
+    112,
+    96
+   ]
+  },
+  "sofa2_E": {
+   "id": "sofa2_E",
+   "type": "sofa2",
+   "facing": "E",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    2
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    2,
+    0,
+    12,
+    32
+   ],
+   "seats": [
+    {
+     "x": 10,
+     "y": 22,
+     "dir": "E"
+    },
+    {
+     "x": 10,
+     "y": 8,
+     "dir": "E"
+    }
+   ],
+   "shadow_size": [
+    32,
+    48
+   ],
+   "atlas": [
+    240,
+    0
+   ],
+   "front": [
+    16,
+    0
+   ],
+   "shadow": [
+    112,
+    0
+   ]
+  },
+  "booth_S": {
+   "id": "booth_S",
+   "type": "booth",
+   "facing": "S",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 32,
+   "h": 32,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    0,
+    32,
+    14
+   ],
+   "seats": [
+    {
+     "x": 8,
+     "y": 10,
+     "dir": "S"
+    },
+    {
+     "x": 24,
+     "y": 10,
+     "dir": "S"
+    }
+   ],
+   "shadow_size": [
+    48,
+    32
+   ],
+   "atlas": [
+    128,
+    176
+   ],
+   "front": [
+    176,
+    0
+   ],
+   "shadow": [
+    160,
+    96
+   ]
+  },
+  "booth_W": {
+   "id": "booth_W",
+   "type": "booth",
+   "facing": "W",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    2
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    2,
+    0,
+    14,
+    32
+   ],
+   "seats": [
+    {
+     "x": 5,
+     "y": 8,
+     "dir": "W"
+    },
+    {
+     "x": 5,
+     "y": 24,
+     "dir": "W"
+    }
+   ],
+   "shadow_size": [
+    32,
+    48
+   ],
+   "atlas": [
+    16,
+    48
+   ],
+   "front": [
+    32,
+    0
+   ],
+   "shadow": [
+    144,
+    0
+   ]
+  },
+  "booth_N": {
+   "id": "booth_N",
+   "type": "booth",
+   "facing": "N",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 32,
+   "h": 32,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    2,
+    32,
+    14
+   ],
+   "seats": [
+    {
+     "x": 23,
+     "y": 5,
+     "dir": "N"
+    },
+    {
+     "x": 7,
+     "y": 5,
+     "dir": "N"
+    }
+   ],
+   "shadow_size": [
+    48,
+    32
+   ],
+   "atlas": [
+    160,
+    176
+   ],
+   "front": [
+    208,
+    0
+   ],
+   "shadow": [
+    208,
+    96
+   ]
+  },
+  "booth_E": {
+   "id": "booth_E",
+   "type": "booth",
+   "facing": "E",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    2
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    0,
+    14,
+    32
+   ],
+   "seats": [
+    {
+     "x": 10,
+     "y": 23,
+     "dir": "E"
+    },
+    {
+     "x": 10,
+     "y": 7,
+     "dir": "E"
+    }
+   ],
+   "shadow_size": [
+    32,
+    48
+   ],
+   "atlas": [
+    32,
+    48
+   ],
+   "front": [
+    48,
+    0
+   ],
+   "shadow": [
+    176,
+    0
+   ]
+  },
+  "table_round_S": {
+   "id": "table_round_S",
+   "type": "table_round",
+   "facing": "S",
+   "group": "tables",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 12,
+   "solid": [
+    1,
+    2,
+    14,
+    13
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    224,
+    208
+   ],
+   "shadow": [
+    32,
+    192
+   ]
+  },
+  "table_sq_S": {
+   "id": "table_sq_S",
+   "type": "table_sq",
+   "facing": "S",
+   "group": "tables",
+   "theme": "cafe",
+   "w": 32,
+   "h": 48,
+   "foot": [
+    2,
+    2
+   ],
+   "elev": 0,
+   "z": 12,
+   "solid": [
+    3,
+    5,
+    26,
+    24
+   ],
+   "shadow_size": [
+    48,
+    48
+   ],
+   "atlas": [
+    64,
+    0
+   ],
+   "shadow": [
+    32,
+    0
+   ]
+  },
+  "table_booth_S": {
+   "id": "table_booth_S",
+   "type": "table_booth",
+   "facing": "S",
+   "group": "tables",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    2
+   ],
+   "elev": 0,
+   "z": 12,
+   "solid": [
+    2,
+    4,
+    12,
+    24
+   ],
+   "shadow_size": [
+    32,
+    48
+   ],
+   "atlas": [
+    48,
+    48
+   ],
+   "shadow": [
+    208,
+    0
+   ]
+  },
+  "counter_S": {
+   "id": "counter_S",
+   "type": "counter",
+   "facing": "S",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    1,
+    16,
+    15
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    240,
+    208
+   ],
+   "shadow": [
+    64,
+    192
+   ]
+  },
+  "counter_W": {
+   "id": "counter_W",
+   "type": "counter",
+   "facing": "W",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    0,
+    15,
+    16
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    0,
+    224
+   ],
+   "shadow": [
+    96,
+    192
+   ]
+  },
+  "counter_N": {
+   "id": "counter_N",
+   "type": "counter",
+   "facing": "N",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    0,
+    16,
+    15
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    16,
+    224
+   ],
+   "shadow": [
+    128,
+    192
+   ]
+  },
+  "counter_E": {
+   "id": "counter_E",
+   "type": "counter",
+   "facing": "E",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    1,
+    0,
+    15,
+    16
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    32,
+    224
+   ],
+   "shadow": [
+    160,
+    192
+   ]
+  },
+  "counter_back_S": {
+   "id": "counter_back_S",
+   "type": "counter_back",
+   "facing": "S",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    2,
+    16,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    48,
+    224
+   ],
+   "shadow": [
+    192,
+    192
+   ]
+  },
+  "counter_back_W": {
+   "id": "counter_back_W",
+   "type": "counter_back",
+   "facing": "W",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    0,
+    14,
+    16
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    64,
+    224
+   ],
+   "shadow": [
+    224,
+    192
+   ]
+  },
+  "counter_back_N": {
+   "id": "counter_back_N",
+   "type": "counter_back",
+   "facing": "N",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    0,
+    16,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    80,
+    224
+   ],
+   "shadow": [
+    0,
+    224
+   ]
+  },
+  "counter_back_E": {
+   "id": "counter_back_E",
+   "type": "counter_back",
+   "facing": "E",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    2,
+    0,
+    14,
+    16
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    96,
+    224
+   ],
+   "shadow": [
+    32,
+    224
+   ]
+  },
+  "fridge_drinks_S": {
+   "id": "fridge_drinks_S",
+   "type": "fridge_drinks",
+   "facing": "S",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 31,
+   "solid": [
+    1,
+    4,
+    14,
+    11
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    64,
+    48
+   ],
+   "shadow": [
+    64,
+    224
+   ]
+  },
+  "fridge_drinks_W": {
+   "id": "fridge_drinks_W",
+   "type": "fridge_drinks",
+   "facing": "W",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 31,
+   "solid": [
+    1,
+    1,
+    11,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    80,
+    48
+   ],
+   "shadow": [
+    96,
+    224
+   ]
+  },
+  "fridge_drinks_N": {
+   "id": "fridge_drinks_N",
+   "type": "fridge_drinks",
+   "facing": "N",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 31,
+   "solid": [
+    1,
+    1,
+    14,
+    11
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    96,
+    48
+   ],
+   "shadow": [
+    128,
+    224
+   ]
+  },
+  "fridge_drinks_E": {
+   "id": "fridge_drinks_E",
+   "type": "fridge_drinks",
+   "facing": "E",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 31,
+   "solid": [
+    4,
+    1,
+    11,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    112,
+    48
+   ],
+   "shadow": [
+    160,
+    224
+   ]
+  },
+  "shelf_wall_S": {
+   "id": "shelf_wall_S",
+   "type": "shelf_wall",
+   "facing": "S",
+   "group": "wall",
+   "theme": "cafe",
+   "w": 32,
+   "h": 48,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 31,
+   "solid": null,
+   "wall": "N",
+   "atlas": [
+    96,
+    0
+   ]
+  },
+  "espresso_S": {
+   "id": "espresso_S",
+   "type": "espresso",
+   "facing": "S",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 16,
+   "z": 12,
+   "solid": null,
+   "atlas": [
+    112,
+    224
+   ]
+  },
+  "register_S": {
+   "id": "register_S",
+   "type": "register",
+   "facing": "S",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 16,
+   "z": 9,
+   "solid": null,
+   "atlas": [
+    128,
+    240
+   ]
+  },
+  "cake_case_S": {
+   "id": "cake_case_S",
+   "type": "cake_case",
+   "facing": "S",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 16,
+   "z": 10,
+   "solid": null,
+   "atlas": [
+    144,
+    240
+   ]
+  },
+  "grinder_S": {
+   "id": "grinder_S",
+   "type": "grinder",
+   "facing": "S",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 16,
+   "z": 12,
+   "solid": null,
+   "atlas": [
+    160,
+    240
+   ]
+  },
+  "pastry_tray_S": {
+   "id": "pastry_tray_S",
+   "type": "pastry_tray",
+   "facing": "S",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 16,
+   "z": 6,
+   "solid": null,
+   "atlas": [
+    176,
+    240
+   ]
+  },
+  "plant_tall_S": {
+   "id": "plant_tall_S",
+   "type": "plant_tall",
+   "facing": "S",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 30,
+   "solid": [
+    0,
+    4,
+    13,
+    11
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    128,
+    48
+   ],
+   "shadow": [
+    192,
+    224
+   ]
+  },
+  "plant_small_S": {
+   "id": "plant_small_S",
+   "type": "plant_small",
+   "facing": "S",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 12,
+   "solid": [
+    4,
+    8,
+    8,
+    5
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    192,
+    240
+   ],
+   "shadow": [
+    224,
+    224
+   ]
+  },
+  "rug_S": {
+   "id": "rug_S",
+   "type": "rug",
+   "facing": "S",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 48,
+   "h": 32,
+   "foot": [
+    3,
+    2
+   ],
+   "elev": 0,
+   "z": 2,
+   "solid": null,
+   "atlas": [
+    128,
+    144
+   ]
+  },
+  "mat_S": {
+   "id": "mat_S",
+   "type": "mat",
+   "facing": "S",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 32,
+   "h": 16,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 1,
+   "solid": null,
+   "atlas": [
+    192,
+    304
+   ]
+  },
+  "aframe_S": {
+   "id": "aframe_S",
+   "type": "aframe",
+   "facing": "S",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 22,
+   "solid": [
+    3,
+    8,
+    10,
+    3
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    208,
+    240
+   ],
+   "shadow": [
+    0,
+    256
+   ]
+  },
+  "bin_S": {
+   "id": "bin_S",
+   "type": "bin",
+   "facing": "S",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 12,
+   "solid": [
+    5,
+    7,
+    6,
+    6
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    224,
+    240
+   ],
+   "shadow": [
+    32,
+    256
+   ]
+  },
+  "coat_rack_S": {
+   "id": "coat_rack_S",
+   "type": "coat_rack",
+   "facing": "S",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 30,
+   "solid": [
+    4,
+    8,
+    8,
+    4
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    144,
+    48
+   ],
+   "shadow": [
+    64,
+    256
+   ]
+  },
+  "cup_S": {
+   "id": "cup_S",
+   "type": "cup",
+   "facing": "S",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 16,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 12,
+   "z": 4,
+   "solid": null,
+   "atlas": [
+    0,
+    176
+   ]
+  },
+  "table_rect_S": {
+   "id": "table_rect_S",
+   "type": "table_rect",
+   "facing": "S",
+   "group": "tables",
+   "theme": "cafe",
+   "w": 32,
+   "h": 32,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 12,
+   "solid": [
+    1,
+    2,
+    30,
+    13
+   ],
+   "shadow_size": [
+    48,
+    32
+   ],
+   "atlas": [
+    192,
+    176
+   ],
+   "shadow": [
+    0,
+    128
+   ]
+  },
+  "table_rect_E": {
+   "id": "table_rect_E",
+   "type": "table_rect",
+   "facing": "E",
+   "group": "tables",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    2
+   ],
+   "elev": 0,
+   "z": 12,
+   "solid": [
+    2,
+    1,
+    13,
+    30
+   ],
+   "shadow_size": [
+    32,
+    48
+   ],
+   "atlas": [
+    160,
+    48
+   ],
+   "shadow": [
+    32,
+    48
+   ]
+  },
+  "bar_wall_S": {
+   "id": "bar_wall_S",
+   "type": "bar_wall",
+   "facing": "S",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 14,
+   "solid": [
+    0,
+    0,
+    16,
+    7
+   ],
+   "wall": "N",
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    240,
+    240
+   ],
+   "shadow": [
+    96,
+    256
+   ]
+  },
+  "menu_board_S": {
+   "id": "menu_board_S",
+   "type": "menu_board",
+   "facing": "S",
+   "group": "wall",
+   "theme": "cafe",
+   "w": 32,
+   "h": 48,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 31,
+   "solid": null,
+   "wall": "N",
+   "atlas": [
+    128,
+    0
+   ]
+  },
+  "picture_S": {
+   "id": "picture_S",
+   "type": "picture",
+   "facing": "S",
+   "group": "wall",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 26,
+   "solid": null,
+   "wall": "N",
+   "atlas": [
+    176,
+    48
+   ]
+  },
+  "clock_S": {
+   "id": "clock_S",
+   "type": "clock",
+   "facing": "S",
+   "group": "wall",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 28,
+   "solid": null,
+   "wall": "N",
+   "atlas": [
+    192,
+    48
+   ]
+  },
+  "counter_sink_S": {
+   "id": "counter_sink_S",
+   "type": "counter_sink",
+   "facing": "S",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    2,
+    16,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    0,
+    256
+   ],
+   "shadow": [
+    128,
+    256
+   ]
+  },
+  "counter_sink_W": {
+   "id": "counter_sink_W",
+   "type": "counter_sink",
+   "facing": "W",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    0,
+    14,
+    16
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    16,
+    256
+   ],
+   "shadow": [
+    160,
+    256
+   ]
+  },
+  "counter_sink_N": {
+   "id": "counter_sink_N",
+   "type": "counter_sink",
+   "facing": "N",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    0,
+    16,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    32,
+    256
+   ],
+   "shadow": [
+    192,
+    256
+   ]
+  },
+  "counter_sink_E": {
+   "id": "counter_sink_E",
+   "type": "counter_sink",
+   "facing": "E",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    2,
+    0,
+    14,
+    16
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    48,
+    256
+   ],
+   "shadow": [
+    224,
+    256
+   ]
+  },
+  "counter_corner_S": {
+   "id": "counter_corner_S",
+   "type": "counter_corner",
+   "facing": "S",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    1,
+    16,
+    15
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    64,
+    256
+   ],
+   "shadow": [
+    0,
+    288
+   ]
+  },
+  "counter_corner_W": {
+   "id": "counter_corner_W",
+   "type": "counter_corner",
+   "facing": "W",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    0,
+    15,
+    16
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    80,
+    256
+   ],
+   "shadow": [
+    32,
+    288
+   ]
+  },
+  "counter_corner_N": {
+   "id": "counter_corner_N",
+   "type": "counter_corner",
+   "facing": "N",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    0,
+    16,
+    15
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    96,
+    256
+   ],
+   "shadow": [
+    64,
+    288
+   ]
+  },
+  "counter_corner_E": {
+   "id": "counter_corner_E",
+   "type": "counter_corner",
+   "facing": "E",
+   "group": "counters",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    1,
+    0,
+    15,
+    16
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    112,
+    256
+   ],
+   "shadow": [
+    96,
+    288
+   ]
+  },
+  "bench_S": {
+   "id": "bench_S",
+   "type": "bench",
+   "facing": "S",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 32,
+   "h": 32,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 9,
+   "solid": [
+    1,
+    4,
+    30,
+    9
+   ],
+   "seats": [
+    {
+     "x": 8,
+     "y": 8,
+     "dir": "S"
+    },
+    {
+     "x": 24,
+     "y": 8,
+     "dir": "S"
+    }
+   ],
+   "shadow_size": [
+    48,
+    32
+   ],
+   "atlas": [
+    224,
+    176
+   ],
+   "front": [
+    112,
+    32
+   ],
+   "shadow": [
+    48,
+    128
+   ]
+  },
+  "bench_W": {
+   "id": "bench_W",
+   "type": "bench",
+   "facing": "W",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    2
+   ],
+   "elev": 0,
+   "z": 9,
+   "solid": [
+    3,
+    1,
+    9,
+    30
+   ],
+   "seats": [
+    {
+     "x": 7,
+     "y": 8,
+     "dir": "W"
+    },
+    {
+     "x": 7,
+     "y": 24,
+     "dir": "W"
+    }
+   ],
+   "shadow_size": [
+    32,
+    48
+   ],
+   "atlas": [
+    208,
+    48
+   ],
+   "front": [
+    64,
+    0
+   ],
+   "shadow": [
+    64,
+    48
+   ]
+  },
+  "bench_N": {
+   "id": "bench_N",
+   "type": "bench",
+   "facing": "N",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 32,
+   "h": 32,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 9,
+   "solid": [
+    1,
+    3,
+    30,
+    9
+   ],
+   "seats": [
+    {
+     "x": 23,
+     "y": 7,
+     "dir": "N"
+    },
+    {
+     "x": 7,
+     "y": 7,
+     "dir": "N"
+    }
+   ],
+   "shadow_size": [
+    48,
+    32
+   ],
+   "atlas": [
+    0,
+    192
+   ],
+   "front": [
+    144,
+    32
+   ],
+   "shadow": [
+    96,
+    128
+   ]
+  },
+  "bench_E": {
+   "id": "bench_E",
+   "type": "bench",
+   "facing": "E",
+   "group": "seating",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    2
+   ],
+   "elev": 0,
+   "z": 9,
+   "solid": [
+    4,
+    1,
+    9,
+    30
+   ],
+   "seats": [
+    {
+     "x": 8,
+     "y": 23,
+     "dir": "E"
+    },
+    {
+     "x": 8,
+     "y": 7,
+     "dir": "E"
+    }
+   ],
+   "shadow_size": [
+    32,
+    48
+   ],
+   "atlas": [
+    224,
+    48
+   ],
+   "front": [
+    80,
+    0
+   ],
+   "shadow": [
+    96,
+    48
+   ]
+  },
+  "side_table_S": {
+   "id": "side_table_S",
+   "type": "side_table",
+   "facing": "S",
+   "group": "tables",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 10,
+   "solid": [
+    3,
+    5,
+    10,
+    8
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    128,
+    272
+   ],
+   "shadow": [
+    128,
+    288
+   ]
+  },
+  "bookshelf_S": {
+   "id": "bookshelf_S",
+   "type": "bookshelf",
+   "facing": "S",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 30,
+   "solid": [
+    1,
+    3,
+    14,
+    5
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    240,
+    48
+   ],
+   "shadow": [
+    160,
+    288
+   ]
+  },
+  "bookshelf_W": {
+   "id": "bookshelf_W",
+   "type": "bookshelf",
+   "facing": "W",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 30,
+   "solid": [
+    8,
+    1,
+    5,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    0,
+    80
+   ],
+   "shadow": [
+    192,
+    288
+   ]
+  },
+  "bookshelf_N": {
+   "id": "bookshelf_N",
+   "type": "bookshelf",
+   "facing": "N",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 30,
+   "solid": [
+    1,
+    8,
+    14,
+    5
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    16,
+    96
+   ],
+   "shadow": [
+    224,
+    288
+   ]
+  },
+  "bookshelf_E": {
+   "id": "bookshelf_E",
+   "type": "bookshelf",
+   "facing": "E",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 30,
+   "solid": [
+    3,
+    1,
+    5,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    32,
+    96
+   ],
+   "shadow": [
+    0,
+    320
+   ]
+  },
+  "lamp_floor_S": {
+   "id": "lamp_floor_S",
+   "type": "lamp_floor",
+   "facing": "S",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 30,
+   "solid": [
+    4,
+    7,
+    8,
+    6
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    48,
+    96
+   ],
+   "shadow": [
+    32,
+    320
+   ]
+  },
+  "menu_stand_S": {
+   "id": "menu_stand_S",
+   "type": "menu_stand",
+   "facing": "S",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 16,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 12,
+   "z": 14,
+   "solid": null,
+   "atlas": [
+    224,
+    304
+   ]
+  },
+  "stove_S": {
+   "id": "stove_S",
+   "type": "stove",
+   "facing": "S",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    1,
+    2,
+    14,
+    13
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    144,
+    272
+   ],
+   "shadow": [
+    64,
+    320
+   ]
+  },
+  "stove_W": {
+   "id": "stove_W",
+   "type": "stove",
+   "facing": "W",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    1,
+    1,
+    13,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    160,
+    272
+   ],
+   "shadow": [
+    96,
+    320
+   ]
+  },
+  "stove_N": {
+   "id": "stove_N",
+   "type": "stove",
+   "facing": "N",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    1,
+    1,
+    14,
+    13
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    176,
+    272
+   ],
+   "shadow": [
+    128,
+    320
+   ]
+  },
+  "stove_E": {
+   "id": "stove_E",
+   "type": "stove",
+   "facing": "E",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    2,
+    1,
+    13,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    192,
+    272
+   ],
+   "shadow": [
+    160,
+    320
+   ]
+  },
+  "fridge_steel_S": {
+   "id": "fridge_steel_S",
+   "type": "fridge_steel",
+   "facing": "S",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 31,
+   "solid": [
+    1,
+    3,
+    14,
+    12
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    64,
+    96
+   ],
+   "shadow": [
+    192,
+    320
+   ]
+  },
+  "fridge_steel_W": {
+   "id": "fridge_steel_W",
+   "type": "fridge_steel",
+   "facing": "W",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 31,
+   "solid": [
+    1,
+    1,
+    12,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    80,
+    96
+   ],
+   "shadow": [
+    224,
+    320
+   ]
+  },
+  "fridge_steel_N": {
+   "id": "fridge_steel_N",
+   "type": "fridge_steel",
+   "facing": "N",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 31,
+   "solid": [
+    1,
+    1,
+    14,
+    12
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    96,
+    96
+   ],
+   "shadow": [
+    0,
+    352
+   ]
+  },
+  "fridge_steel_E": {
+   "id": "fridge_steel_E",
+   "type": "fridge_steel",
+   "facing": "E",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 31,
+   "solid": [
+    3,
+    1,
+    12,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    112,
+    96
+   ],
+   "shadow": [
+    32,
+    352
+   ]
+  },
+  "prep_table_S": {
+   "id": "prep_table_S",
+   "type": "prep_table",
+   "facing": "S",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 32,
+   "h": 32,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 14,
+   "solid": [
+    0,
+    2,
+    32,
+    14
+   ],
+   "shadow_size": [
+    48,
+    32
+   ],
+   "atlas": [
+    32,
+    192
+   ],
+   "shadow": [
+    144,
+    128
+   ]
+  },
+  "prep_table_E": {
+   "id": "prep_table_E",
+   "type": "prep_table",
+   "facing": "E",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    2
+   ],
+   "elev": 0,
+   "z": 14,
+   "solid": [
+    2,
+    0,
+    14,
+    32
+   ],
+   "shadow_size": [
+    32,
+    48
+   ],
+   "atlas": [
+    128,
+    96
+   ],
+   "shadow": [
+    128,
+    48
+   ]
+  },
+  "rack_steel_S": {
+   "id": "rack_steel_S",
+   "type": "rack_steel",
+   "facing": "S",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 30,
+   "solid": [
+    1,
+    4,
+    14,
+    10
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    144,
+    96
+   ],
+   "shadow": [
+    64,
+    352
+   ]
+  },
+  "rack_steel_W": {
+   "id": "rack_steel_W",
+   "type": "rack_steel",
+   "facing": "W",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 30,
+   "solid": [
+    2,
+    1,
+    10,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    160,
+    96
+   ],
+   "shadow": [
+    96,
+    352
+   ]
+  },
+  "rack_steel_N": {
+   "id": "rack_steel_N",
+   "type": "rack_steel",
+   "facing": "N",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 30,
+   "solid": [
+    1,
+    2,
+    14,
+    10
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    176,
+    96
+   ],
+   "shadow": [
+    128,
+    352
+   ]
+  },
+  "rack_steel_E": {
+   "id": "rack_steel_E",
+   "type": "rack_steel",
+   "facing": "E",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 30,
+   "solid": [
+    4,
+    1,
+    10,
+    14
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    192,
+    96
+   ],
+   "shadow": [
+    160,
+    352
+   ]
+  },
+  "sink_double_S": {
+   "id": "sink_double_S",
+   "type": "sink_double",
+   "facing": "S",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 32,
+   "h": 48,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 22,
+   "solid": [
+    0,
+    1,
+    32,
+    15
+   ],
+   "shadow_size": [
+    48,
+    32
+   ],
+   "atlas": [
+    160,
+    0
+   ],
+   "shadow": [
+    192,
+    128
+   ]
+  },
+  "sink_double_W": {
+   "id": "sink_double_W",
+   "type": "sink_double",
+   "facing": "W",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    2
+   ],
+   "elev": 0,
+   "z": 22,
+   "solid": [
+    0,
+    0,
+    15,
+    32
+   ],
+   "shadow_size": [
+    32,
+    48
+   ],
+   "atlas": [
+    208,
+    96
+   ],
+   "shadow": [
+    160,
+    48
+   ]
+  },
+  "sink_double_N": {
+   "id": "sink_double_N",
+   "type": "sink_double",
+   "facing": "N",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 32,
+   "h": 32,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 22,
+   "solid": [
+    0,
+    0,
+    32,
+    15
+   ],
+   "shadow_size": [
+    48,
+    32
+   ],
+   "atlas": [
+    64,
+    192
+   ],
+   "shadow": [
+    0,
+    160
+   ]
+  },
+  "sink_double_E": {
+   "id": "sink_double_E",
+   "type": "sink_double",
+   "facing": "E",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    2
+   ],
+   "elev": 0,
+   "z": 22,
+   "solid": [
+    1,
+    0,
+    15,
+    32
+   ],
+   "shadow_size": [
+    32,
+    48
+   ],
+   "atlas": [
+    224,
+    96
+   ],
+   "shadow": [
+    192,
+    48
+   ]
+  },
+  "dishwasher_S": {
+   "id": "dishwasher_S",
+   "type": "dishwasher",
+   "facing": "S",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    1,
+    16,
+    15
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    208,
+    272
+   ],
+   "shadow": [
+    192,
+    352
+   ]
+  },
+  "dishwasher_W": {
+   "id": "dishwasher_W",
+   "type": "dishwasher",
+   "facing": "W",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    0,
+    15,
+    16
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    224,
+    272
+   ],
+   "shadow": [
+    224,
+    352
+   ]
+  },
+  "dishwasher_N": {
+   "id": "dishwasher_N",
+   "type": "dishwasher",
+   "facing": "N",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    0,
+    0,
+    16,
+    15
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    240,
+    272
+   ],
+   "shadow": [
+    0,
+    384
+   ]
+  },
+  "dishwasher_E": {
+   "id": "dishwasher_E",
+   "type": "dishwasher",
+   "facing": "E",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 16,
+   "solid": [
+    1,
+    0,
+    15,
+    16
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    0,
+    288
+   ],
+   "shadow": [
+    32,
+    384
+   ]
+  },
+  "hood_S": {
+   "id": "hood_S",
+   "type": "hood",
+   "facing": "S",
+   "group": "wall",
+   "theme": "cafe",
+   "w": 32,
+   "h": 48,
+   "foot": [
+    2,
+    1
+   ],
+   "elev": 0,
+   "z": 31,
+   "solid": null,
+   "wall": "N",
+   "atlas": [
+    192,
+    0
+   ]
+  },
+  "mop_bucket_S": {
+   "id": "mop_bucket_S",
+   "type": "mop_bucket",
+   "facing": "S",
+   "group": "kitchen",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 26,
+   "solid": [
+    4,
+    7,
+    8,
+    6
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    240,
+    96
+   ],
+   "shadow": [
+    64,
+    384
+   ]
+  },
+  "toilet_S": {
+   "id": "toilet_S",
+   "type": "toilet",
+   "facing": "S",
+   "group": "restroom",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    3,
+    1,
+    10,
+    13
+   ],
+   "seats": [
+    {
+     "x": 8,
+     "y": 10,
+     "dir": "S"
+    }
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    0,
+    128
+   ],
+   "front": [
+    96,
+    0
+   ],
+   "shadow": [
+    96,
+    384
+   ]
+  },
+  "toilet_W": {
+   "id": "toilet_W",
+   "type": "toilet",
+   "facing": "W",
+   "group": "restroom",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    2,
+    3,
+    13,
+    10
+   ],
+   "seats": [
+    {
+     "x": 5,
+     "y": 8,
+     "dir": "W"
+    }
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    16,
+    288
+   ],
+   "front": [
+    48,
+    48
+   ],
+   "shadow": [
+    128,
+    384
+   ]
+  },
+  "toilet_N": {
+   "id": "toilet_N",
+   "type": "toilet",
+   "facing": "N",
+   "group": "restroom",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    3,
+    2,
+    10,
+    13
+   ],
+   "seats": [
+    {
+     "x": 7,
+     "y": 5,
+     "dir": "N"
+    }
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    32,
+    288
+   ],
+   "front": [
+    64,
+    48
+   ],
+   "shadow": [
+    160,
+    384
+   ]
+  },
+  "toilet_E": {
+   "id": "toilet_E",
+   "type": "toilet",
+   "facing": "E",
+   "group": "restroom",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    1,
+    3,
+    13,
+    10
+   ],
+   "seats": [
+    {
+     "x": 10,
+     "y": 7,
+     "dir": "E"
+    }
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    48,
+    288
+   ],
+   "front": [
+    80,
+    48
+   ],
+   "shadow": [
+    192,
+    384
+   ]
+  },
+  "washbasin_S": {
+   "id": "washbasin_S",
+   "type": "washbasin",
+   "facing": "S",
+   "group": "restroom",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    2,
+    1,
+    12,
+    10
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    16,
+    144
+   ],
+   "shadow": [
+    224,
+    384
+   ]
+  },
+  "washbasin_W": {
+   "id": "washbasin_W",
+   "type": "washbasin",
+   "facing": "W",
+   "group": "restroom",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    5,
+    2,
+    10,
+    12
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    64,
+    288
+   ],
+   "shadow": [
+    0,
+    416
+   ]
+  },
+  "washbasin_N": {
+   "id": "washbasin_N",
+   "type": "washbasin",
+   "facing": "N",
+   "group": "restroom",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    2,
+    5,
+    12,
+    10
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    80,
+    288
+   ],
+   "shadow": [
+    32,
+    416
+   ]
+  },
+  "washbasin_E": {
+   "id": "washbasin_E",
+   "type": "washbasin",
+   "facing": "E",
+   "group": "restroom",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 18,
+   "solid": [
+    1,
+    2,
+    10,
+    12
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    96,
+    288
+   ],
+   "shadow": [
+    64,
+    416
+   ]
+  },
+  "mirror_S": {
+   "id": "mirror_S",
+   "type": "mirror",
+   "facing": "S",
+   "group": "wall",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 30,
+   "solid": null,
+   "wall": "N",
+   "atlas": [
+    32,
+    144
+   ]
+  },
+  "stall_side_S": {
+   "id": "stall_side_S",
+   "type": "stall_side",
+   "facing": "S",
+   "group": "restroom",
+   "theme": "cafe",
+   "w": 16,
+   "h": 80,
+   "foot": [
+    1,
+    3
+   ],
+   "elev": 0,
+   "z": 26,
+   "solid": [
+    13,
+    0,
+    3,
+    46
+   ],
+   "shadow_size": [
+    32,
+    64
+   ],
+   "atlas": [
+    0,
+    0
+   ],
+   "shadow": [
+    0,
+    0
+   ]
+  },
+  "stall_side_E": {
+   "id": "stall_side_E",
+   "type": "stall_side",
+   "facing": "E",
+   "group": "restroom",
+   "theme": "cafe",
+   "w": 48,
+   "h": 48,
+   "foot": [
+    3,
+    1
+   ],
+   "elev": 0,
+   "z": 26,
+   "solid": [
+    0,
+    0,
+    46,
+    3
+   ],
+   "shadow_size": [
+    64,
+    32
+   ],
+   "atlas": [
+    16,
+    0
+   ],
+   "shadow": [
+    0,
+    96
+   ]
+  },
+  "stall_door_S": {
+   "id": "stall_door_S",
+   "type": "stall_door",
+   "facing": "S",
+   "group": "restroom",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 26,
+   "solid": [
+    0,
+    13,
+    16,
+    2
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    112,
+    288
+   ],
+   "shadow": [
+    96,
+    416
+   ]
+  },
+  "stall_door_open_S": {
+   "id": "stall_door_open_S",
+   "type": "stall_door_open",
+   "facing": "S",
+   "group": "restroom",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 26,
+   "solid": [
+    0,
+    3,
+    16,
+    12
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    48,
+    144
+   ],
+   "shadow": [
+    128,
+    416
+   ]
+  },
+  "hand_dryer_S": {
+   "id": "hand_dryer_S",
+   "type": "hand_dryer",
+   "facing": "S",
+   "group": "wall",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 24,
+   "solid": null,
+   "wall": "N",
+   "atlas": [
+    64,
+    144
+   ]
+  },
+  "towel_dispenser_S": {
+   "id": "towel_dispenser_S",
+   "type": "towel_dispenser",
+   "facing": "S",
+   "group": "wall",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 28,
+   "solid": null,
+   "wall": "N",
+   "atlas": [
+    80,
+    144
+   ]
+  },
+  "pendant_S": {
+   "id": "pendant_S",
+   "type": "pendant",
+   "facing": "S",
+   "group": "ceiling",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 38,
+   "solid": null,
+   "layer": "ceiling",
+   "atlas": [
+    96,
+    144
+   ]
+  },
+  "cups_stack_S": {
+   "id": "cups_stack_S",
+   "type": "cups_stack",
+   "facing": "S",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 16,
+   "z": 10,
+   "solid": null,
+   "atlas": [
+    128,
+    304
+   ]
+  },
+  "coffee_bags_S": {
+   "id": "coffee_bags_S",
+   "type": "coffee_bags",
+   "facing": "S",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 12,
+   "solid": [
+    1,
+    4,
+    14,
+    9
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    144,
+    304
+   ],
+   "shadow": [
+    160,
+    416
+   ]
+  },
+  "cake_stand_S": {
+   "id": "cake_stand_S",
+   "type": "cake_stand",
+   "facing": "S",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 16,
+   "z": 14,
+   "solid": null,
+   "atlas": [
+    160,
+    304
+   ]
+  },
+  "tip_jar_S": {
+   "id": "tip_jar_S",
+   "type": "tip_jar",
+   "facing": "S",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 16,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 16,
+   "z": 6,
+   "solid": null,
+   "atlas": [
+    240,
+    304
+   ]
+  },
+  "napkins_S": {
+   "id": "napkins_S",
+   "type": "napkins",
+   "facing": "S",
+   "group": "appliances",
+   "theme": "cafe",
+   "w": 16,
+   "h": 16,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 12,
+   "z": 5,
+   "solid": null,
+   "atlas": [
+    0,
+    320
+   ]
+  },
+  "umbrella_stand_S": {
+   "id": "umbrella_stand_S",
+   "type": "umbrella_stand",
+   "facing": "S",
+   "group": "decor",
+   "theme": "cafe",
+   "w": 16,
+   "h": 32,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 20,
+   "solid": [
+    5,
+    7,
+    6,
+    6
+   ],
+   "shadow_size": [
+    32,
+    32
+   ],
+   "atlas": [
+    176,
+    304
+   ],
+   "shadow": [
+    192,
+    416
+   ]
+  },
+  "plant_wall_S": {
+   "id": "plant_wall_S",
+   "type": "plant_wall",
+   "facing": "S",
+   "group": "wall",
+   "theme": "cafe",
+   "w": 16,
+   "h": 48,
+   "foot": [
+    1,
+    1
+   ],
+   "elev": 0,
+   "z": 28,
+   "solid": null,
+   "wall": "N",
+   "atlas": [
+    112,
+    144
+   ]
+  }
+ },
+ "tiles": {
+  "floors": {
+   "image": "tiles/floors.png",
+   "cols": 4,
+   "kinds": {
+    "wood": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "walnut": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "checker": [
+     8,
+     9,
+     10,
+     11
+    ],
+    "tile": [
+     12,
+     13,
+     14,
+     15
+    ],
+    "terracotta": [
+     16,
+     17,
+     18,
+     19
+    ],
+    "hex": [
+     20,
+     21,
+     22,
+     23
+    ]
+   }
+  },
+  "wallcap": {
+   "image": "tiles/wallcap.png",
+   "cols": 8,
+   "masks": [
+    0,
+    1,
+    4,
+    5,
+    7,
+    16,
+    17,
+    20,
+    21,
+    23,
+    28,
+    29,
+    31,
+    64,
+    65,
+    68,
+    69,
+    71,
+    80,
+    81,
+    84,
+    85,
+    87,
+    92,
+    93,
+    95,
+    112,
+    113,
+    116,
+    117,
+    119,
+    124,
+    125,
+    127,
+    193,
+    197,
+    199,
+    209,
+    213,
+    215,
+    221,
+    223,
+    241,
+    245,
+    247,
+    253,
+    255,
+    255
+   ],
+   "bits": {
+    "N": 1,
+    "NE": 2,
+    "E": 4,
+    "SE": 8,
+    "S": 16,
+    "SW": 32,
+    "W": 64,
+    "NW": 128
+   },
+   "note": "index = masks.index(reduce(mask)); the last tile is a plain fill variant"
+  },
+  "wallface": {
+   "image": "tiles/wallface.png",
+   "cols": 4,
+   "styles": [
+    "cafe",
+    "brick",
+    "tile"
+   ],
+   "layout": "per style 2 rows (upper, lower) x 4 cols (single, left end, middle, right end)"
+  },
+  "openings": {
+   "image": "tiles/openings.png",
+   "cols": 6,
+   "ids": [
+    "door_W_closed",
+    "door_W_open",
+    "door_E_closed",
+    "door_E_open",
+    "window_W",
+    "window_E"
+   ]
+  },
+  "door_S": {
+   "image": "tiles/door_S.png",
+   "cols": 4,
+   "ids": [
+    "open_L",
+    "open_R",
+    "closed_L",
+    "closed_R"
+   ]
+  },
+  "thresholds": {
+   "image": "tiles/thresholds.png",
+   "cols": 4,
+   "ids": [
+    "brass_h",
+    "brass_v",
+    "wood_h",
+    "wood_v"
+   ],
+   "note": "overlay on the floor: strip on the bottom (h) or right (v) edge of the tile"
+  }
+ },
+ "anims": {
+  "window_N": {
+   "image": "anim/window_N.png",
+   "frames": 1,
+   "w": 32,
+   "h": 32,
+   "fps": 0,
+   "place": "wall face, 2 tiles wide, covers both face rows"
+  },
+  "door_N": {
+   "image": "anim/door_N.png",
+   "frames": 4,
+   "w": 16,
+   "h": 32,
+   "fps": 12,
+   "place": "wall face, 1 tile, bottom on the floor line",
+   "states": {
+    "closed": 0,
+    "open": 3
+   }
+  },
+  "neon_open": {
+   "image": "anim/neon_open.png",
+   "frames": 8,
+   "w": 32,
+   "h": 16,
+   "fps": 6,
+   "place": "wall face, upper row"
+  },
+  "steam": {
+   "image": "anim/steam.png",
+   "frames": 6,
+   "w": 16,
+   "h": 16,
+   "fps": 8,
+   "place": "above espresso machine / cups"
+  },
+  "door_N_wc": {
+   "image": "anim/door_N_wc.png",
+   "frames": 4,
+   "w": 16,
+   "h": 32,
+   "fps": 12,
+   "place": "wall face, 1 tile, bottom on the floor line",
+   "states": {
+    "closed": 0,
+    "open": 3
+   }
+  },
+  "ceiling_fan": {
+   "image": "anim/ceiling_fan.png",
+   "frames": 4,
+   "w": 32,
+   "h": 32,
+   "fps": 12,
+   "place": "ceiling layer, drawn 40 px above its floor cell"
+  },
+  "stove_on_S": {
+   "image": "anim/stove_on_S.png",
+   "frames": 4,
+   "w": 16,
+   "h": 32,
+   "fps": 8,
+   "replaces": "stove_S",
+   "place": "swap with the object sprite when it is on"
+  },
+  "stove_on_W": {
+   "image": "anim/stove_on_W.png",
+   "frames": 4,
+   "w": 16,
+   "h": 32,
+   "fps": 8,
+   "replaces": "stove_W",
+   "place": "swap with the object sprite when it is on"
+  },
+  "stove_on_N": {
+   "image": "anim/stove_on_N.png",
+   "frames": 4,
+   "w": 16,
+   "h": 32,
+   "fps": 8,
+   "replaces": "stove_N",
+   "place": "swap with the object sprite when it is on"
+  },
+  "stove_on_E": {
+   "image": "anim/stove_on_E.png",
+   "frames": 4,
+   "w": 16,
+   "h": 32,
+   "fps": 8,
+   "replaces": "stove_E",
+   "place": "swap with the object sprite when it is on"
+  },
+  "sink_running_S": {
+   "image": "anim/sink_running_S.png",
+   "frames": 4,
+   "w": 32,
+   "h": 48,
+   "fps": 8,
+   "replaces": "sink_double_S",
+   "place": "swap with the object sprite when it is on"
+  },
+  "sink_running_W": {
+   "image": "anim/sink_running_W.png",
+   "frames": 4,
+   "w": 16,
+   "h": 48,
+   "fps": 8,
+   "replaces": "sink_double_W",
+   "place": "swap with the object sprite when it is on"
+  },
+  "sink_running_N": {
+   "image": "anim/sink_running_N.png",
+   "frames": 4,
+   "w": 32,
+   "h": 32,
+   "fps": 8,
+   "replaces": "sink_double_N",
+   "place": "swap with the object sprite when it is on"
+  },
+  "sink_running_E": {
+   "image": "anim/sink_running_E.png",
+   "frames": 4,
+   "w": 16,
+   "h": 48,
+   "fps": 8,
+   "replaces": "sink_double_E",
+   "place": "swap with the object sprite when it is on"
+  }
+ },
+ "atlases": {
+  "objects": "sprites/objects.png",
+  "shadows": "sprites/shadows.png",
+  "seat_fronts": "sprites/seat_fronts.png"
+ },
+ "maps": [
+  "maps/cafe.json",
+  "maps/cafe_full.json"
+ ]
+}

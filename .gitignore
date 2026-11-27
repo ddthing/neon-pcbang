@@ -40,9 +40,6 @@ yarn-error.log*
 /.codex/
 /outputs/
 /work/
-/public/assets/downtown/
-/public/assets/fx/
-/public/assets/foods/
 
 # OS metadata
 .DS_Store
