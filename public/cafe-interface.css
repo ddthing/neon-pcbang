@@ -84,6 +84,13 @@
   background: var(--interface-paper);
   transform: none;
 }
+.cafe-fullscreen .cafe-chat-controls.is-open .cafe-chat-drawer {
+  background: var(--interface-paper);
+  color: var(--interface-ink);
+  border: 2px solid var(--interface-border);
+  border-radius: 0;
+  box-shadow: none;
+}
 .cafe-fullscreen .cafe-chat-form input::placeholder { color: #6b5b7b; }
 .cafe-fullscreen :is(.stage-room-door, .proximity-prompt):hover { background: var(--interface-highlight); }
 .cafe-fullscreen .cafe-visitor.mine .cafe-nickname {
@@ -92,7 +99,7 @@
 }
 .cafe-fullscreen :is(.hud-icon-row, .game-view-actions, .hud-chat-pill) svg { color: currentColor; }
 
-.cafe-fullscreen :is(#floor-kiosk, #avatar-wardrobe, #snacks, #pc-desktop, #cafe-menu) {
+.cafe-fullscreen :is(#floor-kiosk, #avatar-wardrobe, #snacks, #snack-board, #snack-coupon, #snack-gift, #pc-desktop, #cafe-menu) {
   border: 2px solid var(--interface-border);
   border-radius: 0;
   box-shadow: none;
@@ -188,6 +195,7 @@
   transform: translateX(-50%);
   padding: 3px 6px;
   border: 2px solid #5c4742;
+  border-image: url("./assets/original/cream-frame.png") 2 fill stretch;
   background: #f7efe5;
   color: #5c4742;
   font-size: 11px;
@@ -281,6 +289,9 @@
   .cafe-fullscreen .game-view-actions { display: flex; flex-wrap: wrap; }
   .cafe-fullscreen .relax-hud:not([hidden]) {
     bottom: max(109px, calc(102px + env(safe-area-inset-bottom)));
+  }
+  .cafe-fullscreen:has(.relax-hud:not([hidden])) #cafe-chat-controls {
+    bottom: calc(230px + env(safe-area-inset-bottom));
   }
   .cafe-fullscreen .scene-viewport .cafe-joystick { display: none; }
 }

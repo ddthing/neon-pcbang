@@ -217,7 +217,6 @@ export function initArcade() {
         }
         updateHud();
         if (!bricks.length) {
-          window.recordCafeStamp?.("game");
           window.cafeEarnPoints?.(25, `벽돌깨기 라운드 ${round} 클리어`);
           submitArcadeScore("arcade", score, { metric: `R${round}` });
           setState("next", "다음 라운드", "라운드 클리어! 아이템과 함께 다음 스테이지로 가요.");
@@ -245,7 +244,6 @@ export function initArcade() {
       combo = 0;
       updateHud();
       if (lives === 0) {
-        window.recordCafeStamp?.("game");
         if (score >= 120) submitArcadeScore("arcade", score, { metric: `R${round}` });
         setState("finished", "다시 도전", `게임 끝! 최종 ${score}점`);
       } else {
@@ -447,7 +445,6 @@ export function initMines() {
     state = next;
     status.textContent = message;
     syncClock();
-    window.recordCafeStamp?.("game");
     if (next === "won") {
       window.cafeAudioPlay?.("chime");
       const bonus = currentTierKey === "hard" ? 55 : currentTierKey === "medium" ? 35 : 20;

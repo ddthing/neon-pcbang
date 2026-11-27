@@ -258,7 +258,6 @@ export function initKnitUnravel() {
     if (isKnitWon(game) && !wonHandled) {
       wonHandled = true;
       window.cafeAudioPlay?.("chime");
-      window.recordCafeStamp?.("game");
       statusEl.textContent = `🎉 ${game.stage}단계 「${game.patternName}」 완성! (+${game.score}점)`;
       submitArcadeScore("knit", game.score, { mode: `stage${game.stage}`, metric: `${game.stage}탄 ${doneRatio}%` });
     } else if (!wonHandled && isKnitStuck(game)) {

@@ -197,7 +197,6 @@ export function initBungeoppang() {
     startBtn.textContent = "다시 장사 시작";
     if (finished) {
       statusEl.textContent = `영업 종료! 총 ${servedCount}명 서빙 · ${score.toLocaleString()}점 달성!`;
-      window.recordCafeStamp?.("game");
       if (score >= 240) window.cafeEarnPoints?.(Math.min(60, 15 + Math.floor(score / 200)), "붕어빵 포차 알바");
       submitArcadeScore("bungeoppang", score, { metric: `${servedCount}봉투 완판` });
     }
@@ -373,7 +372,6 @@ export function initSnackTycoon() {
     startBtn.textContent = "알바 다시 시작";
     if (finished) {
       statusEl.textContent = `교대 시간! 총 ${delivered}건 배달 · ${score.toLocaleString()}점 달성!`;
-      window.recordCafeStamp?.("game");
       if (score >= 250) window.cafeEarnPoints?.(Math.min(60, 15 + Math.floor(score / 220)), "알바냥 매점 러시");
       submitArcadeScore("tycoon", score, { metric: `${delivered}건 조리` });
     }

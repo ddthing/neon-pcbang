@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { crc32, deflateSync } from "node:zlib";
+import { BUILTIN_AVATAR_CODES, drawAvatarSheet, drawClerkSheet } from "../public/avatar-sprites.js";
 
 const colors = {
   i: "5c4742", d: "6b5b7b", s: "9785aa", v: "c8b6e2", l: "e6d9f0",
@@ -49,7 +50,7 @@ function png({ width, height, pixels }) {
   ]);
 }
 
-const hardware = image(112, 32);
+const hardware = image(128, 32);
 const frontMonitor = `
 .iiiiiiiiiiiiiiiii.
 ilvvvvvvvvvvvvvvvsi
@@ -210,6 +211,16 @@ ilvvvvvvvvvvvssvvsi
 ....iiiiiiiiii.....
 `);
 stamp(hardware, 103, 9, mainTower);
+
+stamp(hardware, 112, 3, `
+................
+................
+....iiiiiiii....
+...illttttlli...
+...iltvvtclli...
+....illnclli....
+.....iiiiii.....
+`);
 
 const partitions = image(64, 16);
 const glass = `
@@ -436,9 +447,45 @@ const root = new URL("../public/assets/original/", import.meta.url);
 await mkdir(new URL("food/", root), { recursive: true });
 await writeFile(new URL("workstations.png", root), png(hardware));
 await writeFile(new URL("partitions.png", root), png(partitions));
+const creamFrame = image(16, 16);
+fill(creamFrame, 0, 0, 16, 16, "i");
+fill(creamFrame, 2, 2, 12, 12, "w");
+await writeFile(new URL("cream-frame.png", root), png(creamFrame));
 await writeFile(new URL("skyline.png", root), png(skyline));
 for (const [id, layers] of Object.entries(recipes)) {
   const icon = image(16, 16);
   for (const layer of layers) stamp(icon, ...layer);
   await writeFile(new URL("food/" + id + ".png", root), png(icon));
+}
+
+async function writeCharacterAtlas(name, draw) {
+  let bitmap;
+  const canvas = {
+    width: 0,
+    height: 0,
+    getContext() {
+      bitmap = image(this.width, this.height);
+      let color;
+      return {
+        set fillStyle(value) {
+          const rgb = value.startsWith("#") ? Buffer.from(value.slice(1), "hex") : value.match(/\d+/g).map(Number);
+          color = [...rgb, 255];
+        },
+        fillRect(x, y, w, h) {
+          for (let row = y; row < y + h; row++) {
+            for (let col = x; col < x + w; col++) bitmap.pixels.set(color, (row * bitmap.width + col) * 4);
+          }
+        },
+      };
+    },
+  };
+  draw(canvas);
+  await writeFile(new URL(name + ".png", charRoot), png(bitmap));
+}
+
+const charRoot = new URL("../public/assets/chars/", import.meta.url);
+await mkdir(charRoot, { recursive: true });
+await writeCharacterAtlas("clerk", drawClerkSheet);
+for (const code of BUILTIN_AVATAR_CODES) {
+  await writeCharacterAtlas(code, canvas => drawAvatarSheet(canvas, code));
 }

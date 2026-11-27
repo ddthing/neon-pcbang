@@ -4,9 +4,9 @@
 export const AVATAR_WARDROBE = {
   skins: [
     { id: 0, name: "사람", species: "human", base: "#ffd8be", hi: "#ffefe4", shade: "#e0a587", muzzle: "#ffd8be", iris: "#593b33" },
-    { id: 1, name: "고양이", species: "cat", base: "#fff4e8", hi: "#ffffff", shade: "#dec8c2", muzzle: "#ffffff", iris: "#4f7c6b" },
+    { id: 1, name: "고양이", species: "cat", base: "#fff4e8", hi: "#f7efe5", shade: "#dec8c2", muzzle: "#f7efe5", iris: "#4f7c6b" },
     { id: 2, name: "곰", species: "bear", base: "#d99d6a", hi: "#f0be90", shade: "#a86f44", muzzle: "#fff1de", iris: "#3d2824" },
-    { id: 3, name: "토끼", species: "bunny", base: "#fff6f6", hi: "#ffffff", shade: "#ebd0d8", muzzle: "#ffffff", iris: "#b5526c" },
+    { id: 3, name: "토끼", species: "bunny", base: "#fff6f6", hi: "#f7efe5", shade: "#ebd0d8", muzzle: "#f7efe5", iris: "#b5526c" },
     { id: 4, name: "쥐", species: "mouse", base: "#e2dde6", hi: "#f7f5fa", shade: "#b3abbf", muzzle: "#fff7fc", iris: "#47374f" },
     { id: 5, name: "기린", species: "giraffe", base: "#f5cc62", hi: "#ffe699", shade: "#c9963a", muzzle: "#fff3d6", iris: "#593b29" },
     { id: 6, name: "호랑이", species: "tiger", base: "#f2914b", hi: "#ffb87a", shade: "#bd5d28", muzzle: "#fff4e6", iris: "#8f4722" },
@@ -34,7 +34,7 @@ export const AVATAR_WARDROBE = {
     { id: 2, name: "체크 멜빵바지", body: "#5f85ad", hi: "#84a9cf", sub: "#3f5d7d", accent: "#fff5eb", tie: "#f2c663" },
     { id: 3, name: "스트라이프 니트", body: "#f0c360", hi: "#ffe39c", sub: "#bf8c34", accent: "#fff7ec", tie: "#ad475e" },
     { id: 4, name: "바시티 과잠", body: "#628c68", hi: "#86b38b", sub: "#3e5e44", accent: "#fff3e6", tie: "#e36d86" },
-    { id: 5, name: "크림 세일러", body: "#fff2e4", hi: "#ffffff", sub: "#d9c2c6", accent: "#5278a3", tie: "#e36d86" },
+    { id: 5, name: "크림 세일러", body: "#fff2e4", hi: "#f7efe5", sub: "#d9c2c6", accent: "#5278a3", tie: "#e36d86" },
     { id: 6, name: "데님 자켓", body: "#597aa1", hi: "#7c9fc7", sub: "#3a5473", accent: "#f7e0c8", tie: "#d98f5f" },
     { id: 7, name: "곰돌이 파자마", body: "#f5b8c8", hi: "#ffd9e4", sub: "#cc8699", accent: "#fff5f7", tie: "#ffdf85" },
   ],
@@ -96,7 +96,8 @@ const PINK = "#f4c2d7";
 const LAVENDER = "#c8b6e2";
 const spriteCache = new Map();
 const serviceActions = ["idle", "cook", "plate", "lift", "carry", "serve", "walk"];
-let clerkSheetUrl;
+export const BUILTIN_AVATAR_CODES = new Set(Array.from({ length: 16 }, (_, seed) =>
+  encodeAvatarCode(normalizeAvatarCode(null, seed))));
 const head = [
   "....oooooooo....",
   "...o########o...",
@@ -230,11 +231,8 @@ function drawChibiFrame(ctx, ox, oy, cfg, dir, action, frame) {
   }
 }
 
-export function getAvatarSheetUrl(avatarCode, fallbackColor = 0) {
-  const cfg = normalizeAvatarCode(avatarCode, fallbackColor);
-  const key = encodeAvatarCode(cfg);
-  if (spriteCache.has(key)) return spriteCache.get(key);
-  const canvas = document.createElement("canvas");
+export function drawAvatarSheet(canvas, avatarCode) {
+  const cfg = normalizeAvatarCode(avatarCode);
   canvas.width = WIDTH * 7;
   canvas.height = HEIGHT * 13;
   const ctx = canvas.getContext("2d");
@@ -259,29 +257,36 @@ export function getAvatarSheetUrl(avatarCode, fallbackColor = 0) {
     draw(frame, 12, "down", "eat", frame);
   }
   for (let frame = 0; frame < 3; frame++) draw(frame + 4, 11, "down", "sit-transition", frame);
-  const url = canvas.toDataURL("image/png");
-  spriteCache.set(key, url);
-  return url;
+}
+
+export function getAvatarSheetUrl(avatarCode, fallbackColor = 0) {
+  const key = encodeAvatarCode(normalizeAvatarCode(avatarCode, fallbackColor));
+  if (BUILTIN_AVATAR_CODES.has(key)) return "./assets/chars/" + key + ".png";
+  if (!spriteCache.has(key)) {
+    const canvas = document.createElement("canvas");
+    drawAvatarSheet(canvas, key);
+    spriteCache.set(key, canvas.toDataURL("image/png"));
+  }
+  return spriteCache.get(key);
+}
+
+export function drawClerkSheet(canvas) {
+  canvas.width = WIDTH * 4;
+  canvas.height = HEIGHT * serviceActions.length;
+  const ctx = canvas.getContext("2d");
+  const clerk = normalizeAvatarCode("100040");
+  serviceActions.forEach((pose, row) => {
+    for (let frame = 0; frame < 4; frame++) {
+      drawChibiFrame(ctx, frame * WIDTH, row * HEIGHT, clerk, pose === "idle" ? "down" : "left", pose, frame);
+    }
+  });
 }
 
 export function createClerkSprite(action = "idle") {
-  if (!clerkSheetUrl) {
-    const canvas = document.createElement("canvas");
-    canvas.width = WIDTH * 4;
-    canvas.height = HEIGHT * serviceActions.length;
-    const ctx = canvas.getContext("2d");
-    const clerk = normalizeAvatarCode("100040");
-    serviceActions.forEach((pose, row) => {
-      for (let frame = 0; frame < 4; frame++) {
-        drawChibiFrame(ctx, frame * WIDTH, row * HEIGHT, clerk, pose === "idle" ? "down" : "left", pose, frame);
-      }
-    });
-    clerkSheetUrl = canvas.toDataURL("image/png");
-  }
   const sprite = document.createElement("span");
   sprite.className = "cafe-clerk-sprite";
   sprite.setAttribute("aria-hidden", "true");
-  sprite.style.setProperty("--clerk-art", 'url("' + clerkSheetUrl + '")');
+  sprite.style.setProperty("--clerk-art", 'url("./assets/chars/clerk.png")');
   sprite.style.setProperty("--clerk-pose", (Math.max(0, serviceActions.indexOf(action)) / (serviceActions.length - 1) * 100) + "%");
   return sprite;
 }

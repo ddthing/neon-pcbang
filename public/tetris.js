@@ -211,7 +211,6 @@ export function initTetris() {
     cancelAnimationFrame(raf);
     actionBtn.textContent = "다시 시작";
     statusEl.textContent = `게임 오버! 최종 ${score.toLocaleString()}점 (${lines}줄)`;
-    window.recordCafeStamp?.("game");
     if (score >= 300) window.cafeEarnPoints?.(Math.min(50, 15 + Math.floor(score / 400)), "테트리스 플레이");
     submitArcadeScore("tetris", score, { metric: `${lines}줄 · Lv.${level}` });
   }

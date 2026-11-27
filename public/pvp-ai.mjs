@@ -1,26 +1,7 @@
 // Pure Tactical AI Engine for Omok (15x15 Split-Pattern + 2-Ply Alpha-Beta) & Alkkagi (Physics Lookahead)
 
-const SIZE = 15;
-const DIRS = [[0, 1], [1, 0], [1, 1], [1, -1]];
-
-export function hasFiveInARow(board, index, stone) {
-  const r0 = Math.floor(index / SIZE);
-  const c0 = index % SIZE;
-  for (const [dr, dc] of DIRS) {
-    let count = 1;
-    for (const s of [-1, 1]) {
-      let r = r0 + dr * s;
-      let c = c0 + dc * s;
-      while (r >= 0 && r < SIZE && c >= 0 && c < SIZE && board[r * SIZE + c] === stone) {
-        count++;
-        r += dr * s;
-        c += dc * s;
-      }
-    }
-    if (count >= 5) return true;
-  }
-  return false;
-}
+import { OMOK_SIZE as SIZE, OMOK_DIRECTIONS as DIRS, hasFiveInARow, omokForbiddenMove } from "./omok-rules.mjs";
+export { hasFiveInARow };
 
 function lineSignature(board, r0, c0, dr, dc, stone) {
   // Scan window [-4..+4] centered at (r0, c0) assuming board[r0, c0] = stone
@@ -109,18 +90,19 @@ function getCandidateCells(board) {
   return out;
 }
 
-export function chooseOmokAiMove(board, difficulty = "hard", aiStone = 2) {
+export function chooseOmokAiMove(board, difficulty = "hard", aiStone = 2, restrictWhite = false) {
   const humanStone = aiStone === 2 ? 1 : 2;
-  const candidates = getCandidateCells(board);
-  if (!candidates.length) return 112;
+  const legal = (idx) => !omokForbiddenMove(board, idx, aiStone, restrictWhite);
+  const candidates = getCandidateCells(board).filter(legal);
+  if (!candidates.length) return board.findIndex((stone, idx) => stone === 0 && legal(idx));
   if (candidates.length === 1 && board[112] === 0) return 112;
 
   // Immediate forced win / block check (all levels check obvious 5-in-a-row)
   for (const idx of candidates) {
-    if (hasFiveInARow(board, idx, aiStone)) return idx;
+    if (hasFiveInARow(board, idx, aiStone, restrictWhite)) return idx;
   }
   for (const idx of candidates) {
-    if (hasFiveInARow(board, idx, humanStone)) return idx;
+    if (hasFiveInARow(board, idx, humanStone, restrictWhite)) return idx;
   }
 
   // Rank candidates by combined tactical attack + defense value
@@ -154,7 +136,8 @@ export function chooseOmokAiMove(board, difficulty = "hard", aiStone = 2) {
     // Opponent's immediate win or highest threat after our move
     let oppMax = 0;
     for (const oIdx of nextCands) {
-      if (hasFiveInARow(simBoard, oIdx, humanStone)) {
+      if (omokForbiddenMove(simBoard, oIdx, humanStone, restrictWhite)) continue;
+      if (hasFiveInARow(simBoard, oIdx, humanStone, restrictWhite)) {
         oppMax = 1_500_000;
         break;
       }

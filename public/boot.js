@@ -18,12 +18,10 @@
   room.inert = true;
   paint(15, "매장 준비 중");
   let ready = false;
-  const world = new Promise((resolve) => document.addEventListener("cafe-ready", resolve, { once: true }));
-  const art = (window.cafeArt ? Promise.resolve() : new Promise((resolve) => {
-    const hall = document.getElementById("lobby-art");
-    hall.src ||= hall.dataset.src;
-    hall.decode().then(resolve, resolve);
-  })).then(() => {
+  const waitFor = (event, loaded) => loaded ? Promise.resolve() :
+    new Promise(resolve => document.addEventListener(event, resolve, { once: true }));
+  const world = waitFor("cafe-ready", window.cafeWorld);
+  const art = waitFor("cafe-art-ready", document.querySelector(".scene[data-art-ready]")).then(() => {
     if (!ready) paint(82, "문을 열고 있어요");
   });
   let timeout;

@@ -1,3 +1,4 @@
+import { formatCafeTime } from "./cafe-clock.mjs";
 import "./cafe-layout.js";
 import "./cafe-art.js";
 import { LANDMARKS, ROOMS, SEATS, center, seatCode, seatFor, toPercent } from "./cafe-map.mjs";
@@ -98,10 +99,6 @@ const floorSelect = $("#floor-select");
 const floorSeats = new Map();
 const floorOptions = [];
 const desktop = $("#pc-desktop");
-const monitorLayer = $("#monitor-layer");
-const roomsArtwork = $("#rooms-art");
-const boothArtwork = $("#booth-art");
-const terraceArtwork = $("#terrace-art");
 const relaxHud = $("#relax-hud");
 const journeyProgress = $("#seat-journey");
 const journeyLabel = $("#seat-journey-label");
@@ -109,7 +106,6 @@ const journeyStatus = $("#seat-journey-status");
 const journeySteps = [...journeyProgress.querySelectorAll("[data-phase]")];
 
 let selectedSeat = null;
-let poweredMonitor = null;
 let desktopReturnFocus;
 let occupiedSeats = new Set();
 let awaySeats = new Set();
@@ -122,66 +118,9 @@ function isSeated() {
   return Boolean(room.space) && (!seatJourney || seatJourney.phase === "booting");
 }
 
-function renderMonitorPower(spaceId) {
-  if (window.cafeArt) {
-    const key = isSeated() && spaceId === "hall" && !activeBreakZone ? room.space + ":" + room.seat : null;
-    const panel = key && window.cafeArt.screen(key);
-    const away = new Set(awaySeats);
-    if (key && activeBreakZone) away.add(key);
-    window.cafeArt.updateScreens(key, occupiedSeats, away);
-    if (!panel) {
-      poweredMonitor = null;
-      monitorLayer.replaceChildren();
-      return;
-    }
-    const anchor = poweredMonitor?.dataset.seat === key ? poweredMonitor : document.createElement("span");
-    anchor.className = "pc-screen";
-    anchor.dataset.seat = key;
-    for (const [name, value] of Object.entries({ x: panel.x, y: panel.y,
-      "screen-width": panel.w, "screen-height": panel.h })) {
-      anchor.style.setProperty("--" + name, value + "%");
-    }
-    poweredMonitor = anchor;
-    if (anchor.parentElement !== monitorLayer) monitorLayer.replaceChildren(anchor);
-    return;
-  }
-  if (spaceId === "booth" || spaceId === "terrace") {
-    monitorLayer.hidden = true;
-    return;
-  }
-  monitorLayer.hidden = false;
-  if (monitorLayer.dataset.space !== spaceId) {
-    monitorLayer.dataset.space = spaceId;
-    const groups = spaceId === "hall"
-      ? ["hall", "hall-solo", "hall-duo", "hall-team", "hall-squad"] : [spaceId];
-    const scale = spaceId === "hall" ? 1 : 2;
-    const panels = groups.flatMap((group) => cafeScreenShapes[group].map((points, index) =>
-      [group.replace("hall-", "") + ":" + index, points]));
-    monitorLayer.replaceChildren(...panels.map(([key, points]) => {
-      const xs = points.map(([x]) => x), ys = points.map(([, y]) => y);
-      const x = Math.min(...xs), y = Math.min(...ys);
-      const width = Math.max(...xs) - x, height = Math.max(...ys) - y;
-      const screen = document.createElement("span");
-      screen.className = "pc-screen";
-      screen.dataset.seat = key;
-      screen.style.setProperty("--x", x * scale / 15.36 + "%");
-      screen.style.setProperty("--y", y * scale / 10.24 + "%");
-      screen.style.setProperty("--screen-width", width * scale / 15.36 + "%");
-      screen.style.setProperty("--screen-height", height * scale / 10.24 + "%");
-      screen.style.setProperty("--screen-outline", "polygon(" + points.map(([px, py]) =>
-        ((px - x) / width * 100).toFixed(2) + "% " + ((py - y) / height * 100).toFixed(2) + "%").join(",") + ")");
-      return screen;
-    }));
-  }
-  poweredMonitor = isSeated() && room.space === spaceId ? monitorLayer.children[room.seat] : null;
-  const myAway = Boolean(activeBreakZone) && isSeated();
-  for (const screen of monitorLayer.children) {
-    const key = screen.dataset.seat;
-    const isOn = screen === poweredMonitor || occupiedSeats.has(key);
-    const isAway = (screen === poweredMonitor && myAway) || awaySeats.has(key);
-    screen.classList.toggle("is-on", isOn);
-    screen.classList.toggle("is-away", isAway);
-  }
+function renderMonitorPower() {
+  const key = isSeated() && !activeBreakZone ? room.space + ":" + room.seat : null;
+  window.cafeArt.updateScreens(key, occupiedSeats, awaySeats);
 }
 
 function openDesktop(fromSeat = false) {
@@ -189,12 +128,11 @@ function openDesktop(fromSeat = false) {
   if (activeBreakZone) {
     window.cafeWorld?.exitRelaxZone?.();
   }
-  if (!poweredMonitor) return;
-  if (fromSeat) poweredMonitor.scrollIntoView({ block: "nearest" });
+  if (!isSeated()) return;
   desktopReturnFocus = fromSeat ? $("#seat-marker") : document.activeElement;
   window.prepareCafeWallpaper?.();
   setLauncherOpen(false);
-  openCafeWindow(desktop, poweredMonitor);
+  openCafeWindow(desktop, desktopReturnFocus);
   $("#pc-title").focus({ preventScroll: true });
 }
 
@@ -332,7 +270,7 @@ function renderRoom() {
   }
   renderSeatJourney();
   renderRelaxHud();
-  renderMonitorPower(area);
+  renderMonitorPower();
 
   const marker = $("#seat-marker");
   marker.hidden = !seated || Boolean(seatJourney) || Boolean(activeBreakZone);
@@ -680,7 +618,6 @@ $("#enter").addEventListener("click", async () => {
     }
     seatJourney = null;
     renderRoom();
-    window.recordCafeStamp("seat");
     openDesktop(true);
     if (!desktop.open) $("#kiosk-title").focus();
   } catch {
@@ -1041,12 +978,6 @@ $("#timer-reset").addEventListener("click", () => {
 });
 window.addEventListener("pagehide", closeFocusAudio);
 
-const localTime = new Intl.DateTimeFormat("ko-KR", {
-  timeZone: "Asia/Seoul",
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23"
-});
 let lastClock;
 let clockTimeout;
 function scheduleClock() {
@@ -1060,7 +991,7 @@ function scheduleClock() {
 }
 
 function tick() {
-  const time = localTime.format(new Date());
+  const time = formatCafeTime(new Date());
   if (time !== lastClock) {
     $("#clock").textContent = time;
     $("#pc-clock").textContent = time;
@@ -1144,7 +1075,7 @@ window.cafeSeating = {
   label(key) { return floorSeats.get(key)?.code ?? null; },
   chair(key) {
     const seat = seatFor(key);
-    return seat && { ...toPercent(seat.foot), direction: seat.direction, stand: toPercent(seat.stand) };
+    return seat && { ...toPercent(seat.foot), direction: window.cafeArt.chairDirection(seat), stand: toPercent(seat.stand) };
   },
   trayPosition(key) { return window.cafeArt.tray(key); },
   position(key) {
@@ -1154,8 +1085,7 @@ window.cafeSeating = {
   refresh(keys, peerList = []) {
     occupiedSeats = new Set(keys);
     awaySeats = new Set(peerList.filter((p) => p.seat && (p.zone === "booth" || p.zone === "terrace")).map((p) => p.seat));
-    const space = $(".scene").dataset.space;
-    renderMonitorPower(space === "lobby" ? "hall" : space);
+    renderMonitorPower();
     if (floor.open) renderFloorSelection();
   },
   lose(key) {
@@ -1166,7 +1096,6 @@ window.cafeSeating = {
 };
 document.addEventListener("cafe-art-ready", renderRoom, { once: true });
 renderRoom();
-if (room.space) window.recordCafeStamp("seat");
 renderTimer();
 tick();
 document.addEventListener("visibilitychange", () => {

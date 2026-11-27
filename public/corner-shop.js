@@ -17,7 +17,8 @@ const storage = {
 };
 const member = storage.get("localStorage", "corner-cafe-member") || crypto.randomUUID();
 storage.set("localStorage", "corner-cafe-member", member);
-const currentSeat = () => !seating.phase() && seating.current();
+const currentSeat = () => !seating.phase() && !window.cafeWorld?.isOnBreak() && seating.current();
+window.cafeIsRegular = () => Boolean(data && data.loyalty.totalStamps >= data.loyalty.couponStamps);
 const setText = (node, value) => { if (node) { const text = String(value); if (node.textContent !== text) node.textContent = text; } };
 const lineText = (items) => items.map(({ name, count, options }) =>
   name + (Array.isArray(options) && options.length ? `(${options.join(",")})` : "") + " × " + count).join(" · ");
@@ -565,6 +566,7 @@ function updateCoupon() {
   if (!data) return;
   const { today, total, claimed, balance, threshold, couponStamps } = data.loyalty;
   const progress = Math.min(balance, couponStamps);
+  setText($("#loyalty-summary"), progress + " / " + couponStamps);
   setText($("#coupon-time"), "오늘 " + duration(today) + " / " + duration(threshold) + " · 누적 " + duration(total));
   claim.disabled = sending || stamping || claimed || today < threshold;
   setText(claim, claimed ? "오늘 도장 받았어요" : "오늘 도장 받기 (+50G)");
@@ -594,7 +596,7 @@ function stamp(index) {
 
 function currentOrder() {
   const seat = currentSeat();
-  return seat && order?.seat === seat ? order : null;
+  return seat && order?.seat === seat && !order.released ? order : null;
 }
 
 function notifyCurrentDelivery() {
@@ -633,7 +635,9 @@ function updateOwnOrder(incoming, now) {
 
 function applyData(result, animateStamp = false, rejectedOrder = false) {
   const previousBalance = data?.loyalty.balance ?? 0;
+  const wasRegular = window.cafeIsRegular();
   data = result;
+  if (wasRegular !== window.cafeIsRegular()) document.dispatchEvent(new Event("cafe-regular"));
   clockOffset = result.now - Date.now();
   if (animateStamp && result.loyalty.claimed && result.loyalty.balance > previousBalance) stamp(previousBalance);
   if (Object.hasOwn(result, "order") && !(rejectedOrder && !result.order)) updateOwnOrder(result.order, result.now);

@@ -1,6 +1,7 @@
 // Seat-to-Seat Real-Time Multiplayer Arena (Omok 15x15 & Alkkagi Physics + Cat Clerk AI)
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
-import { chooseAlkkagiAiShot, chooseOmokAiMove, hasFiveInARow } from "./pvp-ai.mjs";
+import { chooseAlkkagiAiShot, chooseOmokAiMove } from "./pvp-ai.mjs";
+import { hasFiveInARow, omokForbiddenMove } from "./omok-rules.mjs";
 
 function stepLocalAlkkagi(stonesInput, stoneId, rawVx, rawVy) {
   const R = 4.2;
@@ -56,6 +57,10 @@ export function initPvp() {
   const statusEl = document.getElementById("pvp-status");
   const roomsList = document.getElementById("pvp-rooms");
   const modeSelect = document.getElementById("pvp-game-type");
+  const whiteRule = document.getElementById("pvp-restrict-white");
+  modeSelect.addEventListener("change", () => {
+    whiteRule.parentElement.hidden = modeSelect.value !== "omok";
+  });
   const aiLevelSelect = document.getElementById("pvp-ai-level");
   const seatInviteSelect = document.getElementById("pvp-invite-seat");
   const createBtn = document.getElementById("pvp-create");
@@ -111,7 +116,6 @@ export function initPvp() {
   function recordWin(gameName) {
     wins++;
     try { localStorage.setItem(winsKey, String(wins)); } catch {}
-    window.recordCafeStamp?.("game");
     window.cafeEarnPoints?.(35, "대국 승리 보너스");
     submitArcadeScore("pvp", wins, { mode: gameName, metric: `누적 ${wins}승` });
   }
@@ -136,7 +140,7 @@ export function initPvp() {
             ...[18, 34, 50, 66, 82].map((x, i) => ({ id: "g" + i, owner: "guest", x, y: i % 2 ? 22 : 18, alive: true })),
           ],
         }
-        : { size: 15, board: new Array(225).fill(0), lastMove: -1, moveCount: 0 },
+        : { size: 15, board: new Array(225).fill(0), lastMove: -1, moveCount: 0, restrictWhite: whiteRule.checked },
     };
     window.cafeWorld?.setActivity("game:pvp");
     statusEl.textContent = game === "alkkagi"
@@ -151,12 +155,20 @@ export function initPvp() {
     setTimeout(() => {
       if (mode !== "ai" || !activeMatch || activeMatch.status !== "playing") return;
       if (activeMatch.game === "omok") {
-        const idx = chooseOmokAiMove(activeMatch.state.board, difficulty, 2);
+        const { restrictWhite } = activeMatch.state;
+        const idx = chooseOmokAiMove(activeMatch.state.board, difficulty, 2, restrictWhite);
+        if (idx < 0) {
+          activeMatch.status = "finished";
+          activeMatch.winner = "draw";
+          statusEl.textContent = "놓을 수 있는 자리가 없어 무승부예요.";
+          drawBoard();
+          return;
+        }
         activeMatch.state.board[idx] = 2;
         activeMatch.state.lastMove = idx;
         activeMatch.state.moveCount++;
         window.cafeAudioPlay?.("tick");
-        if (hasFiveInARow(activeMatch.state.board, idx, 2)) {
+        if (hasFiveInARow(activeMatch.state.board, idx, 2, restrictWhite)) {
           activeMatch.status = "finished";
           activeMatch.winner = "guest";
           statusEl.textContent = "고양이 알바 AI 승리! 🐱 '냐하하 한 수 배웠냥!'";
@@ -390,7 +402,7 @@ export function initPvp() {
 
   createBtn.addEventListener("click", async () => {
     try {
-      const res = await api("create", { game: modeSelect.value, targetSeat: seatInviteSelect.value });
+      const res = await api("create", { game: modeSelect.value, targetSeat: seatInviteSelect.value, restrictWhite: whiteRule.checked });
       mode = "online";
       activeMatch = res.match;
       matchId = res.match.id;
@@ -452,13 +464,20 @@ export function initPvp() {
       if (r < 0 || r >= 15 || c < 0 || c >= 15) return;
       const index = r * 15 + c;
       if (activeMatch.state.board[index] !== 0) return;
+      const { restrictWhite } = activeMatch.state;
+      const stone = activeMatch.role === "host" ? 1 : 2;
+      const violation = omokForbiddenMove(activeMatch.state.board, index, stone, restrictWhite);
+      if (violation) {
+        statusEl.textContent = violation === "overline" ? "6개 이상 연속인 장목은 금수예요." : "열린 3이 두 방향 생기는 쌍삼은 금수예요.";
+        return;
+      }
 
       if (mode === "ai") {
         activeMatch.state.board[index] = 1;
         activeMatch.state.lastMove = index;
         activeMatch.state.moveCount++;
         window.cafeAudioPlay?.("tick");
-        if (hasFiveInARow(activeMatch.state.board, index, 1)) {
+        if (hasFiveInARow(activeMatch.state.board, index, 1, restrictWhite)) {
           activeMatch.status = "finished";
           activeMatch.winner = "host";
           statusEl.textContent = "🎉 오목 승리! 알바냥을 이겼어요!";

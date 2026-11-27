@@ -248,7 +248,6 @@ export function initMerge() {
       celebrate();
     }
     if (won || finished) {
-      window.recordCafeStamp("game");
       if (score >= 256) {
         submitArcadeScore("merge", score, { metric: `최대 ${Math.max(...values)}` });
       }

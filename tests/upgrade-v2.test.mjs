@@ -5,6 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { presence } from "../lib/cafe-presence.mjs";
 import { snacks } from "../lib/cafe-snacks.mjs";
+import { cafeBoard } from "../lib/cafe-board.mjs";
 import { readCafeDelivery } from "../lib/cafe-delivery.mjs";
 import { arcadeLeaderboard } from "../lib/cafe-arcade.mjs";
 import { pvpArena, simulateAlkkagiShot } from "../lib/cafe-pvp.mjs";
@@ -23,6 +24,7 @@ function makeFullV2Db() {
     "0007_world_zones_and_avatars.sql",
     "0008_snack_bar_v2.sql",
     "0009_arcade_and_pvp.sql",
+    "0010_cafe_board.sql",
   ]) {
     const raw = readFileSync(new URL(`../drizzle/${file}`, import.meta.url), "utf8");
     for (const stmt of raw.split("--> statement-breakpoint")) {
@@ -157,12 +159,22 @@ test("seated visitor keeps PC seat & tray while taking a break in Smoking Booth 
     assert.equal(bobTerrace.zone, "terrace");
     assert.equal(bobTerrace.chat.length, 0);
 
-    // Alice returns to seat and eats her tray (+15 G)
+    const awayEat = await snacks(postJson("https://pcbang.test/api/snacks", {
+      action: "eat", visitor: alice, member: aliceMember, orderId: ord.order.id,
+    }), db, menu, arrivedAt + 450);
+    assert.equal(awayEat.status, 409);
+    assert.equal((await readCafeDelivery(db, arrivedAt + 460)).trays.length, 1);
+
+    await presence(postJson("https://pcbang.test/api/presence", {
+      token: alice, name: "앨리스", action: "sync", zone: "hall", x: 55, y: 58,
+    }), db, {}, arrivedAt + 480);
     const eaten = await (await snacks(postJson("https://pcbang.test/api/snacks", {
       action: "eat", visitor: alice, member: aliceMember, orderId: ord.order.id,
     }), db, menu, arrivedAt + 500)).json();
     assert.equal(eaten.order.status, "eaten");
-    assert.equal(eaten.loyalty.points, 165);
+    const totalPrice = menu.categories.flatMap(group => group.items)
+      .filter(item => ["jjagyechi", "eolbaksa"].includes(item.id)).reduce((sum, item) => sum + item.price, 0);
+    assert.equal(eaten.loyalty.points, 150 - totalPrice + 15);
     assert.equal((await readCafeDelivery(db, arrivedAt + 600)).trays.length, 0);
   } finally {
     sqlite.close();
@@ -326,5 +338,70 @@ test("all cozy pixel sprite sheets, zone scenes, 흡연구역 labels, and cafe.h
   assert.ok(openTargets.length >= 12);
   for (const id of new Set(openTargets)) {
     assert.ok(html.includes(`id="${id}"`), `Missing dialog id="${id}" in cafe.html`);
+  }
+});
+
+test("a 45 G order charges once and is removed from the previous seat after moving", async () => {
+  const { db, sqlite } = makeFullV2Db();
+  const visitor = randomUUID(), member = randomUUID();
+  const orderId = randomUUID();
+  const reserve = (seat, now) => presence(postJson("https://pcbang.test/api/presence", {
+    token: visitor, name: "주문 검수", action: "reserve", seat, x: 50, y: 90,
+  }), db, {}, now);
+  const shop = (body, now) => snacks(postJson("https://pcbang.test/api/snacks", {
+    visitor, member, ...body,
+  }), db, menu, now).then(response => response.json());
+  try {
+    await reserve("hall:4", baseTime);
+    const order = { action: "order", id: orderId, seat: "hall:4", items: [{id: "jjagyechi", count: 1}] };
+    const [first, retry] = await Promise.all([shop(order, baseTime + 1), shop(order, baseTime + 2)]);
+    assert.equal(first.order.id, orderId);
+    assert.equal(first.order.seat, "hall:4");
+    assert.equal(first.loyalty.points, 105);
+    assert.equal(retry.loyalty.points, 105);
+    assert.equal(retry.loyalty.totalStamps, 0);
+
+    const arrival = first.order.readyAt;
+    assert.deepEqual((await readCafeDelivery(db, arrival)).trays.map(tray => tray.seat), ["hall:4"]);
+    await reserve("hall:9", arrival + 1);
+    assert.equal((await readCafeDelivery(db, arrival + 2)).trays.length, 0);
+    const current = await shop({action: "sync"}, arrival + 2);
+    assert.equal(current.order.seat, "hall:4");
+    assert.equal(current.order.released, true);
+
+    const tooExpensive = await shop({ ...order, id: randomUUID(), seat: "hall:9", items: [{id: "jjagyechi", count: 3}] }, first.order.returnAt + 5);
+    assert.equal(tooExpensive.rejected, true);
+    assert.equal(tooExpensive.reason, "insufficient_points");
+    assert.equal(tooExpensive.loyalty.points, 105);
+
+    const oldSeat = await shop({ ...order, id: randomUUID() }, first.order.returnAt + 6);
+    assert.equal(oldSeat.rejected, true);
+    assert.equal(oldSeat.loyalty.points, 105);
+  } finally {
+    sqlite.close();
+  }
+});
+
+test("board creates both kinds of posts and restricts status changes to moderators", async () => {
+  const { db, sqlite } = makeFullV2Db();
+  const base = "https://pcbang.test/api/cafe-board";
+  try {
+    for (const [kind, title] of [["suggestion", "창가 의견"], ["bug", "화면 오류"]]) {
+      const response = await cafeBoard(postJson(base, { kind, title, detail: "테스트 상세 내용" }), db, false, baseTime);
+      assert.equal(response.status, 201);
+    }
+    const initial = await cafeBoard(new Request(base + "?status=pending"), db).then(r => r.json());
+    assert.equal(initial.posts.length, 2);
+    const { id } = initial.posts.find(post => post.kind === "suggestion");
+    const change = () => postJson(base, { action: "status", id, status: "accepted" });
+    assert.equal((await cafeBoard(change(), db)).status, 403);
+    assert.equal((await cafeBoard(change(), db, true)).status, 200);
+    const accepted = await cafeBoard(new Request(base + "?status=accepted"), db, true).then(r => r.json());
+    assert.equal(accepted.admin, true);
+    assert.deepEqual(accepted.posts.map(post => post.title), ["창가 의견"]);
+    const pending = await cafeBoard(new Request(base + "?status=pending"), db).then(r => r.json());
+    assert.deepEqual(pending.posts.map(post => post.kind), ["bug"]);
+  } finally {
+    sqlite.close();
   }
 });

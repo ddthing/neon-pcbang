@@ -279,7 +279,8 @@ test("Sprite-based hall, shared layout, 16×32 avatars and wardrobe controls are
   const avatarJs = readFileSync(new URL("../public/avatar-sprites.js", import.meta.url), "utf8");
   const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
 
-  assert.match(html, /<script src="\.\/cafe-layout\.js" defer><\/script>/);
+  assert.match(html, /<script src="\.\/app\.js" type="module"><\/script>/);
+  assert.match(appJs, /import "\.\/cafe-layout\.js"/);
   assert.match(html, /<script src="\.\/pixel-tiles\.js" defer><\/script>/);
   assert.match(html, /data-landmark="entrance"/);
   assert.match(html, /id="wardrobe-rot-left"/);
@@ -291,8 +292,9 @@ test("Sprite-based hall, shared layout, 16×32 avatars and wardrobe controls are
   assert.match(cafeLayout, /window\.cafeLayout =/);
   assert.match(walkJs, /className = "wardrobe-stepper"/);
   assert.match(walkCss, /\.wardrobe-stepper/);
-  assert.match(cafeLayout, /world = \{ width: 1152, height: 768/);
-  assert.match(cafeArt, /T\.prop\(base, id/);
+  assert.match(cafeLayout, /from "\.\/cafe-map\.mjs"/);
+  assert.match(cafeArt, /T\.desk\(base, seat\)/);
+  assert.match(cafeArt, /T\.chairFront\(/);
   assert.match(pixelTiles, /downtown\/sprites\/objects\.png/);
   assert.match(pixelTiles, /ctx\.imageSmoothingEnabled = false/);
   assert.match(pixelTiles, /window\.cafePixelTiles =/);
@@ -331,7 +333,9 @@ test("Each current menu item uses a pack sprite or a tracked 16px dish sprite", 
     assert.equal(png.subarray(1, 4).toString(), "PNG");
     return [png.readUInt32BE(16), png.readUInt32BE(20)];
   };
-  assert.deepEqual(measure("assets/original/workstations.png"), [80, 32]);
+  assert.deepEqual(measure("assets/original/workstations.png"), [128, 32]);
+  assert.equal(catalog.categories.flatMap(({ items }) => items).length, 24);
+  assert.ok(dishes.every(({ price }) => Number.isInteger(price) && price >= 0));
   for (const { id } of dishes) {
     const styles = new Map();
     const node = {

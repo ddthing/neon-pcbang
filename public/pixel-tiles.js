@@ -63,16 +63,17 @@
     ...displayFoods.map((key) => loadImage(key, "foods/" + key + ".png")),
   ]);
 
-  const filters = {
-    authored: "brightness(1)",
-    floor: "sepia(.35) saturate(.43) brightness(1.25) contrast(.53)",
-    wood: "sepia(.32) saturate(.62) brightness(1.17) contrast(.76)",
-    cream: "sepia(.3) saturate(.42) brightness(1.24) contrast(.71)",
-    lavender: "sepia(.28) hue-rotate(219deg) saturate(.66) brightness(1.17) contrast(.73)",
-    rose: "sepia(.27) hue-rotate(291deg) saturate(.79) brightness(1.13) contrast(.71)",
-    mint: "sepia(.33) hue-rotate(100deg) saturate(.61) brightness(1.15) contrast(.74)",
-    food: "saturate(.74) brightness(1.08) contrast(.83)",
+  const ramps = {
+    floor: ["#c9ae97", "#dcc7b4", "#f5e5d2"],
+    margin: ["#ddd0be", "#e5d7c7", "#eee1d1"],
+    wood: [PAL.k, "#ba8e73", "#eed2b2"],
+    cream: [PAL.k, "#cbb5a4", PAL.p2],
+    lavender: [PAL.s, "#aa98c1", "#e7dafa"],
+    rose: [PAL.k, "#cb93ae", "#f6d6e4"],
+    mint: [PAL.k, "#96b9a6", "#d5ebdc"],
   };
+  const rgbRamps = Object.fromEntries(Object.entries(ramps).map(([tone, colors]) => [tone, colors.map(color =>
+    [1, 3, 5].map(offset => Number.parseInt(color.slice(offset, offset + 2), 16)))]));
   const snap = (value) => Math.round(value / TILE) * TILE;
 
   function tintedSheet(image, tone, night) {
@@ -92,7 +93,8 @@
       sourcePixels.set(source, original);
       ctx.clearRect(0, 0, sheet.width, sheet.height);
     }
-    ctx.filter = filters[tone] + (night ? " brightness(.84)" : "");
+    const ramp = rgbRamps[tone];
+    ctx.filter = tone === "food" ? "saturate(.58) brightness(1.08)" : "none";
     ctx.drawImage(source, 0, 0);
     const frame = ctx.getImageData(0, 0, sheet.width, sheet.height);
     const pixels = frame.data;
@@ -101,7 +103,15 @@
       if (!original[i + 3]) continue;
       const darkest = Math.min(original[i], original[i + 1], original[i + 2]);
       const lightest = Math.max(original[i], original[i + 1], original[i + 2]);
-      if (lightest < 35) pixels.set(outline, i);
+      const luma = original[i] * .213 + original[i + 1] * .715 + original[i + 2] * .072;
+      if (ramp) {
+        const level = Math.min(2, Math.max(0, (luma - 24) / 108));
+        const lo = Math.min(1, Math.floor(level));
+        const mix = level - lo;
+        for (let channel = 0; channel < 3; channel++) {
+          pixels[i + channel] = (ramp[lo][channel] * (1 - mix) + ramp[lo + 1][channel] * mix) * (night ? .9 : 1);
+        }
+      } else if (lightest < 35) pixels.set(outline, i);
       else if (darkest >= 247) pixels.set([247, 239, 229], i);
     }
     ctx.putImageData(frame, 0, 0);
@@ -149,7 +159,7 @@
   function marginTile() {
     const tile = document.createElement("canvas");
     tile.width = tile.height = TILE;
-    floor(tile.getContext("2d"), 0, 0, TILE, TILE);
+    blit(tile.getContext("2d"), "floors", 0, 0, TILE, TILE, 0, 0, "margin");
     return tile.toDataURL("image/png");
   }
 
@@ -205,20 +215,35 @@
     return catalog.objects[name];
   }
 
+  const seatDirections = { N: "up", S: "down", E: "right", W: "left" };
+
+  function seatObject(name, x, y) {
+    const item = catalog.objects[name];
+    const footTop = item.h - item.foot[1] * TILE;
+    return {
+      w: item.w, h: item.h,
+      seats: item.seats.map(anchor => ({ x: x + anchor.x, y: y + footTop + anchor.y + 6,
+        direction: seatDirections[anchor.dir ?? item.facing] })),
+    };
+  }
+
   function chairPosition(seat) {
-    const { w, h, seats } = chairFrame(seat.direction);
-    const anchor = seats[0];
-    return { w, h, x: seat.foot.x - anchor.x, y: seat.foot.y - (h - TILE + anchor.y) - 6 };
+    const { w, h, seats } = seatObject(chairFrame(seat.direction).id, 0, 0);
+    return { w, h, x: seat.foot.x - seats[0].x, y: seat.foot.y - seats[0].y, direction: seats[0].direction };
   }
 
   function chairFront(ctx, seat, night) {
-    const { w, h, front } = chairFrame(seat.direction);
-    blit(ctx, "fronts", ...front, w, h, 0, 0, "lavender", 1, night);
+    furnitureFront(ctx, chairFrame(seat.direction).id, "lavender", night);
+  }
+
+  function furnitureFront(ctx, name, tone, night) {
+    const { w, h, front } = catalog.objects[name];
+    blit(ctx, "fronts", ...front, w, h, 0, 0, tone, 1, night);
   }
 
   function workstation(ctx, kind, x, y, scale, night, mirror = false) {
     const frames = {
-      front: [0, 32], side: [32, 16], kiosk: [48, 16], vending: [64, 16], back: [80, 32],
+      front: [0, 32], side: [32, 16], kiosk: [48, 16], vending: [64, 16], back: [80, 32], ashtray: [112, 16],
     };
     const [sx, width] = frames[kind];
     blit(ctx, "workstations", sx, 0, width, 32, x, y, "authored", scale, night, mirror);
@@ -247,12 +272,13 @@
   }
 
   function weatherLoop(ctx, type, now, reduced) {
-    const sheet = sources[{ rain: "rain", storm: "storm", snow: "snow", clear: "leaves" }[type] ?? "leaves"];
+    const sheet = sources[{ rain: "rain", storm: "storm", snow: "snow", clear: "leaves", wind: "leaves" }[type] ?? "rain"];
     const frame = Math.floor(now / (reduced ? 350 : 125)) % 8;
     ctx.save();
-    ctx.globalAlpha = reduced ? .17 : .34;
+    const wind = type === "wind";
+    ctx.globalAlpha = wind ? (reduced ? .13 : .39) : (reduced ? .17 : .34);
     ctx.imageSmoothingEnabled = false;
-    for (let y = 0; y < ctx.canvas.height; y += 128) {
+    for (let y = wind ? 128 : 0; y < (wind ? 384 : ctx.canvas.height); y += 128) {
       for (let x = 0; x < ctx.canvas.width; x += 128) {
         if (reduced && ((x + y) / 128) % 2) continue;
         ctx.drawImage(sheet, frame * 128, 0, 128, 128, x, y, 128, 128);
@@ -269,6 +295,6 @@
 
   window.cafePixelTiles = {
     ready, PAL, snap, prop, floor, wall, windowPanel, door, chairPosition, chairFront,
-    workstation, desk, food, weatherLoop, animation, marginTile, partition, rug, skyline,
+    workstation, desk, seatObject, furnitureFront, food, weatherLoop, animation, marginTile, partition, rug, skyline,
   };
 })();

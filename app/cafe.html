@@ -15,8 +15,6 @@
   <link rel="stylesheet" href="./pc.css">
   <link rel="stylesheet" href="./merge.css">
   <link rel="stylesheet" href="./walk.css">
-  <link rel="stylesheet" href="./weather.css">
-  <link rel="stylesheet" href="./ambience.css">
   <link rel="stylesheet" href="./game-shell.css">
   <link rel="stylesheet" href="./lucian-corner.css">
   <link rel="stylesheet" href="./corner-shop.css">
@@ -28,15 +26,12 @@
   <script src="./boot.js" defer></script>
   <script src="./audio-engine.js" defer></script>
   <script src="./lucian-motion.js" defer></script>
-  <script src="./visit.js" defer></script>
-  <script src="./cafe-screen-shapes.js" defer></script>
   <script src="./app.js" type="module"></script>
   <script src="./wallpaper.js" defer></script>
   <script src="./chat.js" type="module"></script>
   <script src="./cafe-delivery.js" type="module"></script>
   <script src="./walk.js" type="module"></script>
   <script src="./weather.js" type="module"></script>
-  <script src="./ambience.js" type="module"></script>
   <script src="./corner-shop.js" type="module"></script>
   <script src="./cafe-board.js" type="module"></script>
   <title>길모퉁이PC방 · 우리 동네 픽셀 PC방</title>
@@ -129,14 +124,6 @@
         </nav>
         <div class="scene-viewport">
           <div class="scene" data-space="lobby" tabindex="0" aria-label="매장 이동 화면. 방향키 또는 W A S D로 움직이세요.">
-            <img id="lobby-art" data-src="./pcbang-cozy-hall.png" width="1536" height="1024" draggable="false" alt="우드 바닥의 포근한 픽셀 아트 PC방에 1인·2인·5인·6인 게임룸, 오픈키친 매점, 실내 흡연구역, 야외 흡연구역이 보이는 모습" hidden>
-            <img id="rooms-art" data-src="./pcbang-rooms-pixel.png" width="1536" height="1024" draggable="false" alt="" hidden>
-            <img id="booth-art" data-src="./pcbang-smoking-booth.png" width="1536" height="1024" draggable="false" alt="따뜻한 우드와 반투명 유리, 환풍기가 도는 실내 흡연구역" hidden>
-            <img id="terrace-art" data-src="./pcbang-night-terrace.png" width="1536" height="1024" draggable="false" alt="우리 동네 하늘과 밀크커피 자판기가 있는 2층 야외 흡연구역" hidden>
-            <div class="hall-hardware" aria-hidden="true"></div>
-            <div id="window-view" class="window-view" aria-hidden="true"></div>
-            <div id="cafe-ambience" aria-hidden="true"></div>
-            <div id="monitor-layer" aria-hidden="true"></div>
             <div class="cafe-avatars" id="cafe-avatars" aria-hidden="true"></div>
             <div id="cafe-delivery-clerk" class="cafe-delivery-clerk" aria-hidden="true" hidden>
               <div class="cafe-clerk-body"></div>
@@ -223,16 +210,7 @@
           <div class="kiosk-bottom" aria-hidden="true"><span></span><i></i><span></span></div>
         </section>
 
-        <section class="panel visit-card" id="visit-card" aria-labelledby="visit-title">
-          <p class="panel-index mono">✦ GILMOTUNGI CLUB</p>
-          <div class="visit-title"><h2 id="visit-title">단골 카드</h2><span id="visit-count" class="mono" role="status">0 / 3</span></div>
-          <ol class="visit-stamps" aria-label="도장 모으기">
-            <li data-stamp="seat"><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg><span>첫 착석</span></li>
-            <li data-stamp="game"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg><span>오락실 한 판</span></li>
-            <li data-stamp="snack"><svg aria-hidden="true"><use href="./icons.svg#bowl"/></svg><span>간식 받기</span></li>
-          </ol>
-          <p id="visit-reward">도장 3개를 모으면 이름 옆에 단골 별이 붙어요.</p>
-        </section>
+        <button class="walk-button" type="button" data-open="snack-coupon">단골 쿠폰 <span id="loyalty-summary" class="mono"></span></button>
       </dialog>
     </div>
 
@@ -471,6 +449,7 @@
         <button class="walk-button" id="pvp-vs-ai" type="button">🐱 알바 AI 대국</button>
         <button class="walk-button" id="pvp-leave" type="button" hidden>방 나가기</button>
       </div>
+      <label id="pvp-omok-rules"><input id="pvp-restrict-white" type="checkbox"> 백돌에도 쌍삼·장목 금수 적용</label>
       <div class="pvp-rooms" id="pvp-rooms"></div>
       <canvas id="pvp-canvas" width="360" height="360" aria-label="오목 및 알까기 대국판"></canvas>
       <p class="game-status" id="pvp-status" role="status">대국 종목을 고르고 방을 만들거나 AI 대국을 시작하세요.</p>
@@ -818,16 +797,17 @@
           <div class="u242-bd"></div>
         </div>
       </div>
-      <label class="shop-reward" id="order-reward" hidden><input type="checkbox"> <span></span></label>
       <div class="order-receipt" id="order-receipt" tabindex="-1" hidden>
         <strong id="order-status" role="status"></strong>
         <p id="order-items"></p>
       </div>
-      <div class="shop-total"><span>주문 합계</span><strong id="order-cost">0 G</strong></div>
-      <p class="dialog-note" id="order-funds" role="status" hidden>G 포인트가 부족해요.</p>
-      <button class="primary enter" id="place-order" type="button" disabled>내 자리로 주문하기</button>
-      <p class="dialog-note" id="shop-feedback" role="status"></p>
-      <p class="dialog-note">가상 매점 · 무료 체험 · 책상에 배달된 쟁반을 클릭해 맛있게 드세요!</p>
+      <div class="shop-checkout">
+        <label class="shop-reward" id="order-reward" hidden><input type="checkbox"> <span></span></label>
+        <div class="shop-total"><span>주문 합계</span><strong id="order-cost">0 G</strong></div>
+        <p class="dialog-note" id="order-funds" role="status" hidden>G 포인트가 부족해요.</p>
+        <button class="primary enter" id="place-order" type="button" disabled>내 자리로 주문하기</button>
+        <p class="dialog-note" id="shop-feedback" role="status"></p>
+      </div>
       <p class="dialog-note asset-credit"><a href="https://alexkovacsart.itch.io/free-pixel-art-foods">음식 픽셀 아트 © alexkovacsart</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 화면에서 색 보정</p>
     </div>
   </dialog>
@@ -879,7 +859,7 @@
     <div class="dialog-inner">
       <div class="dialog-head"><span class="panel-index mono">SNACK BAR / LOYALTY</span><button class="close" type="button" data-close aria-label="쿠폰 닫기">×</button></div>
       <h2 id="snack-coupon-title">길모퉁이 단골 쿠폰</h2>
-      <p class="panel-copy" id="coupon-guide">착석 이용 시간이 하루 30분 쌓이면 도장 1개와 +50 G 포인트를 드려요.</p>
+      <p class="panel-copy" id="coupon-guide">하루 착석 시간 30분을 채운 뒤 도장을 받으면 오늘 도장 1개와 50 G를 얻어요. 도장 10개로 매점에서 단골 복숭아 에이드를 교환할 수 있어요.</p>
       <div class="ux u353" id="coupon-card">
         <div class="u353-cd"><div class="u353-in">
           <div class="u353-fr"><div class="u353-tt"><b>길모퉁이PC방</b><span>도장을 모아 단골 메뉴를 주문하세요.</span></div><div class="u353-gd" aria-hidden="true"></div></div>

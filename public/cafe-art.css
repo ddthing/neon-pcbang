@@ -1,7 +1,3 @@
-.scene[data-canvas-world] :is(.hall-hardware, #window-view, #cafe-ambience) {
-  display: none;
-}
-
 .cafe-fullscreen .scene-viewport {
   background: #f2e4d6 var(--cafe-margin-tile, none) center /
     calc(16 * var(--world-pixel, 1px)) calc(16 * var(--world-pixel, 1px)) repeat;
@@ -25,7 +21,13 @@
   height: 100%;
 }
 
-.cafe-art-effects { z-index: 1; }
+.cafe-art-effects, .cafe-art-shade { z-index: 2; }
+.cafe-art-shade { position: absolute; inset: 0; pointer-events: none; background: rgba(87,68,113,.24); }
+.cafe-fullscreen:is([data-cafe-light="night"], [data-cafe-light="dusk"]) .scene-viewport {
+  background-color: #c8bbcf;
+  background-blend-mode: multiply;
+}
+.cafe-fullscreen .scene[data-canvas-world] { box-shadow: none; outline: 2px solid #6b5b7b; }
 .scene[data-canvas-world] .cafe-avatars { container-type: inline-size; }
 .scene[data-canvas-world] .cafe-visitor {
   width: calc(16 * var(--world-pixel, 1px));
@@ -48,7 +50,6 @@
 }
 .scene[data-canvas-world] .cafe-visitor.seated .cafe-nickname { bottom: 84%; }
 .scene[data-canvas-world] .cafe-visitor.seated .cafe-activity-pill { bottom: calc(84% + 22px); }
-.scene[data-canvas-world] .pc-screen { background: none; }
 .scene[data-canvas-world] [data-pixel-seat] { margin-top: 0; }
 .cafe-art-message {
   position: absolute;

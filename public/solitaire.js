@@ -248,7 +248,6 @@ export function initSolitaire() {
       clearInterval(clockId);
       clearInterval(autoTimer);
       window.cafeAudioPlay?.("chime");
-      window.recordCafeStamp?.("game");
       const bonus = Math.max(0, 600 - elapsedSec * 2);
       const total = game.score + bonus;
       window.cafeEarnPoints?.(40, "코지 솔리테어 클리어");

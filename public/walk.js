@@ -185,7 +185,7 @@ function paint(key, data, point, walking, awayAtDesk = false) {
   node.classList.toggle("away-desk", awayAtDesk);
   if (key === "mine" || data.seat || data.walking !== undefined) node.classList.toggle("walking", walking);
   node.classList.toggle("remote-path", data.walking !== undefined);
-  const seatedHere = Boolean(data.seat) && !awayAtDesk && data.zone !== "booth" && data.zone !== "terrace";
+  const seatedHere = Boolean(data.seat || data.loungeDirection) && !awayAtDesk && data.zone !== "booth" && data.zone !== "terrace";
   node.classList.toggle("seated", seatedHere);
   const furniture = seatedHere && seating.chair(data.seat);
   if (furniture && !window.cafeArt) {
@@ -205,7 +205,7 @@ function paint(key, data, point, walking, awayAtDesk = false) {
   let breakCol = -1;
   let seatDir = "";
   if (seatedHere) {
-    seatDir = seating.chair(data.seat)?.direction ?? "up";
+    seatDir = data.loungeDirection ?? seating.chair(data.seat)?.direction ?? "up";
     row = { up: 4, right: 5, left: 6, down: 11 }[seatDir];
     if (act === "eat") row += seatDir === "down" ? 1 : 4;
   } else if (!walking && (act === "smoke" || act === "coffee" || act === "candy")) {
@@ -328,11 +328,12 @@ function drawSelf(walking = false) {
   }
 
   const seat = phase === "walking" ? null : mine;
-  const point = seat ? seating.position(seat) : location;
+  const lounge = !seat && window.cafeArt?.loungeSeat(myActivity);
+  const point = seat ? seating.position(seat) : lounge?.point ?? location;
   if (point && space === "hall") {
     const sprite = paint("mine", {
       name: name || "나", color, avatar: avatarCode, facing, waveUntil,
-      seat, zone: activeZone, activity: myActivity,
+      seat, zone: activeZone, activity: myActivity, loungeDirection: lounge?.direction,
     }, point, walking, false);
     sprite.node.classList.toggle("sitting", phase === "sitting");
   }
@@ -377,9 +378,10 @@ function draw() {
       continue;
     }
     if (space !== "hall") continue;
-    const target = peer.seat ? seating.position(peer.seat) : peer;
+    const lounge = !peer.seat && window.cafeArt?.loungeSeat(peer.activity);
+    const target = peer.seat ? seating.position(peer.seat) : lounge?.point ?? peer;
     if (!target) continue;
-    paint(peer.id, peer, target, false, peerBreak && Boolean(peer.seat));
+    paint(peer.id, { ...peer, loungeDirection: lounge?.direction }, target, false, peerBreak && Boolean(peer.seat));
     visible.add(peer.id);
   }
 
@@ -509,7 +511,10 @@ window.cafeChatSay = (text) => !seating.phase()
 async function changeSeat(action, seat) {
   pendingSeatChanges++;
   try {
-    if (action === "reserve") activeZone = "hall";
+    if (action === "reserve") {
+      activeZone = "hall";
+      if (myActivity.startsWith("lounge:")) myActivity = "";
+    }
     return await send(action, seat);
   } catch (error) {
     disconnected();
@@ -578,6 +583,27 @@ window.cafeWorld = {
   },
   enterRelaxZone,
   exitRelaxZone,
+  async toggleLoungeSeat(key) {
+    if (myActivity === key) {
+      setActivity("");
+      return;
+    }
+    if (journey || isOnBreak() || !canMove() || peers.some(peer => peer.activity === key)) return;
+    const lounge = window.cafeArt.loungeSeat(key);
+    if (!lounge) return;
+    const steps = pathTo(location, lounge.stand, "hall", { strictTarget: true });
+    if (steps.length) {
+      path = [];
+      pressed.clear();
+      stopJoystick();
+      await new Promise(resolve => {
+        journey = { legs: [{ start: { ...location }, points: steps, space: "hall" }], showSpace() {}, resolve };
+        startLeg();
+        requestFrame();
+      });
+    } else if (Math.hypot(location.x - lounge.stand.x, location.y - lounge.stand.y) > .25) return;
+    if (!seating.current() && !isOnBreak()) setActivity(key);
+  },
   isOnBreak,
   currentZone: () => activeZone,
   setActivity,
@@ -942,7 +968,7 @@ function initWardrobe() {
 function canMove() {
   if (seating.phase() || document.querySelector("dialog[open]")) return false;
   if (isOnBreak()) return true; // Can always walk freely inside Smoking Booth & Night Terrace!
-  return !seating.current();
+  return !seating.current() && !myActivity.startsWith("lounge:");
 }
 
 function startMovement() {

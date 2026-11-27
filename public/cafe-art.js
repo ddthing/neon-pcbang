@@ -29,7 +29,13 @@ const backdrop = makeCanvas("cafe-art-base");
 const effects = makeCanvas("cafe-art-effects");
 const base = backdrop.getContext("2d");
 const overlay = effects.getContext("2d");
-scene.prepend(backdrop, effects);
+const shade = document.createElement("div");
+shade.className = "cafe-art-shade";
+shade.setAttribute("aria-hidden", "true");
+shade.hidden = true;
+scene.prepend(backdrop);
+clerk.after(shade, effects);
+avatars.append(clerk);
 scene.dataset.canvasWorld = "";
 
 let ready = false;
@@ -37,6 +43,10 @@ let area = "";
 let layout = [];
 let glass = [];
 let screens = new Map();
+const loungeSeats = new Map();
+const loungeTargets = document.createElement("div");
+loungeTargets.className = "world-seat-targets";
+scene.append(loungeTargets);
 let occupied = new Set();
 let away = new Set();
 let activeSeat = null;
@@ -96,8 +106,34 @@ function paintShop() {
   }
 }
 
+function paintLoungeSeat(name, x, y, tone, label) {
+  T.prop(base, name, x, y, tone);
+  const { w, h, seats } = T.seatObject(name, x, y);
+  const front = makeCanvas("cafe-art-prop-front", w, h);
+  T.furnitureFront(front.getContext("2d"), name, tone);
+  foreground(front, x, y, Math.max(...seats.map(seat => seat.y)));
+  for (const seat of seats) {
+    const key = "lounge:" + loungeSeats.size;
+    const point = toPercent(seat);
+    const stand = toPercent({ x: seat.x, y: seat.y + 14 });
+    loungeSeats.set(key, { point, stand, direction: seat.direction });
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "world-target";
+    button.dataset.tip = label;
+    button.setAttribute("aria-label", label + " " + (loungeSeats.size));
+    button.style.left = point.x + "%";
+    button.style.top = point.y + "%";
+    button.addEventListener("click", () => window.cafeWorld?.toggleLoungeSeat(key));
+    loungeTargets.append(button);
+  }
+}
+
 function paintHall() {
   T.floor(base, FLOOR.x, FLOOR.y, FLOOR.w, FLOOR.h);
+  T.wall(base, 0, 0, WIDTH, 16, "cream", false, true);
+  T.wall(base, 0, 496, 368, 16, "cream", false, true);
+  T.wall(base, 400, 496, 368, 16, "cream", false, true);
   T.wall(base, 16, 16, 736, 32, "cream");
   T.wall(base, 0, 16, 16, 480, "lavender", false, true);
   T.wall(base, 752, 16, 16, 480, "lavender", false, true);
@@ -116,9 +152,9 @@ function paintHall() {
 
   const lounge = LANDMARKS.lounge;
   T.rug(base, lounge.x, lounge.y, lounge.w - 16, lounge.h, "lavender");
-  T.prop(base, "sofa2_S", lounge.x + 16, lounge.y, "rose");
+  paintLoungeSeat("sofa2_S", lounge.x + 16, lounge.y, "rose", "라운지 소파");
   T.prop(base, "table_round_S", lounge.x + 48, lounge.y + 16, "wood");
-  T.prop(base, "armchair_E", lounge.x + 64, lounge.y + 16, "mint");
+  paintLoungeSeat("armchair_E", lounge.x + 64, lounge.y + 16, "mint", "라운지 안락의자");
   T.prop(base, "plant_small_S", lounge.x, lounge.y + 32, "mint");
   paintShop();
 
@@ -128,6 +164,8 @@ function paintHall() {
   T.partition(base, { x: booth.x, y: booth.y + 16, w: 16, h: 32 });
   T.prop(base, "bench_S", booth.x + 16, booth.y, "mint");
   T.prop(base, "hood_S", booth.x + 16, booth.y - 16, "cream");
+  T.door(base, booth.x + 16, booth.y + 32, 32, 3);
+  T.workstation(base, "ashtray", booth.x + 16, booth.y + 16, 1);
 
   const { kiosk, board, entrance, terrace } = LANDMARKS;
   T.workstation(base, "kiosk", kiosk.x, kiosk.y, 1);
@@ -135,9 +173,9 @@ function paintHall() {
   T.prop(base, "mat_S", entrance.x, entrance.y - 16, "rose");
   T.door(base, entrance.x, entrance.y - 8, entrance.w, 0);
   T.prop(base, "mat_S", terrace.x, terrace.y, "mint");
-  T.prop(base, "plant_tall_S", 704, 436, "mint");
+  T.prop(base, "plant_tall_S", 704, 432, "mint");
   T.prop(base, "plant_small_S", 208, 368, "mint");
-  T.prop(base, "plant_tall_S", 80, 434, "mint");
+  T.prop(base, "plant_tall_S", 80, 432, "mint");
   T.prop(base, "plant_small_S", 656, 432, "mint");
 
   for (const seat of layout) {
@@ -157,8 +195,9 @@ function paintBreakArea() {
     T.skyline(base, 0, 0, WIDTH, 248, lastPhase);
     T.floor(base, 48, 256, 672, 256, true, false, "terracotta");
     T.partition(base, { x: 48, y: 240, w: 672, h: 16 }, true);
-    T.prop(base, "bench_S", 384, 280, "mint");
-    T.prop(base, "side_table_S", 416, 312, "wood");
+    T.prop(base, "bench_S", 384, 272, "mint");
+    T.prop(base, "side_table_S", 416, 304, "wood");
+    T.workstation(base, "ashtray", 416, 304, 1);
     T.prop(base, "plant_tall_S", 624, 288, "mint");
     T.prop(base, "plant_tall_S", 576, 352, "mint");
   } else {
@@ -168,6 +207,7 @@ function paintBreakArea() {
     T.rug(base, 176, 256, 224, 96, "rose");
     T.prop(base, "sofa2_S", 192, 256, "rose");
     T.prop(base, "table_round_S", 240, 288, "wood");
+    T.workstation(base, "ashtray", 240, 288, 1);
     T.prop(base, "plant_tall_S", 592, 224, "mint");
   }
   const config = relaxZones[area];
@@ -179,6 +219,8 @@ function paintBreakArea() {
 
 function paintBase() {
   screens = new Map();
+  loungeSeats.clear();
+  loungeTargets.replaceChildren();
   glass = [];
   avatars.querySelectorAll(".cafe-art-chair, .cafe-art-prop-front").forEach((node) => node.remove());
   rect(base, 0, 0, WIDTH, HEIGHT, PAL.p2);
@@ -204,7 +246,7 @@ function paintEffects(now) {
       }
     }
   }
-  if (night) rect(overlay, 0, 0, WIDTH, HEIGHT, "rgba(87,68,113,.24)");
+  shade.hidden = !night;
   for (const [key, { x, y, w, h }] of screens) {
     if (key !== activeSeat && !occupied.has(key)) continue;
     const booting = key === activeSeat && !motion.matches && now - bootAt < 800;
@@ -215,6 +257,7 @@ function paintEffects(now) {
   }
   if (area === "hall" && night) T.animation(overlay, "neon_open", 368, 32, Math.floor(now / (motion.matches ? 480 : 160)));
   T.weatherLoop(overlay, weather, now, motion.matches);
+  if (area === "terrace" && weather !== "clear") T.weatherLoop(overlay, "wind", now, motion.matches);
   if (area === "hall" && clerk.dataset.mode === "cook" && !clerk.hidden) {
     T.animation(overlay, "stove", LANDMARKS.counter.x + 48, LANDMARKS.counter.y + 16, Math.floor(now / 125));
     T.animation(overlay, "steam", LANDMARKS.counter.x + 48, LANDMARKS.counter.y, Math.floor(now / 125));
@@ -228,6 +271,8 @@ function paintEffects(now) {
 
 window.cafeArt = {
   pixel,
+  loungeSeat: (key) => loungeSeats.get(key),
+  chairDirection: (seat) => ready ? T.chairPosition(seat).direction : seat.direction,
   kitchenClerk: toPercent({ x: 544, y: 443 }),
   place: (point) => toPercent(pixel(point)),
   screen(key) {
@@ -259,6 +304,7 @@ Promise.all([T.ready, import("./world.js")]).then(([, world]) => {
   relaxZones = world.relaxZones;
   viewport.style.setProperty("--cafe-margin-tile", `url("${T.marginTile()}")`);
   ready = true;
+  scene.dataset.artReady = "";
   paintEffects(performance.now());
   document.dispatchEvent(new Event("cafe-art-ready"));
   setInterval(() => paintEffects(performance.now()), 110);

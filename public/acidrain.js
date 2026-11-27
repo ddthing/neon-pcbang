@@ -139,7 +139,6 @@ export function initAcidRain() {
     startBtn.textContent = "다시 도전";
     const cpmText = cpmEl.textContent;
     statusEl.textContent = `방화벽 종료! 최종 ${score.toLocaleString()}점 (${cpmText})`;
-    window.recordCafeStamp?.("game");
     if (score >= 200) window.cafeEarnPoints?.(Math.min(55, 15 + Math.floor(score / 250)), "네온 산성비 방어");
     submitArcadeScore("acidrain", score, { metric: `${cpmText} · W${wave}` });
   }

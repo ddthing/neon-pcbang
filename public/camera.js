@@ -59,8 +59,8 @@ export function createCafeCamera(scene) {
       manual = false;
       zoom = 3;
     }
-    const scale = mode ? zoom : Math.max(1, Math.floor(Math.min(width * density / WORLD.width, height * density / WORLD.height)));
-    const pixel = scale / density;
+    const scale = mode ? zoom : Math.max(1, Math.floor(Math.min(width / WORLD.width, height / WORLD.height)));
+    const pixel = scale;
     const worldWidth = WORLD.width * pixel;
     const worldHeight = WORLD.height * pixel;
     bounds = { width, height, worldWidth, worldHeight, density };
@@ -103,11 +103,12 @@ export function createCafeCamera(scene) {
     button.addEventListener("click", () => quickView(QUICK_VIEWS[button.dataset.cameraTo]));
   });
   viewport.addEventListener("pointerdown", (event) => {
-    if (!mode || event.pointerType === "mouse" || !scene.contains(event.target)) return;
+    if (!mode || event.button !== 0 || !scene.contains(event.target)) return;
     cancelAnimationFrame(frame);
     const point = { x: event.clientX, y: event.clientY };
     pointers.set(event.pointerId, { ...point, origin: point });
     if (pointers.size === 2) {
+      for (const id of pointers.keys()) viewport.setPointerCapture(id);
       dragging = true;
       pinching = true;
       manual = true;
@@ -187,7 +188,12 @@ export function createCafeCamera(scene) {
   window.addEventListener("resize", resize);
   small.addEventListener("change", resize);
   new ResizeObserver(resize).observe(viewport);
-  new MutationObserver(() => { manual = false; }).observe(scene, { attributes: true, attributeFilter: ["data-space"] });
+  let observedSpace = scene.dataset.space;
+  new MutationObserver(() => {
+    if (observedSpace === scene.dataset.space) return;
+    observedSpace = scene.dataset.space;
+    manual = false;
+  }).observe(scene, { attributes: true, attributeFilter: ["data-space"] });
   pcButton.addEventListener("click", () => document.getElementById("open-monitor").click());
   resize();
   return { follow };

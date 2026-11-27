@@ -2,9 +2,9 @@
 
 내 위치의 날씨와 시간이 창밖으로 흐르는 파스텔 픽셀아트 온라인 PC방입니다. 같은 매장에 입장한 손님들이 실시간으로 걸어다니며 좌석을 고르고, 음식 배달을 시키고, 11종의 미니게임과 대전을 함께 즐길 수 있습니다.
 
-- **3/4 탑다운 월드 (`1152×768`)**는 16×16 PNG 타일과 가구를 렌더링 단계에서 파스텔로 보정합니다. [스프라이트 렌더러](public/pixel-tiles.js) · [매장 렌더러](public/cafe-art.js)
+- **3/4 탑다운 월드 (`768×512`, 41석)**는 16×16 PNG 타일과 가구를 렌더링 단계에서 파스텔로 보정합니다. [스프라이트 렌더러](public/pixel-tiles.js) · [매장 렌더러](public/cafe-art.js)
 - **캐릭터와 옷장**은 16×32 치비 스프라이트의 4방향 걷기·착석·휴식·간식 동작과 회전 미리보기를 지원합니다. [캐릭터](public/avatar-sprites.js) · [옷장](public/walk.js)
-- **휴식·흡연구역 2종 (좌석 유지 외출):** 매장 좌측 상단 **실내 흡연구역(`booth`)**과 우측 상단 **야외 흡연구역(`terrace`)**을 PC 자리를 반납하지 않고 오갈 수 있으며, 구역별 독립 채팅을 지원합니다.
+- **휴식·흡연구역 2종 (좌석 유지 외출):** 입구 옆의 **실내 흡연구역(`booth`)**과 하단에서 연결되는 **야외 흡연구역(`terrace`)**을 PC 자리를 반납하지 않고 오갈 수 있으며, 구역별 독립 채팅을 지원합니다.
 - **길모퉁이 매점 2.0 & 오픈키친:** 24종 메뉴([snack-menu.json](public/snack-menu.json)) 주문, 알바냥 서빙 배달([cafe-delivery.js](public/cafe-delivery.js)), 옆 자리 간식 선물을 지원합니다.
 - **길모퉁이 OS 2.0 & 미니게임 11종:** 런처 아이콘(`게임 런처` / 작업표시줄 `게임`)을 누를 때 열리며, 실시간 오목·알까기(`모퉁이 대국장`), 테트리스(`모퉁이 블록 드롭`), **코지 솔리테어**, **뜨개 실풀기(Knit Unravel)**, 붕어빵 포차, 매점 러시, 산성비, 지뢰찾기, 벽돌깨기 DX, 2048, 스도쿠(고정/입력 구분·Undo 지원)와 실시간 TOP 5 랭킹([lib/cafe-arcade.mjs](lib/cafe-arcade.mjs))을 제공합니다.
 
@@ -19,20 +19,20 @@
 
 | 대상 | 원본 파일 | 연동 소비처 (수정 시 반드시 함께 확인) |
 | --- | --- | --- |
-| 홀 좌석 열·행, 룸 좌석, 구역 랜드마크(입구·키오스크·매점·라운지·흡연구역·화분) | [public/cafe-layout.js](public/cafe-layout.js) (`window.cafeLayout`) | [public/cafe-art.js](public/cafe-art.js) (홀 렌더링), [public/app.js](public/app.js) (`#floor-kiosk` 좌석 버튼 및 `syncFloorLandmarks()`) |
+| 홀 좌석 열·행, 룸 좌석, 구역 랜드마크(입구·키오스크·매점·라운지·흡연구역·화분) | [public/cafe-map.mjs](public/cafe-map.mjs) (`SEATS`, `ROOMS`, `LANDMARKS`) | [public/cafe-art.js](public/cafe-art.js) (홀 렌더링), [public/app.js](public/app.js) (`#floor-kiosk` 좌석 버튼 및 `syncFloorLandmarks()`) |
 | 충돌 박스·출입문 통행·경로탐색·착석 기준점 | [lib/cafe-world.mjs](lib/cafe-world.mjs) (운영 시 `/world.js`로 서빙) | [public/walk.js](public/walk.js) (캐릭터 이동·클릭 길찾기), [public/cafe-delivery.js](public/cafe-delivery.js) (배달 동선) |
 | 상세 2차 리뉴얼 시안 규격·검수 기록 | [docs/pixel-art-renewal.md](docs/pixel-art-renewal.md), [public/renewal-layout.mjs](public/renewal-layout.mjs) | [public/renewal-seat-picker.mjs](public/renewal-seat-picker.mjs) |
 
 - **좌석·인테리어 수정 절차:**
-  1. [public/cafe-layout.js](public/cafe-layout.js)의 `hallBanks`, `hallRows`, `spaces`, `landmarks`를 먼저 수정합니다.
+  1. [public/cafe-map.mjs](public/cafe-map.mjs)의 `HALL_TABLES`와 룸에 속한 좌석, `LANDMARKS`를 먼저 수정합니다.
   2. [app/cafe.html](app/cafe.html)의 `.floor-map-marker`에는 반드시 `data-landmark="<key>"` 속성을 유지해 [public/app.js](public/app.js)의 `syncFloorLandmarks()`가 좌석도 위치를 자동 갱신하도록 합니다.
-  3. **기존 좌석 키(`hall:0`~`hall:87`, `solo:0`, `duo:0..1`, `team:0..4`, `squad:0..5`)는 D1 예약/배달과 직결되므로 임의로 변경·삭제하지 않습니다.**
+  3. 사용 중인 좌석 키(`hall:0..21`, `solo:0..3`, `duo:0..3`, `team:0..4`, `squad:0..5`)는 D1 예약과 주문에 연결됩니다.
 
 ---
 
 ### ② 16×16 파스텔 픽셀아트 제작 지침
 
-현재 매장 구현과 검수는 [Notion 브랜치 인수인계](docs/notion-implementation-handoff.md)를 따릅니다. 아래 1차 시안 배치 및 이전 좌석 수는 기록용입니다. [16×16 무료 픽셀 에셋 & 제미나이 가이드](https://app.notion.com/p/16-16-4241906cddf181b791a1deedbce972d0)
+현재 매장 구현과 검수는 [Notion 브랜치 인수인계](docs/notion-implementation-handoff.md)를 따릅니다. [16×16 무료 픽셀 에셋 & 제미나이 가이드](https://app.notion.com/p/16-16-4241906cddf181b791a1deedbce972d0)
 
 - 가구·소품은 3/4 탑다운 PNG 스프라이트에서 가져옵니다. Downtown Eats & Nights를 인테리어 주 팩으로 쓰고, 100 Free Pixel Art Foods는 진열, 메뉴, 서비스 쟁반에 적용합니다. 창밖과 테라스의 날씨에는 Weather & Nature FX를 사용합니다.
 - 팩에 없는 PC 세트·키오스크·자판기와 매점 완제품은 같은 팔레트로 제작한 원본 PNG를 사용합니다. 원본 도안을 수정한 뒤 `node scripts/build-notion-sprites.mjs`로 PNG를 다시 만듭니다.
@@ -84,10 +84,10 @@ node scripts/install-notion-art.mjs <DowntownEats_FREE> <Weather_FX> <Food_Icons
 ---
 
 ### ⑤ 모바일·카메라·터치 UX 지침
-- **풀뷰포트 카메라 ([public/camera.js](public/camera.js)):** 모바일 세로 화면(`390×844`)에서도 `worldHeight >= viewport.clientHeight`를 보장해 화면 하단에 빈 검은 여백이 남지 않게 합니다.
+- **카메라 ([public/camera.js](public/camera.js))** 데스크톱은 768×512 논리 매장 전체에 정수배 fit을 적용하고 여백을 타일로 채웁니다. 모바일은 3배로 시작하고, 2·3·4배 핀치와 드래그, 네 개의 퀵버튼을 사용합니다.
 - **터치 영역 및 비겹침 ([public/walk.css](public/walk.css), [public/game-shell.css](public/game-shell.css), [public/chat.css](public/chat.css), [public/pc.css](public/pc.css)):**
   - 모바일 터치 버튼은 최소 `44px` 이상 확보하고, `touch-action: manipulation` / `none`을 적용해 더블탭 확대를 막습니다.
-  - 플로어 화면에서 `#cafe-joystick`(좌측), `.walk-controls`(하단), `#cafe-chat-controls`(우측 상단 위)가 겹치지 않아야 하며, PC 착석 시 조이스틱은 자동 숨김(`syncMobileJoystickVisibility`) 처리됩니다.
+  - 모바일 휴식 버튼을 2행으로 배치하며 채팅은 휴식 버튼 위로 이동합니다.
   - 모든 미니게임 `dialog`는 모바일 가로 폭(`390px`)에서 가로 스크롤(`scrollWidth > innerWidth`)이 발생하지 않아야 합니다.
 
 ---

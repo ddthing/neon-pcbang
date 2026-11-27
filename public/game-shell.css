@@ -57,26 +57,13 @@ body {
 }
 .cafe-joystick[data-active] span { background: #c4d5b5; }
 .walk-touch-hint { display: none; }
-.visit-card { padding: 13px 14px; border-color: #695a49; background: #302b25; }
-.visit-card .panel-index { color: #dcbf92; }
-.visit-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-block: 5px 11px; }
-.visit-title h2 { font-size: 18px; letter-spacing: -.05em; }
-#visit-count { padding: 3px 7px; border: 1px solid #76654d; border-radius: 3px; color: #ead5b2; font-size: 11px; }
-.visit-stamps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
-.visit-stamps li {
-  display: grid; justify-items: center; gap: 4px; min-width: 0; padding: 8px 2px 6px;
-  border: 1px dashed #86735a; border-radius: 5px; color: #c9bca9; font-size: 11px;
-}
-.visit-stamps svg { width: 17px; height: 17px; }
-.visit-stamps .stamped { border-style: solid; border-color: #ab9b69; background: #5e5134; color: #ffebc1; }
-#visit-reward { margin-top: 9px; color: #d1c1a7; font-size: 11px; line-height: 1.5; }
-.visit-card.complete #visit-reward, .cafe-nickname .regular-star { color: #ffdc8e; }
+.cafe-nickname .regular-star { color: #8a4f3c; }
 .cafe-nickname .regular-star { text-shadow: 1px 1px #624520, -1px -1px #624520; }
 .cafe-visitor.mine .cafe-nickname { box-shadow: 0 2px #252b24; }
 .arcade-score { color: #f1d4a4; }
 #arcade .game-hud { flex-wrap: wrap; gap: 4px 12px; }
 #arcade #game { image-rendering: pixelated; }
-.stage-brand, #floor-title, #cafe-menu-title, #visit-title, #arcade-title {
+.stage-brand, #floor-title, #cafe-menu-title, #arcade-title {
   font-family: var(--display);
   font-size: 20px;
   font-weight: 400;

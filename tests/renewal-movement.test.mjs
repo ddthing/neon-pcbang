@@ -11,16 +11,19 @@ import {
   relaxZones,
   routeToSeat,
 } from "../lib/cafe-world.mjs";
-import { CHARACTER_SPEC, WORLD_SPEC } from "../lib/renewal-layout.mjs";
+import { CHARACTER_SPEC } from "../lib/renewal-layout.mjs";
+import { ROOMS, SEATS, SEAT_COUNTS, WORLD, seatFor, toPercent, toPixels } from "../lib/cafe-map.mjs";
 
-test("movement engine reuses finalized world scale and footBox dimensions from renewal-layout", () => {
-  assert.deepEqual(MOVEMENT_SPEC.world, WORLD_SPEC);
+test("movement engine uses the shared 768×512 scale and character foot box", () => {
+  assert.deepEqual(MOVEMENT_SPEC.world, WORLD);
+  assert.deepEqual(WORLD, { width: 768, height: 512 });
   assert.deepEqual(MOVEMENT_SPEC.footBox, CHARACTER_SPEC.footBox);
 });
 
 test("hall entrance threshold is reachable and walkable while adjacent bottom walls stay blocked", () => {
   assert.equal(canWalk(entranceThreshold.center.x, entranceThreshold.center.y), true);
-  assert.equal(canWalk(50, entranceThreshold.center.y), false);
+  const adjacentWall = toPercent({ x: 320, y: 488 });
+  assert.equal(canWalk(adjacentWall.x, adjacentWall.y), false);
   const route = pathTo(entrance, entranceThreshold.center, "hall", { strictTarget: true });
   assert.ok(route.length >= 1, "must find path onto visible doorway threshold");
   let prev = entrance;
@@ -32,8 +35,8 @@ test("hall entrance threshold is reachable and walkable while adjacent bottom wa
 });
 
 test("strictTarget click mode rejects walls and obstacles instead of warping to another corridor", () => {
-  assert.deepEqual(pathTo(entrance, { x: 30, y: 40 }, "hall", { strictTarget: true }), []);
-  assert.deepEqual(pathTo(entrance, { x: 50, y: 89.2 }, "hall", { strictTarget: true }), []);
+  assert.deepEqual(pathTo(entrance, toPercent({ x: 224, y: 112 }), "hall", { strictTarget: true }), []);
+  assert.deepEqual(pathTo(entrance, toPercent({ x: 320, y: 488 }), "hall", { strictTarget: true }), []);
   assert.deepEqual(
     pathTo(relaxZones.booth.door, { x: 86, y: 49 }, "booth", { strictTarget: true }),
     [],
@@ -62,38 +65,36 @@ test("booth and terrace pathfinding uses continuous collision checks around ever
   }
 });
 
-test("same-room seat switching uses internal corridors without visiting roomDoor", () => {
-  const roomChairs = {
-    "duo:0": { x: 38, y: 70 },
-    "duo:1": { x: 65, y: 70 },
-    "team:0": { x: 20, y: 68 },
-    "team:3": { x: 68, y: 68 },
-    "squad:0": { x: 32.8, y: 33 },
-    "squad:2": { x: 75.5, y: 33 },
-    "squad:4": { x: 55.2, y: 76 },
-  };
-  const chairPos = (key) => roomChairs[key];
-  const hasDoorDetour = (pts) => pts.some((p) => p.x === 50 && p.y === 94);
+test("all 41 seats are accessible from the entry and their approaches stay walkable", () => {
+  assert.equal(SEATS.length, 41);
+  assert.deepEqual(SEAT_COUNTS, { hall: 22, solo: 4, duo: 4, team: 5, squad: 6 });
+  assert.deepEqual(new Set(SEATS.map(({ direction }) => direction)), new Set(["up", "down", "left", "right"]));
+  for (const { key, foot, stand } of SEATS) {
+    const legs = routeToSeat(entrance, null, key);
+    assert.equal(legs.length, 1, key);
+    const [{ start, space, points }] = legs;
+    assert.equal(space, "hall");
+    assert.deepEqual(points.at(-1), toPercent(foot));
+    assert.deepEqual(points.at(-2), toPercent(stand));
+    let prev = start;
+    for (const point of points.slice(0, -1)) {
+      assert.equal(clearSegmentInSpace(prev, point, space), true, key);
+      prev = point;
+    }
+  }
+});
 
-  const duoRoute = routeToSeat(roomChairs["duo:0"], "duo:0", "duo:1", chairPos);
-  assert.equal(duoRoute.length, 1);
-  assert.equal(hasDoorDetour(duoRoute[0].points), false);
-
-  const teamRoute = routeToSeat(roomChairs["team:0"], "team:0", "team:3", chairPos);
-  assert.equal(teamRoute.length, 1);
-  assert.equal(hasDoorDetour(teamRoute[0].points), false);
-
-  const squadFrontRoute = routeToSeat(roomChairs["squad:0"], "squad:0", "squad:2", chairPos);
-  assert.equal(squadFrontRoute.length, 1);
-  assert.equal(hasDoorDetour(squadFrontRoute[0].points), false);
-  assert.equal(squadFrontRoute[0].points.every((p) => p.y <= 40), true, "front-row switch stays in front aisle");
-
-  const squadCrossRoute = routeToSeat(roomChairs["squad:0"], "squad:0", "squad:4", chairPos);
-  assert.equal(squadCrossRoute.length, 1);
-  assert.equal(hasDoorDetour(squadCrossRoute[0].points), false);
-  assert.equal(
-    squadCrossRoute[0].points.some((p) => p.x === 17.5),
-    true,
-    "front-to-back switch in 6-seat room uses internal side aisle",
-  );
+test("seat switching stays inside the current room", () => {
+  for (const [from, to] of [["duo:0", "duo:1"], ["team:0", "team:3"], ["squad:0", "squad:2"], ["squad:0", "squad:4"]]) {
+    const origin = seatFor(from), target = seatFor(to);
+    const [{ start, space, points }] = routeToSeat(toPercent(origin.foot), from, to);
+    assert.equal(space, "hall");
+    assert.deepEqual(start, toPercent(origin.foot));
+    assert.deepEqual(points[0], toPercent(origin.stand));
+    assert.deepEqual(points.at(-1), toPercent(target.foot));
+    const room = ROOMS.find(({ id }) => id === origin.room);
+    assert.equal(room.id, target.room);
+    const { x, y, w, h } = room.rect;
+    assert.ok(points.map(toPixels).every(p => p.x > x && p.x < x + w && p.y > y && p.y < y + h));
+  }
 });

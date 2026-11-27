@@ -31,9 +31,11 @@ try {
     try {
       const page = await request("/", { headers });
       assert.equal(page.status, 200, "Authenticated URL must serve the game page");
-      assert.match(await page.text(), /src="\.\/cafe-art\.js"/, "Game page must load the renewed renderer");
+      assert.match(await page.text(), /src="\.\/app\.js" type="module"/, "Game page must load the cafe entry point");
       await Promise.all([
         "cafe-art.js", "cafe-art.css", "cafe-interface.css", "camera.js",
+        "cafe-map.mjs", "cafe-clock.mjs", "cafe-board.js", "omok-rules.mjs", "boot.js",
+        "assets/chars/clerk.png", "assets/original/cream-frame.png",
         "cafe-delivery.js", "food-pixels.js", "assets/original/workstations.png",
         "renewal-layout.mjs", "renewal-effects.mjs", "renewal-slice-art.mjs",
         "renewal-seat-picker.mjs", "renewal-slice.html", "renewal-slice.js", "walk.js",

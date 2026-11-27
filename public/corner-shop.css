@@ -95,3 +95,24 @@
 .snack-item-name { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
 .snack-item-price, #order-funds { color: #7a432e; }
 #snacks .u242-sc { scrollbar-width: auto; scrollbar-color: #9b809d #f2e8db; }
+
+#snacks .dialog-inner {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 34px);
+}
+#snacks #order-menu {
+  flex: 0 1 clamp(150px, 40dvh, 360px);
+  min-height: 105px;
+}
+#snacks #order-receipt {
+  flex: 0 1 auto;
+  max-height: 27dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+#snacks .shop-checkout { display: grid; flex: none; gap: 5px; }
+#snacks .shop-reward { background: #eee4f5; color: #5c4742; }
+#snacks .shop-actions #place-order { min-height: 44px; }
+#snacks .u242-sc::-webkit-scrollbar { display: block; width: 8px; }
+#snacks .u242-sc::-webkit-scrollbar-thumb { background: #9b809d; }
