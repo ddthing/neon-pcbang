@@ -186,9 +186,10 @@
         <p class="walk-guests" id="cafe-guests" hidden></p>
         <div class="room-foot">
           <p><svg aria-hidden="true"><use href="./icons.svg#cursor"/></svg><span id="room-hint">입구 왼쪽의 우드 키오스크를 눌러보세요.</span></p>
-          <span class="mono" id="room-count">41석</span>
+          <span class="mono" id="room-count">67석</span>
         </div>
       </section>
+      <button class="pc-restore-pill walk-button stage-key" id="pc-restore-pill" type="button" hidden>🖥️ 내 PC 다시 열기</button>
 
       <dialog class="controls hub-menu" id="cafe-menu" aria-labelledby="cafe-menu-title">
         <div class="hub-heading"><h2 id="cafe-menu-title">길모퉁이 메뉴</h2><button class="close" type="button" data-close aria-label="메뉴 닫기">×</button></div>
@@ -199,7 +200,7 @@
             <p class="kiosk-label mono">길모퉁이PC방 · 2F</p>
             <h2 id="kiosk-title" tabindex="-1">어디에 앉을까요?</h2>
             <p class="kiosk-copy" id="kiosk-copy">전체 좌석도에서 앉고 싶은 자리를 골라요.</p>
-            <div class="kiosk-counts" id="kiosk-counts"><span><strong>22</strong> 일반석</span><span><strong>19</strong> 룸 좌석</span></div>
+            <div class="kiosk-counts" id="kiosk-counts"><span><strong>48</strong> 일반석</span><span><strong>19</strong> 룸 좌석</span></div>
             <div id="stage-seated" hidden>
               <div class="ticket"><span class="mono">MY SEAT</span><strong id="ticket-seat"></strong><small>이용 시간 <time class="mono" id="session-time">00:00</time> · <b data-gpoints>150 G</b></small></div>
               <button class="primary enter" id="open-monitor" type="button"><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg> 내 PC 열기</button>
@@ -268,7 +269,7 @@
       <div class="floor-map">
         <div id="floor-overview">
           <div class="floor-toolbar">
-            <p><strong>전체 41석</strong><span>일반석 22 · 룸 좌석 19</span></p>
+            <p><strong>전체 67석</strong><span>일반석 48 · 룸 좌석 19</span></p>
             <button class="floor-control" id="floor-zoom" type="button" aria-pressed="false">＋ 확대</button>
           </div>
           <div class="floor-scroll" id="floor-scroll" role="region" aria-label="전체 좌석도" tabindex="0">
@@ -327,7 +328,10 @@
   <dialog class="pc-desktop" id="pc-desktop" aria-labelledby="pc-title">
     <div class="pc-statusbar">
       <span class="mono"><i></i> 길모퉁이 OS 2.0 · COZY LAUNCHER</span>
-      <button class="close" type="button" data-close aria-label="PC 화면 닫기">×</button>
+      <div class="pc-statusbar-actions">
+        <button class="pc-min-btn" id="pc-minimize" type="button" aria-label="PC 화면 최소화">—</button>
+        <button class="close" type="button" data-close aria-label="PC 화면 닫기">×</button>
+      </div>
     </div>
     <div class="pc-workspace">
       <img class="pc-wallpaper pixel" id="pc-wallpaper-image" alt="" data-default>
@@ -358,6 +362,7 @@
       <div class="pc-shortcuts" aria-label="바탕화면 바로가기">
         <button class="pc-shortcut" type="button" data-launcher><span class="pc-app-icon sage"><svg aria-hidden="true"><use href="./icons.svg#game"/></svg></span>게임 런처</button>
         <button class="pc-shortcut" type="button" data-open="snacks"><span class="pc-app-icon cream"><svg aria-hidden="true"><use href="./icons.svg#bowl"/></svg></span>매점 2.0</button>
+        <button class="pc-shortcut" type="button" data-open="desk-shop"><span class="pc-app-icon cream">🪴</span>책상 꾸미기</button>
         <button class="pc-shortcut" type="button" data-open="focus"><span class="pc-app-icon lilac"><svg aria-hidden="true"><use href="./icons.svg#clock"/></svg></span>집중 모드</button>
         <button class="pc-shortcut" type="button" data-wallpaper><span class="pc-app-icon cream"><svg aria-hidden="true"><use href="./icons.svg#monitor"/></svg></span>배경 설정</button>
       </div>
@@ -367,6 +372,10 @@
         <dl><dt>이용 시간</dt><dd><time class="mono" id="pc-session-time">00:00</time></dd></dl>
         <button class="primary enter" type="button" data-open="snacks"><svg aria-hidden="true"><use href="./icons.svg#bowl"/></svg>먹거리 주문 (24종)</button>
         <button class="pc-sub-btn" type="button" data-open="snack-gift">🎁 옆 자리 간식 쏘기</button>
+        <div class="pc-missions" id="pc-missions" aria-label="오늘의 미션">
+          <div class="pc-missions-head"><strong>오늘의 미션</strong><small class="mono" id="pc-missions-count">0/3</small></div>
+          <ul id="pc-missions-list"></ul>
+        </div>
         <p id="pc-order-summary">내 자리로 간식 보내기</p>
         <div class="pc-break-row">
           <button class="pc-break-btn" type="button" data-pc-break="booth">🚬 실내 흡연구역</button>
@@ -429,6 +438,17 @@
     </div>
   </dialog>
 
+  <dialog id="desk-shop" aria-labelledby="desk-shop-title">
+    <div class="dialog-inner">
+      <div class="dialog-head"><span class="panel-index mono">DESK DECOR / G-SHOP</span><button class="close" type="button" data-close aria-label="책상 꾸미기 닫기">×</button></div>
+      <h2 id="desk-shop-title">🪴 책상 꾸미기 상점</h2>
+      <p class="panel-copy">모은 G-포인트로 아기자기한 픽셀 소품을 사서 내 PC 책상에 최대 3개까지 올려보세요!</p>
+      <div class="shop-links"><span class="gpoint-badge">내 포인트 · <b data-gpoints>150 G</b></span><small class="mono" id="desk-shop-equipped">배치 중: 0 / 3</small></div>
+      <div class="desk-shop-grid" id="desk-shop-list"></div>
+      <p class="dialog-note" id="desk-shop-status" role="status"></p>
+    </div>
+  </dialog>
+
   <!-- GAME 01: SEAT-TO-SEAT PVP ARENA (OMOK & ALKKAGI) -->
   <dialog id="pvp" aria-labelledby="pvp-title">
     <div class="dialog-inner">
@@ -448,6 +468,7 @@
           <option value="easy">초급 AI</option>
         </select>
         <button class="walk-button" id="pvp-vs-ai" type="button">🐱 알바 AI 대국</button>
+        <button class="walk-button" id="pvp-resign" type="button" hidden>🏳️ 기권</button>
         <button class="walk-button" id="pvp-leave" type="button" hidden>방 나가기</button>
       </div>
       <label id="pvp-omok-rules"><input id="pvp-restrict-white" type="checkbox"> 백돌에도 쌍삼·장목 금수 적용</label>
@@ -569,6 +590,7 @@
       <form class="acid-form" id="acid-form">
         <input id="acid-input" type="text" autocomplete="off" placeholder="떨어지는 단어를 입력하고 Enter!">
         <button class="walk-button stage-key" type="submit">입력</button>
+        <button class="walk-button" id="acid-pause" type="button" hidden>일시정지</button>
         <button class="walk-button" id="acid-start" type="button">게임 시작</button>
       </form>
       <p class="game-status" id="acid-status" role="status">기계식 키보드 스위치를 고르고 타자 실력을 뽐내 보세요!</p>
@@ -632,7 +654,7 @@
         <div><span>최고 점수</span><strong id="merge-best">0</strong></div>
       </div>
       <div class="ux u093 merge-progress">
-        <span>목표 <strong id="merge-progress">2 / 2048</strong></span>
+        <span>최고 타일 <strong id="merge-progress">2 / 2048</strong></span>
         <div class="u093-bar" aria-hidden="true"><i></i></div>
       </div>
       <div class="ux merge-board mono" id="merge-board" role="table" aria-label="2048 보드 4행 4열" aria-describedby="merge-help" tabindex="0" autofocus></div>

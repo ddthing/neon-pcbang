@@ -27,20 +27,29 @@ export function initAcidRain() {
   const switchSelect = document.getElementById("acid-switch");
   const statusEl = document.getElementById("acid-status");
   const startBtn = document.getElementById("acid-start");
+  const pauseBtn = document.getElementById("acid-pause");
 
   mountLeaderboardBox(dialog, "acidrain", () => "standard", (s, m) => `${s.toLocaleString()}점${m ? ` (${m})` : ""}`);
 
   let drops = [];
   let sparks = [];
   let score = 0, hp = 5, wave = 1, clearedWords = 0, typedChars = 0;
-  let startedAt = 0, slowUntil = 0, spawnTimer = 0, lastTime = 0, raf = 0;
-  let state = "idle";
+  let elapsedActiveMs = 0, slowUntil = 0, spawnTimer = 0, lastTime = 0, raf = 0;
+  let state = "idle"; // idle | playing | paused | over
 
   function playSwitchSound() {
     window.cafeAudioKeySwitch?.(switchSelect.value);
   }
 
+  function pickLaneX() {
+    const lanes = [58, 144, 230, 316, 402];
+    const safeLanes = lanes.filter((lx) => !drops.some((d) => Math.abs(d.x - lx) < 56 && d.y < 105));
+    const pool = safeLanes.length ? safeLanes : lanes;
+    return pool[Math.floor(Math.random() * pool.length)] + (Math.random() * 14 - 7);
+  }
+
   function spawnDrop() {
+    const laneX = pickLaneX();
     const isSpecial = Math.random() < 0.14;
     if (isSpecial) {
       const sp = SPECIALS[Math.floor(Math.random() * SPECIALS.length)];
@@ -48,20 +57,23 @@ export function initAcidRain() {
         text: sp.word,
         kind: sp.kind,
         color: sp.color,
-        x: 42 + Math.random() * (canvas.width - 96),
+        x: laneX,
         y: -12,
-        speed: 26 + wave * 3.5,
+        speed: 17 + wave * 3.2,
       });
       return;
     }
-    const text = WORDS[Math.floor(Math.random() * WORDS.length)];
+    const existing = new Set(drops.map((d) => d.text));
+    const available = WORDS.filter((w) => !existing.has(w));
+    const wordPool = available.length ? available : WORDS;
+    const text = wordPool[Math.floor(Math.random() * wordPool.length)];
     drops.push({
       text,
       kind: "normal",
       color: "#fbe3d3",
-      x: 38 + Math.random() * (canvas.width - 88),
+      x: laneX,
       y: -12,
-      speed: 24 + wave * 4.2 + Math.random() * 10,
+      speed: 15 + wave * 3.5 + Math.random() * 5,
     });
   }
 
@@ -81,8 +93,8 @@ export function initAcidRain() {
     scoreEl.textContent = score.toLocaleString();
     hpEl.textContent = "♥".repeat(Math.max(0, hp)) + "♡".repeat(Math.max(0, 5 - hp));
     waveEl.textContent = "W" + wave;
-    const elapsedMin = startedAt ? Math.max(0.08, (performance.now() - startedAt) / 60000) : 1;
-    const cpm = startedAt ? Math.round((typedChars * 2.4) / elapsedMin) : 0;
+    const elapsedMin = elapsedActiveMs ? Math.max(0.08, elapsedActiveMs / 60000) : 1;
+    const cpm = elapsedActiveMs ? Math.round((typedChars * 2.4) / elapsedMin) : 0;
     cpmEl.textContent = cpm + "타";
   }
 
@@ -137,22 +149,51 @@ export function initAcidRain() {
     state = "over";
     cancelAnimationFrame(raf);
     startBtn.textContent = "다시 도전";
+    if (pauseBtn) pauseBtn.hidden = true;
     const cpmText = cpmEl.textContent;
     statusEl.textContent = `방화벽 종료! 최종 ${score.toLocaleString()}점 (${cpmText})`;
     if (score >= 200) window.cafeEarnPoints?.(Math.min(55, 15 + Math.floor(score / 250)), "네온 산성비 방어");
     submitArcadeScore("acidrain", score, { metric: `${cpmText} · W${wave}` });
   }
 
+  function pauseGame() {
+    if (state !== "playing") return;
+    state = "paused";
+    cancelAnimationFrame(raf);
+    lastTime = 0;
+    if (pauseBtn) {
+      pauseBtn.hidden = false;
+      pauseBtn.textContent = "이어하기";
+    }
+    statusEl.textContent = "일시 정지 중이에요. [이어하기]를 누르면 이어서 진행해요.";
+  }
+
+  function resumeGame() {
+    if (state !== "paused") return;
+    state = "playing";
+    lastTime = 0;
+    if (pauseBtn) {
+      pauseBtn.hidden = false;
+      pauseBtn.textContent = "일시정지";
+    }
+    statusEl.textContent = "단어를 입력하고 Enter를 치세요!";
+    window.cafeWorld?.setActivity("game:acidrain");
+    input.focus({ preventScroll: true });
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop);
+  }
+
   function loop(now) {
     if (state !== "playing") return;
     const dt = lastTime ? Math.min(0.05, (now - lastTime) / 1000) : 0;
     lastTime = now;
+    elapsedActiveMs += dt * 1000;
 
     const speedMul = now < slowUntil ? 0.42 : 1;
     spawnTimer -= dt;
     if (spawnTimer <= 0) {
       spawnDrop();
-      spawnTimer = Math.max(0.55, 1.65 - wave * 0.11);
+      spawnTimer = Math.max(0.65, 1.85 - wave * 0.11);
     }
 
     for (let i = drops.length - 1; i >= 0; i--) {
@@ -244,12 +285,16 @@ export function initAcidRain() {
     drops = [];
     sparks = [];
     score = 0; hp = 5; wave = 1; clearedWords = 0; typedChars = 0;
-    startedAt = performance.now();
+    elapsedActiveMs = 0;
     slowUntil = 0;
     spawnTimer = 0.2;
     lastTime = 0;
     state = "playing";
     startBtn.textContent = "재시작";
+    if (pauseBtn) {
+      pauseBtn.hidden = false;
+      pauseBtn.textContent = "일시정지";
+    }
     statusEl.textContent = "단어를 입력하고 Enter를 치세요! 민트/노란/분홍 단어는 특수 아이템이에요.";
     window.cafeWorld?.setActivity("game:acidrain");
     updateHud();
@@ -259,18 +304,18 @@ export function initAcidRain() {
     raf = requestAnimationFrame(loop);
   });
 
+  pauseBtn?.addEventListener("click", () => {
+    if (state === "playing") pauseGame();
+    else if (state === "paused") resumeGame();
+  });
+
   dialog.addEventListener("close", () => {
-    state = "idle";
-    cancelAnimationFrame(raf);
+    pauseGame();
     window.cafeWorld?.setActivity("");
   });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden || !dialog.open) {
-      cancelAnimationFrame(raf);
-      lastTime = 0;
-    } else if (state === "playing") {
-      lastTime = 0;
-      raf = requestAnimationFrame(loop);
+      pauseGame();
     }
   });
 

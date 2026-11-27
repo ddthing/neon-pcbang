@@ -8,7 +8,7 @@ const stop = (key) => {
   return seat && toPercent(seat.stand);
 };
 
-test("the attendant starts at the counter and stops beside each of the 41 chairs", () => {
+test("the attendant starts at the counter and stops beside each of the 67 chairs", () => {
   for (const { key } of SEATS) {
     const route = routeForDelivery(key, stop);
     assert.ok(route, key);

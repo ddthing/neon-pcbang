@@ -32,7 +32,7 @@ export function initBungeoppang() {
   let bag = { pat: 0, cream: 0, pizza: 0 };
   let customer = null;
   let score = 0, combo = 0, servedCount = 0, remaining = 75;
-  let running = false, timer = 0;
+  let running = false, paused = false, timer = 0;
 
   function resetMolds() {
     molds = Array.from({ length: 6 }, (_, idx) => ({
@@ -191,9 +191,17 @@ export function initBungeoppang() {
     btn.addEventListener("click", () => selectTool(btn.dataset.bungeoTool));
   });
 
-  function stopGame(finished = false) {
+  function stopGame(finished = false, pauseOnly = false) {
     running = false;
     clearInterval(timer);
+    if (pauseOnly) {
+      paused = true;
+      startBtn.textContent = "이어서 장사";
+      statusEl.textContent = "잠깐 불을 줄여뒀어요. [이어서 장사]를 누르면 이어서 구워요!";
+      renderUi();
+      return;
+    }
+    paused = false;
     startBtn.textContent = "다시 장사 시작";
     if (finished) {
       statusEl.textContent = `영업 종료! 총 ${servedCount}명 서빙 · ${score.toLocaleString()}점 달성!`;
@@ -203,16 +211,7 @@ export function initBungeoppang() {
     renderUi();
   }
 
-  startBtn.addEventListener("click", () => {
-    resetMolds();
-    bag = { pat: 0, cream: 0, pizza: 0 };
-    score = 0; combo = 0; servedCount = 0; remaining = 75;
-    running = true;
-    startBtn.textContent = "영업 중 (재시작)";
-    selectTool("batter");
-    window.cafeWorld?.setActivity("game:bungeoppang");
-    nextCustomer();
-    statusEl.textContent = "1. 반죽 붓기 → 2. 앙금 넣기 → 3. 뒤집기 → 4. 황금빛일 때 꺼내 서빙!";
+  function startLoop() {
     clearInterval(timer);
     timer = setInterval(() => {
       if (!running || document.hidden) return;
@@ -237,10 +236,35 @@ export function initBungeoppang() {
         renderMolds();
       }
     }, 500);
+  }
+
+  startBtn.addEventListener("click", () => {
+    if (paused && remaining > 0) {
+      paused = false;
+      running = true;
+      startBtn.textContent = "영업 중 (재시작)";
+      window.cafeWorld?.setActivity("game:bungeoppang");
+      statusEl.textContent = "이어서 영업 중! 황금빛일 때 꺼내 서빙하세요!";
+      renderUi();
+      startLoop();
+      return;
+    }
+    resetMolds();
+    bag = { pat: 0, cream: 0, pizza: 0 };
+    score = 0; combo = 0; servedCount = 0; remaining = 75;
+    running = true;
+    paused = false;
+    startBtn.textContent = "영업 중 (재시작)";
+    selectTool("batter");
+    window.cafeWorld?.setActivity("game:bungeoppang");
+    nextCustomer();
+    statusEl.textContent = "1. 반죽 붓기 → 2. 앙금 넣기 → 3. 뒤집기 → 4. 황금빛일 때 꺼내 서빙!";
+    startLoop();
   });
 
   dialog.addEventListener("close", () => {
-    stopGame(false);
+    if (running && remaining > 0) stopGame(false, true);
+    else stopGame(false, false);
     window.cafeWorld?.setActivity("");
   });
 
@@ -291,9 +315,9 @@ export function initSnackTycoon() {
   let tickets = [];
   let tray = [];
   let score = 0, combo = 0, delivered = 0, remaining = 70;
-  let running = false, timer = 0;
+  let running = false, paused = false, timer = 0;
 
-  const seatsPool = ["A01석", "A14석", "B08석", "C19석", "1인석", "2인석", "5인룸", "6인룸"];
+  const seatsPool = ["A01석", "A14석", "A27석", "A42석", "1인석", "2인룸", "5인룸", "6인룸"];
 
   function spawnTicket() {
     const recipe = RECIPES[Math.floor(Math.random() * RECIPES.length)];
@@ -366,9 +390,17 @@ export function initSnackTycoon() {
     render();
   });
 
-  function stopTycoon(finished = false) {
+  function stopTycoon(finished = false, pauseOnly = false) {
     running = false;
     clearInterval(timer);
+    if (pauseOnly) {
+      paused = true;
+      startBtn.textContent = "이어서 알바";
+      statusEl.textContent = "잠시 쉬는 중! [이어서 알바]를 누르면 이어서 배달해요.";
+      render();
+      return;
+    }
+    paused = false;
     startBtn.textContent = "알바 다시 시작";
     if (finished) {
       statusEl.textContent = `교대 시간! 총 ${delivered}건 배달 · ${score.toLocaleString()}점 달성!`;
@@ -378,16 +410,7 @@ export function initSnackTycoon() {
     render();
   }
 
-  startBtn.addEventListener("click", () => {
-    tickets = [];
-    tray = [];
-    score = 0; combo = 0; delivered = 0; remaining = 70;
-    running = true;
-    for (let i = 0; i < 3; i++) spawnTicket();
-    startBtn.textContent = "근무 중 (재시작)";
-    window.cafeWorld?.setActivity("game:tycoon");
-    statusEl.textContent = "주문서 힌트를 보고 재료를 담은 뒤 [배달 출발!]을 누르세요!";
-    render();
+  function startTycoonLoop() {
     clearInterval(timer);
     timer = setInterval(() => {
       if (!running || document.hidden) return;
@@ -399,10 +422,35 @@ export function initSnackTycoon() {
         timeEl.textContent = remaining + "초";
       }
     }, 1000);
+  }
+
+  startBtn.addEventListener("click", () => {
+    if (paused && remaining > 0) {
+      paused = false;
+      running = true;
+      startBtn.textContent = "근무 중 (재시작)";
+      window.cafeWorld?.setActivity("game:tycoon");
+      statusEl.textContent = "이어서 배달 중! 주문서 레시피를 조합하세요!";
+      render();
+      startTycoonLoop();
+      return;
+    }
+    tickets = [];
+    tray = [];
+    score = 0; combo = 0; delivered = 0; remaining = 70;
+    running = true;
+    paused = false;
+    for (let i = 0; i < 3; i++) spawnTicket();
+    startBtn.textContent = "근무 중 (재시작)";
+    window.cafeWorld?.setActivity("game:tycoon");
+    statusEl.textContent = "주문서 힌트를 보고 재료를 담은 뒤 [배달 출발!]을 누르세요!";
+    render();
+    startTycoonLoop();
   });
 
   dialog.addEventListener("close", () => {
-    stopTycoon(false);
+    if (running && remaining > 0) stopTycoon(false, true);
+    else stopTycoon(false, false);
     window.cafeWorld?.setActivity("");
   });
 

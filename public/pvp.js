@@ -65,6 +65,7 @@ export function initPvp() {
   const seatInviteSelect = document.getElementById("pvp-invite-seat");
   const createBtn = document.getElementById("pvp-create");
   const aiBtn = document.getElementById("pvp-vs-ai");
+  const resignBtn = document.getElementById("pvp-resign");
   const leaveBtn = document.getElementById("pvp-leave");
   const winsKey = "neon-pcbang-pvp-wins";
 
@@ -125,6 +126,8 @@ export function initPvp() {
     mode = "ai";
     matchId = "";
     leaveBtn.hidden = false;
+    if (resignBtn) resignBtn.hidden = false;
+    roomsList.hidden = true;
     activeMatch = {
       game,
       status: "playing",
@@ -355,6 +358,8 @@ export function initPvp() {
           }
           matchId = r.id;
           leaveBtn.hidden = false;
+          if (resignBtn) resignBtn.hidden = true;
+          roomsList.hidden = false;
           window.cafeWorld?.setActivity("game:pvp");
           syncMatchUi();
         } catch {
@@ -430,6 +435,19 @@ export function initPvp() {
 
   aiBtn.addEventListener("click", startAiMatch);
 
+  resignBtn?.addEventListener("click", () => {
+    if (!activeMatch || activeMatch.status !== "playing") return;
+    if (mode === "ai") {
+      activeMatch.status = "finished";
+      activeMatch.winner = "guest";
+      statusEl.textContent = "기권했어요! 고양이 알바 AI 승리 🐱";
+      resignBtn.hidden = true;
+      drawBoard();
+    } else {
+      leaveBtn.click();
+    }
+  });
+
   leaveBtn.addEventListener("click", async () => {
     if (mode === "online" && matchId) {
       api("leave", { matchId }).catch(() => {});
@@ -438,6 +456,9 @@ export function initPvp() {
     matchId = "";
     activeMatch = null;
     leaveBtn.hidden = true;
+    if (resignBtn) resignBtn.hidden = true;
+    roomsList.hidden = false;
+    window.cafeWorld?.setActivity?.("");
     statusEl.textContent = "대국 모드를 고르고 상대를 초대하거나 AI와 대국하세요.";
     drawBoard();
     pollLobby();

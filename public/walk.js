@@ -1,6 +1,6 @@
 import "./app.js";
 import { clearSegmentInSpace, entrance, kiosk, pathTo, routeToSeat, roomPortals, relaxPortals, relaxZones } from "./world.js";
-import { LANDMARKS, center, toPercent } from "./cafe-map.mjs";
+import { LANDMARKS, SEATS, center, toPercent } from "./cafe-map.mjs";
 import { createCafeCamera } from "./camera.js";
 import { AVATAR_WARDROBE, encodeAvatarCode, getAvatarSheetUrl, normalizeAvatarCode, renderAvatarPortrait, renderAvatarPreview } from "./avatar-sprites.js";
 
@@ -50,6 +50,59 @@ let joystickOrigin;
 let joystickX = 0;
 let joystickY = 0;
 const visitors = new Map();
+const AI_REGULARS = [
+  { id: "npc:0", name: "민지", avatar: "010110", preferSeat: "hall:1", lines: ["오늘 게임 잘 풀리네~", "창가 자리 햇살 좋다!"] },
+  { id: "npc:1", name: "현우", avatar: "141201", preferSeat: "hall:5", lines: ["짜계치 하나 시킬까?", "오목 한 판 하실 분!"] },
+  { id: "npc:2", name: "서연", avatar: "323723", preferSeat: "hall:10", lines: ["키보드 타건감 좋다~", "얼박사 국룰이지!"] },
+  { id: "npc:3", name: "도윤", avatar: "200412", preferSeat: "hall:14", lines: ["승급전 드디어 2연승!", "비 오는 날엔 PC방이지"] },
+  { id: "npc:4", name: "하은", avatar: "164534", preferSeat: "hall:20", lines: ["뜨개 실풀기 은근 중독돼", "집중 모드 25분 완주!"] },
+  { id: "npc:5", name: "지훈", avatar: "042600", preferSeat: "hall:25", lines: ["여기 PC방 자리 넓어서 편하다", "아샷추 얼음 가득!"] },
+  { id: "npc:6", name: "유진", avatar: "312141", preferSeat: "hall:31", lines: ["고양이 알바생 너무 귀여워", "붕어빵 슈크림 최고"] },
+  { id: "npc:7", name: "시우", avatar: "635310", preferSeat: "hall:38", lines: ["벽돌깨기 신기록 도전!", "2층 야외 테라스 뷰 좋네요"] },
+  { id: "npc:8", name: "수빈", avatar: "021521", preferSeat: "solo:1", lines: ["1인석 아늑하고 집중 잘 돼요", "스도쿠 어려움 클리어!"] },
+  { id: "npc:9", name: "태양", avatar: "553402", preferSeat: "duo:0", lines: ["2인룸 완전 편해요", "솔리테어 3장 뽑기 도전!"] },
+  { id: "npc:10", name: "예린", avatar: "134730", preferSeat: "team:2", lines: ["5인룸 스크림 대기 중~", "매점 알바냥 대박 바쁘네"] },
+];
+const npcBubbles = new Map();
+let activeNpcList = [];
+
+function showLocalBubble(spriteNode, text, ms = 3200) {
+  if (!spriteNode) return;
+  let bubble = spriteNode.querySelector(".cafe-speech-bubble");
+  if (!bubble) {
+    bubble = document.createElement("div");
+    bubble.className = "cafe-speech-bubble is-arriving";
+    spriteNode.append(bubble);
+  }
+  bubble.textContent = text;
+  clearTimeout(spriteNode._bubbleTimer);
+  spriteNode._bubbleTimer = setTimeout(() => bubble.remove(), ms);
+}
+
+function resolveNpcRegulars(space) {
+  if (space !== "hall") {
+    activeNpcList = [];
+    window.cafeArt?.setNpcSeats?.(new Set());
+    return [];
+  }
+  const taken = new Set(peers.flatMap((p) => (p.seat ? [p.seat] : [])));
+  const mySeat = seating.current();
+  if (mySeat) taken.add(mySeat);
+  const allKeys = SEATS.map((s) => s.key);
+  const assigned = [];
+  for (const npc of AI_REGULARS) {
+    let targetSeat = npc.preferSeat;
+    if (taken.has(targetSeat)) {
+      targetSeat = allKeys.find((k) => !taken.has(k) && k !== "hall:0") || "";
+    }
+    if (!targetSeat) continue;
+    taken.add(targetSeat);
+    assigned.push({ ...npc, seat: targetSeat });
+  }
+  activeNpcList = assigned;
+  window.cafeArt?.setNpcSeats?.(new Set(assigned.map((n) => n.seat)));
+  return assigned;
+}
 
 function read(storage, key) {
   try { return window[storage].getItem(key); } catch { return null; }
@@ -385,6 +438,20 @@ function draw() {
     visible.add(peer.id);
   }
 
+  for (const npc of resolveNpcRegulars(space)) {
+    const pos = seating.position(npc.seat);
+    if (!pos) continue;
+    const sprite = paint(npc.id, {
+      name: npc.name, avatar: npc.avatar, seat: npc.seat, facing: 1, waveUntil: 0, zone: "hall",
+    }, pos, false, false);
+    sprite.node.classList.add("npc-regular");
+    const msg = npcBubbles.get(npc.id);
+    if (msg && msg.until > Date.now()) {
+      showLocalBubble(sprite.node, msg.text, msg.until - Date.now());
+    }
+    visible.add(npc.id);
+  }
+
   for (const [id, sprite] of visitors) {
     if (visible.has(id)) continue;
     clearTimeout(sprite.stopWalking);
@@ -570,6 +637,15 @@ function exitRelaxZone() {
 function setActivity(nextActivity) {
   if (myActivity === nextActivity) return;
   myActivity = nextActivity;
+  if (isOnBreak() && ["smoke", "coffee", "candy"].includes(nextActivity)) {
+    const firstBuff = !window.cafeRelaxBuffUntil || window.cafeRelaxBuffUntil < Date.now();
+    window.cafeRelaxBuffUntil = Date.now() + 180_000;
+    if (firstBuff) {
+      document.querySelector(".u070")?.dispatchEvent(new CustomEvent("pcbang-notice", {
+        detail: { message: "☕ 3분간 머리 식힘 버프 발동! (미니게임 G +15%)", kind: "ok" },
+      }));
+    }
+  }
   draw();
   send("sync").catch(disconnected);
 }
@@ -628,6 +704,14 @@ window.cafeWorld = {
   syncNow: () => send("sync").catch(disconnected),
   getProfile: () => ({ name: name || "손님", avatar: avatarCode, token }),
   getPeers: () => peers.slice(),
+  getNpcPeers: () => activeNpcList.map(({ id, name: npcName, seat }) => ({ id, name: npcName, seat })),
+  thankNpc(seatKey, note, itemLabel) {
+    const npc = activeNpcList.find((n) => n.seat === seatKey);
+    if (!npc) return;
+    const text = note ? `🎁 ${itemLabel} 감동!! "${note}" 😋` : `🎁 ${itemLabel} 진짜 감사해요!! 😋`;
+    npcBubbles.set(npc.id, { text, until: Date.now() + 5200 });
+    draw();
+  },
   walkToSeat(seat, previous, showSpace) {
     activeZone = "hall";
     stoodFromSeat = null;
@@ -771,8 +855,19 @@ function wave() {
   waveUntil = lastWave + 3200;
   window.cafeAudioPlay?.("wave");
   draw();
+  showLocalBubble(visitors.get("mine")?.node, "👋 안녕하세요!", 2800);
+  document.dispatchEvent(new CustomEvent("cafe-mission", { detail: { id: "greet" } }));
   send("wave").catch(disconnected);
 }
+
+setInterval(() => {
+  if (document.hidden || displayedSpace() !== "hall" || !activeNpcList.length) return;
+  const npc = activeNpcList[Math.floor(Math.random() * activeNpcList.length)];
+  const line = npc.lines[Math.floor(Math.random() * npc.lines.length)];
+  npcBubbles.set(npc.id, { text: line, until: Date.now() + 4500 });
+  const sprite = visitors.get(npc.id);
+  if (sprite) showLocalBubble(sprite.node, line, 4500);
+}, 7500);
 
 document.getElementById("cafe-wave").addEventListener("click", wave);
 document.getElementById("cafe-name-form").addEventListener("submit", (event) => {

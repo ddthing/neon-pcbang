@@ -186,6 +186,13 @@
 }
 .cafe-fullscreen .pc-app:hover { background: var(--interface-screen); }
 .cafe-fullscreen .pc-app:focus-visible { outline: 2px solid var(--interface-ink); }
+.cafe-fullscreen #pc-desktop[open]:not(:modal) {
+  position: fixed;
+  inset: 62px 12px 72px 12px;
+  margin: auto;
+  z-index: 25;
+  display: block;
+}
 .cafe-fullscreen #pc-desktop :is(.pc-statusbar > span, .pc-bezel, #pc-clock, .pc-panel-heading h3, .pc-panel-heading > span, .pc-cafe dt, .pc-cafe dd, #pc-order-summary, .pc-end) {
   color: #3d2c28;
 }
@@ -219,6 +226,48 @@
 }
 .cafe-fullscreen #pc-desktop .pc-start-menu button { color: #3d2c28; }
 .cafe-fullscreen #pc-desktop .pc-start-menu button:hover { background: #c8b6e2; color: #3d2c28; }
+.cafe-fullscreen #cafe-menu :is(.open-status, .u013-lab, .u013-sub, .kiosk-copy, .kiosk-text-button, .kiosk-counts span) {
+  color: #3d2c28;
+}
+.cafe-fullscreen :is(#bungeoppang, #snack-tycoon) :is(.tycoon-order-banner, .bungeo-bag-bar, .tycoon-ticket, .tycoon-tray-box, .bungeo-mold) {
+  background: #fff7ed;
+  color: #3d2c28;
+  border-color: #5c4742;
+}
+.cafe-fullscreen :is(#bungeoppang, #snack-tycoon) :is(.tycoon-order-banner strong, .tycoon-ticket span, .tycoon-ticket small, .bungeo-bag-bar span, .bungeo-mold small) {
+  color: #3d2c28;
+}
+.cafe-fullscreen :is(#bungeoppang, #snack-tycoon) .tycoon-ticket.is-next {
+  background: #c8b6e2;
+}
+.cafe-fullscreen :is(#tetris, #arcade, #mines, #acidrain, #pvp, #solitaire, #knit, #merge, #sudoku, #focus, #desk-shop) .arcade-rank-box {
+  background: #fff7ed;
+  border-color: #5c4742;
+  color: #3d2c28;
+}
+.cafe-fullscreen .arcade-rank-box :is(summary, li, em) {
+  color: #3d2c28;
+}
+.cafe-fullscreen .arcade-rank-list li {
+  background: #eee4f5;
+}
+.cafe-fullscreen #pvp .pvp-room-row {
+  background: #fff7ed;
+  border-color: #5c4742;
+}
+.cafe-fullscreen #pvp .pvp-room-row :is(strong, small) {
+  color: #3d2c28;
+}
+.cafe-fullscreen .acid-form input {
+  background: #fff7ed;
+  color: #3d2c28;
+  border-color: #5c4742;
+}
+.cafe-fullscreen .cafe-board-pinned {
+  background: #eee4f5;
+  border-color: #5c4742;
+  color: #3d2c28;
+}
 .cafe-fullscreen #floor-kiosk :is(.floor-control, #floor-zoom, #floor-back) {
   background: #f7efe5;
   color: #3d2c28;

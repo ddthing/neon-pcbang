@@ -126,7 +126,7 @@ export function initArcade() {
 
   function movePaddle(x) {
     paddle.x = Math.max(paddle.width / 2, Math.min(width - paddle.width / 2, x));
-    if (state === "ready" || state === "idle") {
+    if (state === "aiming" || state === "ready" || state === "idle") {
       balls.forEach((b) => { b.x = paddle.x; });
     }
   }
@@ -248,7 +248,7 @@ export function initArcade() {
         setState("finished", "다시 도전", `게임 끝! 최종 ${score}점`);
       } else {
         resetBalls();
-        setState("ready", "다음 공", "공을 놓쳤어요. 다음 공을 발사하세요.");
+        setState("aiming", "공 발사", "←→ / 마우스로 조준 후 클릭 또는 Space로 공을 발사하세요!");
       }
       action.focus();
     }
@@ -262,35 +262,61 @@ export function initArcade() {
     if (state === "playing") frame = requestAnimationFrame(animate);
   }
 
+  function launchAimedBall() {
+    if (state !== "aiming" && state !== "ready") return;
+    previousTime = 0;
+    setState("playing", "일시 정지", "아이템 캡슐(W 와이드 · M 멀티볼 · + 보너스)을 받아보세요!");
+    window.cafeWorld?.setActivity("game:arcade");
+    canvas.focus();
+    frame = requestAnimationFrame(animate);
+  }
+
   function pause() {
     if (state !== "playing") return;
     cancelAnimationFrame(frame);
     keys.clear();
-    setState("paused", "이어서 하기", "잠깐 멈췄어요.");
+    setState("paused", "이어서 하기", "잠깐 멈췄어요. 이어서 하기를 누르면 진행 상태가 유지돼요.");
   }
 
   action.addEventListener("click", () => {
     if (state === "playing") { pause(); return; }
+    if (state === "aiming" || state === "ready") { launchAimedBall(); return; }
+    if (state === "paused") {
+      previousTime = 0;
+      setState("playing", "일시 정지", "이어서 플레이 중!");
+      window.cafeWorld?.setActivity("game:arcade");
+      canvas.focus();
+      frame = requestAnimationFrame(animate);
+      return;
+    }
     if (state === "finished" || state === "idle") resetGame();
     if (state === "next") {
       round++;
       lives = Math.min(5, lives + 1);
       resetBoard();
     }
-    previousTime = 0;
-    setState("playing", "일시 정지", "아이템 캡슐(W 와이드 · M 멀티볼 · + 보너스)을 받아보세요!");
-    window.cafeWorld?.setActivity("game:arcade");
+    setState("aiming", "공 발사", "←→ / 마우스로 패들 위치를 맞춘 뒤 화면 클릭 또는 Space로 발사하세요!");
+    draw();
     canvas.focus();
-    frame = requestAnimationFrame(animate);
   });
   arcade.addEventListener("close", () => { pause(); window.cafeWorld?.setActivity(""); });
   document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
   window.addEventListener("blur", () => keys.clear());
 
   arcade.addEventListener("keydown", (event) => {
+    if (event.code === "Space" && (state === "aiming" || state === "ready")) {
+      event.preventDefault();
+      launchAimedBall();
+      return;
+    }
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     event.preventDefault();
     keys.add(event.key);
+    if (state === "aiming") {
+      const dir = event.key === "ArrowRight" ? 1 : -1;
+      movePaddle(paddle.x + dir * 18);
+      draw();
+    }
   });
   document.addEventListener("keyup", (event) => keys.delete(event.key));
 
@@ -303,6 +329,7 @@ export function initArcade() {
   canvas.addEventListener("pointerdown", (event) => {
     canvas.setPointerCapture(event.pointerId);
     pointAtPaddle(event);
+    if (state === "aiming" || state === "ready") launchAimedBall();
   });
 
   resetGame();

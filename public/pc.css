@@ -17,12 +17,31 @@
 
 /* Gilmotungi OS 2.0 Desktop (Cozy Reference Palette) */
 .pc-desktop {
-  width: min(1140px, calc(100% - 24px)); max-height: calc(100dvh - 24px);
+  width: min(1140px, calc(100% - 24px)); max-height: calc(100dvh - 136px);
   border: 5px solid #6e525a; border-radius: 10px; background: #3b2d31; box-shadow: 0 16px 90px #21181ac8;
+}
+.pc-desktop.is-nonmodal[open] {
+  position: fixed; inset: 62px 12px 72px 12px; margin: auto; z-index: 25;
 }
 .pc-desktop[open] { animation: none; }
 .pc-statusbar, .pc-bezel {
   display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 11px;
+}
+.pc-statusbar-actions { display: flex; align-items: center; gap: 4px; }
+.pc-min-btn {
+  display: inline-grid; place-items: center; width: 30px; height: 28px;
+  border: 2px solid #5c4742; border-radius: 0; background: #f7efe5; color: #3d2c28;
+  font-size: 14px; font-weight: 900; line-height: 1;
+}
+.pc-min-btn:hover { background: #c8b6e2; }
+.pc-restore-pill {
+  position: fixed; right: 12px; top: 72px; z-index: 23;
+  padding: 6px 11px; border: 2px solid #5c4742; border-radius: 0;
+  background: #c8b6e2; color: #3d2c28; font-weight: 800; font-size: 11px;
+}
+.pc-restore-pill:hover { background: #f4c2d7; }
+@media (max-width: 680px) {
+  .pc-restore-pill { display: none !important; }
 }
 .pc-statusbar > span { color: #fbe3d3; font-size: 10px; font-weight: 750; letter-spacing: .14em; }
 .pc-statusbar i, .pc-bezel i, .pc-status-dot {
@@ -83,6 +102,31 @@
 .pc-break-btn:hover { background: #c8b6e2; }
 #pc-order-summary { margin-top: 5px; color: #5c4742; font-size: 10px; text-align: center; font-weight: 700; }
 .pc-end { display: block; margin: 6px auto 0; padding: 4px 8px; border: 1px solid #5c4742; color: #3d2c28; background: #eee4f5; font-size: 10px; font-weight: 750; }
+.pc-missions {
+  margin-top: 6px; padding: 6px 7px; border: 2px solid #5c4742; background: #fff7ed; color: #3d2c28;
+}
+.pc-missions-head { display: flex; justify-content: space-between; align-items: center; font-size: 10px; margin-bottom: 4px; color: #3d2c28; }
+#pc-missions-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.pc-mission-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 4px;
+  font-size: 10px; line-height: 1.25; color: #3d2c28;
+}
+.pc-mission-btn {
+  padding: 2px 5px; border: 1px solid #5c4742; background: #c8b6e2; color: #3d2c28;
+  font-size: 9px; font-weight: 800; white-space: nowrap;
+}
+.pc-mission-btn.claimed { background: #d1e8d8; color: #3d2c28; }
+#desk-shop { width: min(500px, calc(100% - 24px)); }
+.desk-shop-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 10px 0; }
+.desk-prop-card {
+  display: grid; gap: 5px; padding: 9px; border: 2px solid #5c4742; background: #fff7ed; color: #3d2c28;
+}
+.desk-prop-card strong { font-size: 12px; color: #3d2c28; }
+.desk-prop-card small { font-size: 10px; color: #5c4742; }
+.desk-prop-card button {
+  padding: 5px 8px; border: 2px solid #5c4742; background: #eee4f5; color: #3d2c28; font-size: 11px; font-weight: 800;
+}
+.desk-prop-card button[aria-pressed="true"] { background: #c8b6e2; }
 
 /* 11-Game Click-to-Open Floating Popup Launcher + Pixel Atlas Icons */
 .pc-launcher {
@@ -402,16 +446,16 @@
 }
 .sol-slot:hover { border-color: #dc9666; }
 .sol-card {
-  width: 100%; aspect-ratio: 5 / 7; border: 2px solid #4c383d; border-radius: 6px;
-  background: #fff7ea; color: #2c2226; padding: 3px 4px; text-align: left;
+  width: 100%; aspect-ratio: 5 / 7; border: 2px solid #5c4742; border-radius: 6px;
+  background: #fff7ea; color: #3d2c28; padding: 4px 5px; text-align: left;
   display: flex; flex-direction: column; justify-content: space-between;
-  font-family: var(--mono); font-weight: 800; font-size: clamp(10px, 2.2vw, 14px);
-  box-shadow: 0 2px 0 #261b1e; cursor: pointer; touch-action: manipulation;
+  font-family: var(--mono); font-weight: 800; font-size: clamp(12px, 2.5vw, 15px);
+  box-shadow: 0 2px 0 #5c4742; cursor: pointer; touch-action: manipulation;
 }
 .sol-card.red { color: #b83232; }
 .sol-card.down {
-  background: repeating-linear-gradient(135deg, #4b6155, #4b6155 4px, #3c4f45 4px, #3c4f45 8px);
-  border-color: #29332d; color: transparent;
+  background: repeating-linear-gradient(135deg, #c8b6e2, #c8b6e2 4px, #f4c2d7 4px, #f4c2d7 8px);
+  border-color: #5c4742; color: transparent;
 }
 .sol-card[data-selected="true"], .sol-card[data-hint="true"] {
   border-color: #f6cf73; box-shadow: 0 0 0 2px #f6cf73, 0 3px 8px #5c474255; transform: translateY(-2px);
@@ -474,14 +518,15 @@
 }
 .knit-dock-rem { font-family: var(--mono); font-size: 10px; text-shadow: 0 1px 1px #5c4742; line-height: 1; }
 .knit-tray-grid {
-  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; padding: 4px;
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; padding: 5px;
   width: min(100%, clamp(192px, 34dvh, 316px)); margin-inline: auto;
-  border: 2px solid #59444a; border-radius: 8px; background: #271e22; user-select: none; touch-action: manipulation;
+  border: 2px solid #5c4742; border-radius: 6px; background: #e8dac9; user-select: none; touch-action: manipulation;
 }
 .knit-cell {
-  aspect-ratio: 1; border-radius: 6px; border: 1px solid #3c2f34; background: #33272c;
+  aspect-ratio: 1; border-radius: 5px; border: 1px solid #cbb7a2;
+  background: repeating-linear-gradient(45deg, #f7efe5 0 4px, #ede0d1 4px 8px);
   display: grid; place-items: center; position: relative; padding: 0;
-  font-family: var(--mono); font-size: 10px; font-weight: 900; color: #fff9f2; touch-action: manipulation;
+  font-family: var(--mono); font-size: 10px; font-weight: 900; color: #3d2c28; touch-action: manipulation;
 }
 .knit-cell.spool { cursor: pointer; border-color: #5c4742; }
 .knit-cell.spool.reachable {

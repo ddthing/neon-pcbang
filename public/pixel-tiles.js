@@ -190,8 +190,85 @@
   }
 
   function partition(ctx, { x, y, w, h }, wood = false) {
-    const sourceX = (wood ? 32 : 0) + (h > TILE ? 16 : 0);
-    tiles(ctx, "partitions", x, y, w, h, "authored", () => [sourceX, 0]);
+    const left = snap(x), top = snap(y), rw = Math.max(TILE, snap(w)), rh = Math.max(TILE, snap(h));
+    const horizontal = rw >= rh;
+    ctx.save();
+    // Crisp continuous warm-brown exterior frame (eliminates broken tile seams!)
+    ctx.fillStyle = PAL.k;
+    ctx.fillRect(left, top, rw, rh);
+    if (wood) {
+      ctx.fillStyle = PAL.w1;
+      ctx.fillRect(left + 1, top + 1, rw - 2, rh - 2);
+      ctx.fillStyle = PAL.w3;
+      if (horizontal) {
+        ctx.fillRect(left + 2, top + 2, rw - 4, rh - 5);
+        ctx.fillStyle = PAL.p1;
+        ctx.fillRect(left + 2, top + 3, rw - 4, 3);
+      } else {
+        ctx.fillRect(left + 2, top + 2, rw - 5, rh - 4);
+        ctx.fillStyle = PAL.p1;
+        ctx.fillRect(left + 3, top + 2, 3, rh - 4);
+      }
+      // Subtle wood post trim every 32px
+      ctx.fillStyle = PAL.k;
+      if (horizontal) {
+        for (let px = left + 32; px < left + rw - 8; px += 32) {
+          ctx.fillRect(px, top + 1, 2, rh - 2);
+        }
+      } else {
+        for (let py = top + 32; py < top + rh - 8; py += 32) {
+          ctx.fillRect(left + 1, py, rw - 2, 2);
+        }
+      }
+    } else {
+      // Frosted lavender-cream glass partition with continuous rail & diagonal sheen
+      ctx.fillStyle = PAL.d;
+      ctx.fillRect(left + 1, top + 1, rw - 2, rh - 2);
+      ctx.fillStyle = PAL.v;
+      ctx.fillRect(left + 2, top + 2, rw - 4, rh - 4);
+      ctx.fillStyle = PAL.c4;
+      if (horizontal) {
+        ctx.fillRect(left + 2, top + 3, rw - 4, Math.max(2, rh - 8));
+        ctx.fillStyle = PAL.p3;
+        for (let px = left + 8; px < left + rw - 10; px += 24) {
+          ctx.fillRect(px, top + 4, 5, 2);
+          ctx.fillRect(px + 2, top + 6, 4, 2);
+        }
+        ctx.fillStyle = PAL.w3;
+        ctx.fillRect(left + 1, top + rh - 4, rw - 2, 3);
+      } else {
+        ctx.fillRect(left + 3, top + 2, Math.max(2, rw - 6), rh - 4);
+        ctx.fillStyle = PAL.p3;
+        for (let py = top + 8; py < top + rh - 10; py += 24) {
+          ctx.fillRect(left + 5, py, 2, 6);
+          ctx.fillRect(left + 7, py + 2, 2, 5);
+        }
+        ctx.fillStyle = PAL.s;
+        for (let py = top + 32; py < top + rh - 8; py += 32) {
+          ctx.fillRect(left + 1, py, rw - 2, 2);
+        }
+      }
+    }
+    ctx.restore();
+  }
+
+  function deskDivider(ctx, x, y, w) {
+    const lx = snap(x), sy = Math.round(y), rw = snap(w);
+    ctx.save();
+    ctx.fillStyle = PAL.k;
+    ctx.fillRect(lx, sy - 3, rw, 5);
+    ctx.fillStyle = PAL.w1;
+    ctx.fillRect(lx + 1, sy - 2, rw - 2, 3);
+    ctx.fillStyle = PAL.w3;
+    ctx.fillRect(lx + 1, sy - 2, rw - 2, 2);
+    // Warm monitor stall dividers every 2 tiles (32px)
+    for (let px = lx; px <= lx + rw; px += 32) {
+      ctx.fillStyle = PAL.k;
+      ctx.fillRect(px - 1, sy - 4, 3, 7);
+      ctx.fillStyle = PAL.p1;
+      ctx.fillRect(px, sy - 3, 1, 5);
+    }
+    ctx.restore();
   }
 
   function rug(ctx, x, y, w, h, tone = "rose") {
@@ -232,8 +309,38 @@
   function skyline(ctx, x, y, w, h, phase) {
     const dusk = phase === "night" || phase === "dusk";
     const scale = Math.ceil(h / 64);
+    ctx.save();
+    // 1. Unified seamless sky bands across the whole skyline (no tiled second sun!)
+    ctx.fillStyle = dusk ? "#5c4e6b" : "#cbbbe3";
+    ctx.fillRect(x, y, w, Math.round(h * 0.56));
+    ctx.fillStyle = dusk ? "#7a6988" : "#e8dceb";
+    ctx.fillRect(x, y + Math.round(h * 0.56), w, h - Math.round(h * 0.56));
+    // 2. Single Sun or Moon + twinkling pixel stars at night
+    const orbX = x + Math.round(w * 0.72);
+    const orbY = y + Math.round(h * 0.22);
+    if (dusk) {
+      ctx.fillStyle = "#e5dcef";
+      for (const [sx, sy] of [[92, 28], [184, 52], [312, 22], [440, 44], [648, 28], [710, 58]]) {
+        ctx.fillRect(x + sx, y + sy, 3, 3);
+      }
+      ctx.fillStyle = "#e8e3f2";
+      ctx.fillRect(orbX - 10, orbY - 12, 20, 24);
+      ctx.fillRect(orbX - 14, orbY - 8, 28, 16);
+      ctx.fillStyle = "#5c4e6b";
+      ctx.fillRect(orbX - 2, orbY - 8, 12, 16);
+    } else {
+      ctx.fillStyle = "#f6d2b6";
+      ctx.fillRect(orbX - 14, orbY - 10, 28, 20);
+      ctx.fillRect(orbX - 10, orbY - 14, 20, 28);
+      ctx.fillStyle = "#ffe5a3";
+      ctx.fillRect(orbX - 8, orbY - 8, 16, 16);
+    }
+    ctx.restore();
+    // 3. Tile ONLY the building strip (sy = 26..64) so buildings span full width with zero double sun
+    const cropY = 26;
+    const cropH = 64 - cropY;
     for (let column = 0; column < w; column += 128 * scale) {
-      blit(ctx, "skyline", dusk ? 128 : 0, 0, 128, 64, x + column, y, "authored", scale);
+      blit(ctx, "skyline", dusk ? 128 : 0, cropY, 128, cropH, x + column, y + cropY * scale, "authored", scale);
     }
   }
 
@@ -299,7 +406,10 @@
   }
 
   function weatherLoop(ctx, type, now, reduced) {
-    const sheet = sources[{ rain: "rain", storm: "storm", snow: "snow", clear: "leaves", wind: "leaves" }[type] ?? "rain"];
+    const key = { rain: "rain", storm: "storm", snow: "snow", clear: "leaves", wind: "leaves" }[type];
+    if (!key) return;
+    const sheet = sources[key];
+    if (!sheet) return;
     const frame = Math.floor(now / (reduced ? 350 : 125)) % 8;
     ctx.save();
     const wind = type === "wind";
@@ -322,6 +432,6 @@
 
   window.cafePixelTiles = {
     ready, PAL, snap, prop, floor, wall, windowPanel, door, jamb, chairPosition, chairFront,
-    workstation, desk, seatObject, furnitureFront, food, weatherLoop, animation, marginTile, partition, rug, skyline,
+    workstation, desk, deskDivider, seatObject, furnitureFront, food, weatherLoop, animation, marginTile, partition, rug, skyline,
   };
 })();

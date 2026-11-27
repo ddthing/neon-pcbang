@@ -36,6 +36,7 @@ export function initSolitaire() {
   let hintPair = null;
   let startedAt = 0;
   let elapsedSec = 0;
+  let baseElapsedSec = 0;
   let clockId = 0;
   let autoTimer = 0;
   let wonHandled = false;
@@ -46,10 +47,10 @@ export function initSolitaire() {
 
   function startClock() {
     clearInterval(clockId);
-    if (!startedAt) startedAt = performance.now();
+    startedAt = performance.now();
     clockId = setInterval(() => {
       if (!dialog.open || document.hidden || isSolitaireWon(game)) return;
-      elapsedSec = Math.floor((performance.now() - startedAt) / 1000);
+      elapsedSec = baseElapsedSec + Math.floor((performance.now() - startedAt) / 1000);
       timeEl.textContent = formatSec(elapsedSec);
     }, 500);
   }
@@ -269,6 +270,7 @@ export function initSolitaire() {
     hintPair = null;
     startedAt = 0;
     elapsedSec = 0;
+    baseElapsedSec = 0;
     wonHandled = false;
     window.cafeWorld?.setActivity("game:solitaire");
     statusEl.textContent = "카드를 눌러 선택한 뒤 옮길 칸을 누르세요. 같은 카드를 한 번 더 누르면 자동 올리기!";
@@ -307,10 +309,21 @@ export function initSolitaire() {
   });
 
   dialog.addEventListener("close", () => {
+    if (startedAt) {
+      baseElapsedSec += Math.floor((performance.now() - startedAt) / 1000);
+      elapsedSec = baseElapsedSec;
+      startedAt = 0;
+    }
     clearInterval(clockId);
     clearInterval(autoTimer);
     window.cafeWorld?.setActivity("");
   });
+  new MutationObserver(() => {
+    if (dialog.open && game.moves > 0 && !wonHandled) {
+      window.cafeWorld?.setActivity("game:solitaire");
+      if (!startedAt) startClock();
+    }
+  }).observe(dialog, { attributes: true, attributeFilter: ["open"] });
 
   reset(3);
 }

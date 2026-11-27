@@ -1,4 +1,4 @@
-import { FLOOR, LANDMARKS, ROOMS, WORLD, center, roomPartitions, toPercent, toPixels } from "./cafe-map.mjs";
+import { FLOOR, HALL_BANKS, LANDMARKS, ROOMS, WORLD, center, roomPartitions, toPercent, toPixels } from "./cafe-map.mjs";
 
 const T = window.cafePixelTiles;
 const { PAL } = T;
@@ -48,8 +48,10 @@ const loungeTargets = document.createElement("div");
 loungeTargets.className = "world-seat-targets";
 scene.append(loungeTargets);
 let occupied = new Set();
+let npcSeats = new Set();
 let away = new Set();
 let activeSeat = null;
+let equippedProps = [];
 let bootAt = 0;
 let lastPhase;
 let doorAt = -Infinity;
@@ -150,8 +152,19 @@ function paintHall() {
       const useWood = part.h === 16 || room.space === "squad" || room.space === "team";
       T.partition(base, part, useWood);
     }
-    T.prop(base, "picture_S", room.door.x, room.door.y - 32, "rose");
+    if (room.side === "south") T.prop(base, "mat_S", room.door.x, room.door.y, accents[room.space]);
+    if (room.space !== "solo") {
+      T.prop(base, "picture_S", x + Math.floor(w / 2 / 16) * 16, y - 16, accents[room.space]);
+    }
   }
+  // Cozy room decor between desks & corners (keeps doorways and seat approaches open)
+  T.prop(base, "plant_small_S", 42 * 16, 5 * 16, "mint");     // duo-1 between desks
+  T.prop(base, "plant_small_S", 42 * 16, 12 * 16, "mint");    // duo-2 between desks
+  T.prop(base, "plant_small_S", 40 * 16, 27 * 16, "mint");    // team-1 lower-left corner
+  T.prop(base, "side_table_S", 4 * 16, 19 * 16, "wood");      // squad-1 between top desks
+  T.prop(base, "side_table_S", 8 * 16, 19 * 16, "wood");      // squad-1 between top desks
+  T.prop(base, "plant_small_S", 4 * 16, 24 * 16, "mint");     // squad-1 between bottom desks
+  T.prop(base, "lamp_floor_S", 8 * 16, 24 * 16, "cream");     // squad-1 warm lamp between bottom desks
 
   const lounge = LANDMARKS.lounge;
   T.rug(base, lounge.x, lounge.y, lounge.w - 16, lounge.h, "lavender");
@@ -165,7 +178,6 @@ function paintHall() {
   T.rug(base, booth.x, booth.y, booth.w, booth.h, "mint");
   T.partition(base, { x: booth.x, y: booth.y, w: booth.w, h: 16 });
   T.partition(base, { x: booth.x, y: booth.y + 16, w: 16, h: 32 });
-  T.prop(base, "bench_S", booth.x + 16, booth.y, "mint");
   T.prop(base, "hood_S", booth.x + 16, booth.y - 16, "cream");
   T.prop(base, "mat_S", booth.x + 16, booth.y + 32, "mint");
   T.jamb(base, booth.x + 16, booth.y + 48, 16);
@@ -190,6 +202,9 @@ function paintHall() {
     layer.dataset.seat = seat.key;
     T.chairFront(layer.getContext("2d"), seat);
     foreground(layer, x, y, seat.foot.y);
+  }
+  for (const bank of HALL_BANKS) {
+    T.deskDivider(base, bank.x, bank.seamY, bank.w);
   }
 }
 
@@ -286,12 +301,42 @@ function paintEffects(now) {
   }
   shade.hidden = !night;
   for (const [key, { x, y, w, h }] of screens) {
-    if (key !== activeSeat && !occupied.has(key)) continue;
+    if (key !== activeSeat && !occupied.has(key) && !npcSeats.has(key)) continue;
     const booting = key === activeSeat && !motion.matches && now - bootAt < 800;
     rect(overlay, x, y, w, h, away.has(key) ? PAL.c1 : PAL.t0);
     if (away.has(key)) rect(overlay, x + w / 2 - 1, y + h / 2 - 1, 3, 3, PAL.y3);
     else if (booting) rect(overlay, x + 1, y + h - 2, (w - 2) * Math.max(0, (now - bootAt) / 800), 1, PAL.g3);
     else rect(overlay, x + 1, y + 1, w - 2, 2, PAL.t3);
+  }
+  if (area === "hall" && activeSeat && equippedProps.length) {
+    const activePanel = screens.get(activeSeat);
+    if (activePanel) {
+      const px = Math.round(activePanel.trayX) - 6;
+      const py = Math.round(activePanel.trayY) - 6;
+      equippedProps.slice(0, 3).forEach((propId, idx) => {
+        const dx = px + (idx - 1) * 6;
+        if (propId === "cactus") {
+          rect(overlay, dx, py + 2, 4, 3, PAL.y2);
+          rect(overlay, dx + 1, py - 1, 2, 3, PAL.g2);
+        } else if (propId === "cat") {
+          rect(overlay, dx, py, 5, 4, PAL.r3);
+          rect(overlay, dx, py - 1, 1, 1, PAL.k);
+          rect(overlay, dx + 4, py - 1, 1, 1, PAL.k);
+        } else if (propId === "mug") {
+          rect(overlay, dx, py + 1, 4, 4, PAL.p3);
+          rect(overlay, dx + 1, py, 2, 1, PAL.v);
+        } else if (propId === "lamp") {
+          rect(overlay, dx + 1, py + 2, 2, 3, PAL.k);
+          rect(overlay, dx, py - 1, 4, 3, PAL.y3);
+        } else if (propId === "headset") {
+          rect(overlay, dx, py + 1, 5, 1, PAL.d);
+          rect(overlay, dx, py + 2, 1, 2, PAL.r1);
+          rect(overlay, dx + 4, py + 2, 1, 2, PAL.r1);
+        } else {
+          rect(overlay, dx + 1, py, 3, 5, PAL.t3);
+        }
+      });
+    }
   }
   if (area === "hall" && night) T.animation(overlay, "neon_open", 368, 32, Math.floor(now / (motion.matches ? 480 : 160)));
   if (area === "terrace") {
@@ -343,6 +388,12 @@ window.cafeArt = {
     occupied = seats;
     away = awaySeats;
     paintEffects(performance.now());
+  },
+  setNpcSeats(seats) {
+    npcSeats = seats instanceof Set ? seats : new Set(seats || []);
+  },
+  setDeskProps(list) {
+    equippedProps = Array.isArray(list) ? list.slice(0, 3) : [];
   },
   openDoor() { doorAt = performance.now(); },
 };

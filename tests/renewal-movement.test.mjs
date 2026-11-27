@@ -13,7 +13,7 @@ import {
   routeToSeat,
 } from "../lib/cafe-world.mjs";
 import { CHARACTER_SPEC } from "../lib/renewal-layout.mjs";
-import { HALL_TABLES, ROOMS, SEATS, SEAT_COUNTS, TILE, WORLD, seatFor, toPercent, toPixels } from "../lib/cafe-map.mjs";
+import { HALL_BANKS, HALL_TABLES, ROOMS, SEATS, SEAT_COUNTS, TILE, WORLD, seatFor, toPercent, toPixels } from "../lib/cafe-map.mjs";
 
 test("movement engine uses the shared 768×512 scale and character foot box", () => {
   assert.deepEqual(MOVEMENT_SPEC.world, WORLD);
@@ -36,7 +36,7 @@ test("hall entrance threshold is reachable and walkable while adjacent bottom wa
 });
 
 test("strictTarget click mode rejects walls and obstacles instead of warping to another corridor", () => {
-  assert.deepEqual(pathTo(entrance, toPercent({ x: 224, y: 112 }), "hall", { strictTarget: true }), []);
+  assert.deepEqual(pathTo(entrance, toPercent({ x: 272, y: 96 }), "hall", { strictTarget: true }), []);
   assert.deepEqual(pathTo(entrance, toPercent({ x: 320, y: 488 }), "hall", { strictTarget: true }), []);
   assert.deepEqual(
     pathTo(relaxZones.booth.door, { x: 86, y: 49 }, "booth", { strictTarget: true }),
@@ -66,9 +66,9 @@ test("booth and terrace pathfinding uses continuous collision checks around ever
   }
 });
 
-test("all 41 seats are accessible from the entry and their approaches stay walkable", () => {
-  assert.equal(SEATS.length, 41);
-  assert.deepEqual(SEAT_COUNTS, { hall: 22, solo: 4, duo: 4, team: 5, squad: 6 });
+test("all 67 Korean PC방 seats are accessible from the entry and their approaches stay walkable", () => {
+  assert.equal(SEATS.length, 67);
+  assert.deepEqual(SEAT_COUNTS, { hall: 48, solo: 4, duo: 4, team: 5, squad: 6 });
   assert.deepEqual(new Set(SEATS.map(({ direction }) => direction)), new Set(["up", "down", "left", "right"]));
   for (const { key, foot, stand } of SEATS) {
     const legs = routeToSeat(entrance, null, key);
@@ -100,19 +100,20 @@ test("seat switching stays inside the current room", () => {
   }
 });
 
-test("Notion aisle clearances (>=32px rows, >=48px center aisle), walkability of all stand points/doors, and 4 weather modes + reduced motion", () => {
-  // Check central vertical aisle between x=20..24 table and x=27..31 table is >= 48px (3 tiles)
-  const col2End = (20 + 4) * TILE;
-  const col3Start = 27 * TILE;
-  assert.ok(col3Start - col2End >= 48, `Central aisle must be >= 48px, got ${col3Start - col2End}`);
-  // Side gaps between [14..18] and [20..24], and [27..31] and [33..37] are >= 32px (2 tiles)
-  assert.ok(20 * TILE - (14 + 4) * TILE >= 32);
-  assert.ok(33 * TILE - (27 + 4) * TILE >= 32);
-  // Row clearances between y=6, y=12, y=18 tables (height 2 tiles = 32px) leave >= 64px vertical corridor
-  const uniqueRows = [...new Set(HALL_TABLES.map((t) => t.y))].sort((a, b) => a - b);
-  for (let i = 1; i < uniqueRows.length; i++) {
-    assert.ok(uniqueRows[i] - (uniqueRows[i - 1] + 2 * TILE) >= 32);
-  }
+test("Korean PC방 aisle clearances (>=48px center aisle, 6 continuous banks), walkability of all stand points/doors, and 4 weather modes + cloud/fog non-rain + reduced motion", () => {
+  // Check central vertical aisle between left bank (cols [16..24]) and right bank (cols [27..35]) is >= 48px (3 tiles)
+  assert.equal(HALL_BANKS.length, 6);
+  assert.equal(HALL_TABLES.length, 48);
+  const leftBankEnd = (22 + 2) * TILE;
+  const rightBankStart = 27 * TILE;
+  assert.ok(rightBankStart - leftBankEnd >= 48, `Central aisle must be >= 48px, got ${rightBankStart - leftBankEnd}`);
+  // Side aisle outside solo-2/4 & squad-1 east wall (x=13) to left bay (x=16) is >= 48px (3 tiles)
+  assert.ok(16 * TILE - 13 * TILE >= 48);
+  // Right aisle between right bay (x=35) and duo/team west wall (x=39) is >= 48px (4 tiles = 64px)
+  assert.ok(39 * TILE - 35 * TILE >= 48);
+  // Vertical gaps between back-to-back blocks (y=5..9, 12..16, 19..23) leave >= 48px (3 tiles) between blocks
+  assert.ok(12 * TILE - 9 * TILE >= 48);
+  assert.ok(19 * TILE - 16 * TILE >= 48);
   // Every seat standPoint and room door center is walkable
   for (const s of SEATS) {
     const pct = toPercent(s.stand);

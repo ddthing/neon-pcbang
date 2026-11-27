@@ -674,13 +674,33 @@ window.cafeEatOrder = async (orderId) => {
 };
 
 window.cafeEarnPoints = async (amount = 25, reason = "미니게임 보너스") => {
+  const hasBuff = Number(window.cafeRelaxBuffUntil || 0) > Date.now();
+  const boosted = hasBuff ? Math.round(amount * 1.15) : amount;
+  document.dispatchEvent(new CustomEvent("cafe-mission", { detail: { id: "game" } }));
   try {
-    const result = await request("earn", { amount });
+    const result = await request("earn", { amount: boosted });
     applyData(result);
     document.querySelector(".u070")?.dispatchEvent(new CustomEvent("pcbang-notice", {
-      detail: { message: `🪙 ${reason} +${amount} G 적립!`, kind: "ok" },
+      detail: { message: `🪙 ${reason}${hasBuff ? " (머리 식힘 +15%!)" : ""} +${boosted} G 적립!`, kind: "ok" },
     }));
   } catch {}
+};
+
+window.cafeSpendPoints = async (cost, reason = "책상 꾸미기") => {
+  try {
+    const result = await request("prop", { cost });
+    applyData(result);
+    document.querySelector(".u070")?.dispatchEvent(new CustomEvent("pcbang-notice", {
+      detail: { message: `✨ ${reason} (-${cost} G)`, kind: "ok" },
+    }));
+    return { ok: true, points: result.loyalty?.points };
+  } catch (err) {
+    const currentPts = data?.loyalty?.points ?? 150;
+    if (err?.payload?.error === "insufficient_points" || currentPts < cost) {
+      return { ok: false, reason: "insufficient_points" };
+    }
+    return { ok: false, reason: "unavailable" };
+  }
 };
 
 // Seat Gift ("옆 자리 간식 쏘기") Modal Wiring
@@ -693,17 +713,21 @@ function initGiftModal() {
   const feedback = $("#gift-feedback");
 
   function populateGiftOptions() {
-    const peers = (window.cafeWorld?.getPeers?.() || []).filter((p) => p.seat);
+    const realPeers = (window.cafeWorld?.getPeers?.() || []).filter((p) => p.seat).map((p) => ({ ...p, isNpc: false }));
+    const npcPeers = (window.cafeWorld?.getNpcPeers?.() || []).map((n) => ({ ...n, isNpc: true }));
+    const targets = [...realPeers, ...npcPeers];
     seatSelect.replaceChildren();
-    if (!peers.length) {
+    if (!targets.length) {
       const opt = element("option", "", "현재 착석 중인 다른 손님이 없어요");
       opt.value = "";
       seatSelect.append(opt);
       sendBtn.disabled = true;
     } else {
-      for (const peer of peers) {
-        const opt = element("option", "", `${seating.label(peer.seat) || peer.seat} · ${peer.name}님`);
+      for (const peer of targets) {
+        const tag = peer.isNpc ? " (단골)" : "";
+        const opt = element("option", "", `${seating.label(peer.seat) || peer.seat} · ${peer.name}님${tag}`);
         opt.value = peer.seat;
+        if (peer.isNpc) opt.dataset.npc = "1";
         seatSelect.append(opt);
       }
       sendBtn.disabled = (data?.loyalty?.points ?? 150) < 30;
@@ -723,8 +747,26 @@ function initGiftModal() {
 
   sendBtn?.addEventListener("click", () => action(async () => {
     if (!seatSelect.value || !itemSelect.value) return;
+    const chosenOpt = seatSelect.selectedOptions?.[0];
+    const isNpcTarget = chosenOpt?.dataset?.npc === "1";
     setText(feedback, "고양이 알바생에게 선물 주문을 전달하고 있어요...");
     try {
+      if (isNpcTarget) {
+        const spend = await window.cafeSpendPoints(30, "단골 손님에게 간식 선물");
+        if (!spend.ok) {
+          setText(feedback, spend.reason === "insufficient_points"
+            ? "보유 G-포인트가 부족해요! (필요: 30 G)"
+            : "포인트를 처리하지 못했어요. 잠시 후 다시 눌러주세요.");
+          return;
+        }
+        const itemLabel = itemSelect.selectedOptions?.[0]?.textContent?.split(" (")[0] || "간식";
+        window.cafeWorld?.thankNpc?.(seatSelect.value, noteInput.value.trim(), itemLabel);
+        noteInput.value = "";
+        setText(feedback, `🎁 단골 손님 자리에 ${itemLabel} 선물을 보냈어요! (-30 G)`);
+        window.cafeAudioPlay?.("chime");
+        document.dispatchEvent(new CustomEvent("cafe-mission", { detail: { id: "greet" } }));
+        return;
+      }
       const profile = window.cafeWorld?.getProfile?.() || { name: "단골 손님" };
       const result = await request("gift", {
         id: crypto.randomUUID(),
@@ -737,6 +779,7 @@ function initGiftModal() {
       noteInput.value = "";
       setText(feedback, "🎁 선물 주문 접수 완료! 고양이 알바생이 지금 바로 배달을 시작해요 (-30 G)");
       window.cafeAudioPlay?.("chime");
+      document.dispatchEvent(new CustomEvent("cafe-mission", { detail: { id: "greet" } }));
       window.cafeWorld?.syncNow?.();
     } catch (err) {
       const code = err?.payload?.error;
@@ -804,6 +847,7 @@ submit.addEventListener("click", () => action(async () => {
       rewardToggle.checked = false;
       setText(shopFeedback, "");
       window.cafeAudioPlay?.("chime");
+      document.dispatchEvent(new CustomEvent("cafe-mission", { detail: { id: "snack" } }));
       window.cafeWorld?.syncNow?.();
     } else setText(shopFeedback, result.reason === "insufficient_points"
       ? "G 포인트가 부족해요." : "좌석이나 쿠폰 상태가 바뀌었거나 이미 조리 중인 주문이 있어요.");

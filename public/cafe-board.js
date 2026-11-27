@@ -43,13 +43,22 @@ function makePost(post, admin) {
   return article;
 }
 
+function makeWelcomePost() {
+  const article = document.createElement("article");
+  article.className = "cafe-board-pinned";
+  article.innerHTML = "<h3>📌 사장님 공지 · 길모퉁이PC방에 오신 걸 환영해요!</h3><small>공지 · 고정</small><p>48석 PC방 홀과 프라이빗 룸, 옥상 테라스에서 게임과 먹거리를 즐기고 불편한 점이나 건의사항을 편하게 남겨 주세요.</p>";
+  return article;
+}
+
 async function refresh() {
   const token = ++serial;
   try {
     const data = await request(null, filter.value);
     if (token !== serial) return;
-    posts.replaceChildren(...data.posts.map((post) => makePost(post, data.admin)));
-    if (!data.posts.length) posts.textContent = "표시할 글이 없어요.";
+    const nodes = data.posts.map((post) => makePost(post, data.admin));
+    if (!nodes.length && !filter.value) nodes.push(makeWelcomePost());
+    if (nodes.length) posts.replaceChildren(...nodes);
+    else posts.textContent = "표시할 글이 없어요.";
   } catch {
     if (token === serial) posts.textContent = "게시글을 불러오지 못했어요.";
   }

@@ -99,17 +99,19 @@
   left: var(--x);
   top: var(--y);
   transform: translate(-50%, -50%);
-  min-height: 22px;
-  min-width: 24px;
-  padding: 2px;
+  min-height: 17px;
+  min-width: 17px;
+  width: 3.9%;
+  padding: 1px 0;
   border: 1px solid #5c4742;
   border-radius: 0;
-  color: #5c4742;
+  color: #3d2c28;
   background: #f7efe5;
   pointer-events: auto;
-  font-size: 10px;
+  font-size: clamp(7px, 0.78vw, 9.5px);
+  line-height: 1.15;
 }
-.floor-map-room { z-index: 3; min-width: max-content; padding-inline: 4px; }
+.floor-map-room { z-index: 3; width: auto; min-width: max-content; padding-inline: 4px; font-size: clamp(8px, 0.9vw, 10px); }
 .floor-seat[data-map-seat]:is(:hover, [aria-pressed="true"], .my-seat) { background: #c8b6e2; }
 .floor-room {
   grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
