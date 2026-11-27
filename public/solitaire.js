@@ -252,12 +252,12 @@ export function initSolitaire() {
       window.cafeAudioPlay?.("chime");
       const bonus = Math.max(0, 600 - elapsedSec * 2);
       const total = game.score + bonus;
-      window.cafeEarnPoints?.(40, "코지 솔리테어 클리어");
+      const reward = window.cafeRewardGameEnd?.("solitaire", total, { winBonus: true, label: "코지 솔리테어 클리어" });
       submitArcadeScore("solitaire", total, {
         mode: drawCount === 3 ? "draw3" : "draw1",
         metric: `${formatSec(elapsedSec)} · ${game.moves}수`,
       });
-      statusEl.textContent = `🎉 솔리테어 완성! 최종 ${total.toLocaleString()}점 (${formatSec(elapsedSec)})`;
+      statusEl.textContent = `🎉 솔리테어 완성! 최종 ${total.toLocaleString()}점 (${formatSec(elapsedSec)})${reward ? ` · +${reward.awarded} G` : ""}`;
     }
   }
 

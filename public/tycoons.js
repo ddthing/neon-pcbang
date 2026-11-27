@@ -204,8 +204,9 @@ export function initBungeoppang() {
     paused = false;
     startBtn.textContent = "다시 장사 시작";
     if (finished) {
-      statusEl.textContent = `영업 종료! 총 ${servedCount}명 서빙 · ${score.toLocaleString()}점 달성!`;
-      if (score >= 240) window.cafeEarnPoints?.(Math.min(60, 15 + Math.floor(score / 200)), "붕어빵 포차 알바");
+      const reward = window.cafeRewardGameEnd?.("bungeoppang", score, { label: "붕어빵 포차 알바" });
+      const gText = reward ? ` · +${reward.awarded} G` : "";
+      statusEl.textContent = `영업 종료! 총 ${servedCount}명 서빙 · ${score.toLocaleString()}점 달성!${gText}`;
       submitArcadeScore("bungeoppang", score, { metric: `${servedCount}봉투 완판` });
     }
     renderUi();
@@ -317,7 +318,7 @@ export function initSnackTycoon() {
   let score = 0, combo = 0, delivered = 0, remaining = 70;
   let running = false, paused = false, timer = 0;
 
-  const seatsPool = ["A01석", "A14석", "A27석", "A42석", "1인석", "2인룸", "5인룸", "6인룸"];
+  const seatsPool = ["A01", "A14", "A27", "A42", "1인석 1", "2인룸 1", "2인룸 2", "5인룸", "6인룸"];
 
   function spawnTicket() {
     const recipe = RECIPES[Math.floor(Math.random() * RECIPES.length)];
@@ -403,8 +404,9 @@ export function initSnackTycoon() {
     paused = false;
     startBtn.textContent = "알바 다시 시작";
     if (finished) {
-      statusEl.textContent = `교대 시간! 총 ${delivered}건 배달 · ${score.toLocaleString()}점 달성!`;
-      if (score >= 250) window.cafeEarnPoints?.(Math.min(60, 15 + Math.floor(score / 220)), "알바냥 매점 러시");
+      const reward = window.cafeRewardGameEnd?.("tycoon", score, { label: "알바냥 매점 러시" });
+      const gText = reward ? ` · +${reward.awarded} G` : "";
+      statusEl.textContent = `교대 시간! 총 ${delivered}건 배달 · ${score.toLocaleString()}점 달성!${gText}`;
       submitArcadeScore("tycoon", score, { metric: `${delivered}건 조리` });
     }
     render();

@@ -54,6 +54,7 @@ let activeSeat = null;
 let equippedProps = [];
 let bootAt = 0;
 let lastPhase;
+let lastWeather;
 let doorAt = -Infinity;
 let relaxZones;
 
@@ -218,15 +219,16 @@ function paintHall() {
   T.prop(base, "plant_tall_S", 80, 432, "mint");
   T.prop(base, "plant_small_S", 656, 432, "mint");
 
+  const chairsLayer = makeCanvas("cafe-art-chairs");
+  chairsLayer.style.zIndex = "999";
+  const chairsCtx = chairsLayer.getContext("2d");
   for (const seat of layout) {
     const panel = T.desk(base, seat);
     screens.set(seat.key, panel);
-    const { x, y, w, h } = T.chairPosition(seat);
-    const layer = makeCanvas("cafe-art-chair", w, h);
-    layer.dataset.seat = seat.key;
-    T.chairFront(layer.getContext("2d"), seat);
-    foreground(layer, x, y, seat.foot.y);
+    const { x, y } = T.chairPosition(seat);
+    T.chairFront(chairsCtx, seat, false, Math.round(x), Math.round(y));
   }
+  avatars.append(chairsLayer);
 }
 
 function paintBreakArea() {
@@ -238,7 +240,7 @@ function paintBreakArea() {
 
   if (outside) {
     // 2F Outdoor Rooftop Terrace: open sky/skyline + balustrade + warm wood deck + cozy café cluster
-    T.skyline(base, 0, 0, WIDTH, 240, lastPhase);
+    T.skyline(base, 0, 0, WIDTH, 240, lastPhase, lastWeather);
     T.floor(base, 48, 256, 672, 240, true, false, "tile");
     T.floor(base, 128, 256, 512, 128, false, false, "wood");
     T.rug(base, 256, 288, 240, 80, "mint");
@@ -296,7 +298,7 @@ function paintBase() {
   loungeSeats.clear();
   loungeTargets.replaceChildren();
   glass = [];
-  avatars.querySelectorAll(".cafe-art-chair, .cafe-art-prop-front").forEach((node) => node.remove());
+  avatars.querySelectorAll(".cafe-art-chair, .cafe-art-chairs, .cafe-art-prop-front").forEach((node) => node.remove());
   rect(base, 0, 0, WIDTH, HEIGHT, PAL.p2);
   if (area === "hall") paintHall();
   else paintBreakArea();
@@ -305,12 +307,13 @@ function paintBase() {
 function paintEffects(now) {
   if (!ready || !area || document.hidden) return;
   const phase = document.body.dataset.cafeLight || "night";
-  if (phase !== lastPhase) {
+  const weather = document.body.dataset.cafeWeather || "rain";
+  if (phase !== lastPhase || (area === "terrace" && weather !== lastWeather)) {
     lastPhase = phase;
+    lastWeather = weather;
     paintBase();
   }
   const night = phase === "night" || phase === "dusk";
-  const weather = document.body.dataset.cafeWeather || "rain";
   overlay.clearRect(0, 0, WIDTH, HEIGHT);
   for (const { x, y, w } of glass) {
     for (let offset = 0; offset < w; offset += 16) {

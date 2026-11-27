@@ -210,8 +210,9 @@ export function initTetris() {
     state = "over";
     cancelAnimationFrame(raf);
     actionBtn.textContent = "다시 시작";
-    statusEl.textContent = `게임 오버! 최종 ${score.toLocaleString()}점 (${lines}줄)`;
-    if (score >= 300) window.cafeEarnPoints?.(Math.min(50, 15 + Math.floor(score / 400)), "테트리스 플레이");
+    const reward = window.cafeRewardGameEnd?.("tetris", score, { label: "테트리스 플레이" });
+    const gText = reward ? ` · +${reward.awarded} G${reward.hasBuff ? " (버프)" : ""}` : "";
+    statusEl.textContent = `게임 오버! 최종 ${score.toLocaleString()}점 (${lines}줄)${gText}`;
     submitArcadeScore("tetris", score, { metric: `${lines}줄 · Lv.${level}` });
   }
 

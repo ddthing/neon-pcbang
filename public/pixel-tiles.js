@@ -47,20 +47,12 @@
     partitions: "original/partitions.png",
     skyline: "original/skyline.png",
   };
-  const displayFoods = [
-    "soda_coke", "soda_pepsi", "soda_fanta", "soda_sprite",
-    "cake_strawberry", "cake_matcha", "cake_cheese", "cake_chocolate",
-    "pastry_bread", "pastry_croissant", "pastry_brioche", "pastry_pretzel",
-    "onigiri_1", "onigiri_3", "onigiri_5", "boba_taro", "boba_matcha",
-    "boba_strawberry", "coffee_foam", "fruit_strawberry", "jam_peach",
-  ];
   const ready = Promise.all([
     fetch("./assets/downtown/catalog.json").then((response) => {
       if (!response.ok) throw new Error("Downtown 에셋 카탈로그를 불러올 수 없습니다.");
       return response.json();
     }).then((data) => { catalog = data; }),
     ...Object.entries(images).map(([key, path]) => loadImage(key, path)),
-    ...displayFoods.map((key) => loadImage(key, "foods/" + key + ".png")),
   ]);
 
   const ramps = {
@@ -306,19 +298,23 @@
     ctx.fillRect(lx + TILE * 2 - 3, ty + 1, 2, Math.max(0, jh - 2));
   }
 
-  function skyline(ctx, x, y, w, h, phase) {
-    const dusk = phase === "night" || phase === "dusk";
+  function skyline(ctx, x, y, w, h, phase, weatherType = "clear") {
+    const night = phase === "night";
+    const dusk = phase === "dusk";
+    const cloudy = weatherType === "cloud" || weatherType === "fog" || weatherType === "rain" || weatherType === "storm";
     const scale = Math.ceil(h / 64);
     ctx.save();
-    // 1. Unified seamless sky bands across the whole skyline (no tiled second sun!)
-    ctx.fillStyle = dusk ? "#5c4e6b" : "#cbbbe3";
+    // 1. 3-phase time-of-day sky palette (Day sky blue / Dusk peach-lavender / Night indigo)
+    const topColor = night ? "#5c4e6b" : dusk ? "#e5b8b8" : (cloudy ? "#b7c8da" : "#b9daf0");
+    const bottomColor = night ? "#7a6988" : dusk ? "#c8b6e2" : (cloudy ? "#d7dfea" : "#dff1fb");
+    ctx.fillStyle = topColor;
     ctx.fillRect(x, y, w, Math.round(h * 0.56));
-    ctx.fillStyle = dusk ? "#7a6988" : "#e8dceb";
+    ctx.fillStyle = bottomColor;
     ctx.fillRect(x, y + Math.round(h * 0.56), w, h - Math.round(h * 0.56));
     // 2. Single Sun or Moon + twinkling pixel stars at night
     const orbX = x + Math.round(w * 0.72);
     const orbY = y + Math.round(h * 0.22);
-    if (dusk) {
+    if (night) {
       ctx.fillStyle = "#e5dcef";
       for (const [sx, sy] of [[92, 28], [184, 52], [312, 22], [440, 44], [648, 28], [710, 58]]) {
         ctx.fillRect(x + sx, y + sy, 3, 3);
@@ -329,18 +325,30 @@
       ctx.fillStyle = "#5c4e6b";
       ctx.fillRect(orbX - 2, orbY - 8, 12, 16);
     } else {
-      ctx.fillStyle = "#f6d2b6";
+      ctx.fillStyle = dusk ? "#f4c2d7" : "#f6d2b6";
       ctx.fillRect(orbX - 14, orbY - 10, 28, 20);
       ctx.fillRect(orbX - 10, orbY - 14, 20, 28);
-      ctx.fillStyle = "#ffe5a3";
+      ctx.fillStyle = dusk ? "#f6cf73" : "#ffe5a3";
       ctx.fillRect(orbX - 8, orbY - 8, 16, 16);
     }
+    // 3. Layered pixel clouds (soft wisps in day, fuller cozy cloud banks on cloudy/fog/rain)
+    const cloudCoords = cloudy
+      ? [[68, 34, 72], [190, 52, 86], [336, 28, 92], [492, 48, 84], [634, 30, 78]]
+      : dusk ? [[140, 38, 56], [420, 44, 64]] : [[116, 36, 62], [360, 46, 58], [588, 30, 52]];
+    for (const [cx, cy, cw] of cloudCoords) {
+      ctx.fillStyle = night ? "#8d82a3" : cloudy ? "#e5dcef" : "#fff7ed";
+      ctx.fillRect(x + cx, y + cy + 6, cw, 12);
+      ctx.fillRect(x + cx + 10, y + cy, Math.max(20, cw - 20), 10);
+      ctx.fillRect(x + cx + 18, y + cy - 4, Math.max(12, cw - 38), 6);
+      ctx.fillStyle = night ? "#7a6988" : cloudy ? "#d6cee4" : "#f7efe5";
+      ctx.fillRect(x + cx + 4, y + cy + 14, cw - 8, 4);
+    }
     ctx.restore();
-    // 3. Tile ONLY the building strip (sy = 26..64) so buildings span full width with zero double sun
+    // 4. Tile ONLY the building strip (sy = 26..64) so buildings span full width with zero double sun
     const cropY = 26;
     const cropH = 64 - cropY;
     for (let column = 0; column < w; column += 128 * scale) {
-      blit(ctx, "skyline", dusk ? 128 : 0, cropY, 128, cropH, x + column, y + cropY * scale, "authored", scale);
+      blit(ctx, "skyline", night || dusk ? 128 : 0, cropY, 128, cropH, x + column, y + cropY * scale, "authored", scale);
     }
   }
 
@@ -366,13 +374,13 @@
     return { w, h, x: seat.foot.x - seats[0].x, y: seat.foot.y - seats[0].y, direction: seats[0].direction };
   }
 
-  function chairFront(ctx, seat, night) {
-    furnitureFront(ctx, chairFrame(seat.direction).id, "lavender", night);
+  function chairFront(ctx, seat, night, dx = 0, dy = 0) {
+    furnitureFront(ctx, chairFrame(seat.direction).id, "lavender", night, dx, dy);
   }
 
-  function furnitureFront(ctx, name, tone, night) {
+  function furnitureFront(ctx, name, tone, night, dx = 0, dy = 0) {
     const { w, h, front } = catalog.objects[name];
-    blit(ctx, "fronts", ...front, w, h, 0, 0, tone, 1, night);
+    blit(ctx, "fronts", ...front, w, h, dx, dy, tone, 1, night);
   }
 
   function workstation(ctx, kind, x, y, scale, night, mirror = false) {
@@ -402,6 +410,7 @@
   }
 
   function food(ctx, key, x, y, night, scale = 1) {
+    if (!sources[key]) return;
     blit(ctx, key, 0, 0, TILE, TILE, snap(x), snap(y), "food", scale, night);
   }
 

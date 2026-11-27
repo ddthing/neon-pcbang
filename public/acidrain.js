@@ -34,7 +34,7 @@ export function initAcidRain() {
   let drops = [];
   let sparks = [];
   let score = 0, hp = 5, wave = 1, clearedWords = 0, typedChars = 0;
-  let elapsedActiveMs = 0, slowUntil = 0, spawnTimer = 0, lastTime = 0, raf = 0;
+  let elapsedActiveMs = 0, slowUntil = 0, hitInvulnUntil = 0, spawnTimer = 0, lastTime = 0, raf = 0;
   let state = "idle"; // idle | playing | paused | over
 
   function playSwitchSound() {
@@ -58,7 +58,7 @@ export function initAcidRain() {
         kind: sp.kind,
         color: sp.color,
         x: laneX,
-        y: -12,
+        y: -32,
         speed: 17 + wave * 3.2,
       });
       return;
@@ -72,7 +72,7 @@ export function initAcidRain() {
       kind: "normal",
       color: "#fbe3d3",
       x: laneX,
-      y: -12,
+      y: -32,
       speed: 15 + wave * 3.5 + Math.random() * 5,
     });
   }
@@ -151,8 +151,9 @@ export function initAcidRain() {
     startBtn.textContent = "다시 도전";
     if (pauseBtn) pauseBtn.hidden = true;
     const cpmText = cpmEl.textContent;
-    statusEl.textContent = `방화벽 종료! 최종 ${score.toLocaleString()}점 (${cpmText})`;
-    if (score >= 200) window.cafeEarnPoints?.(Math.min(55, 15 + Math.floor(score / 250)), "네온 산성비 방어");
+    const reward = window.cafeRewardGameEnd?.("acidrain", score, { label: "네온 산성비 방어" });
+    const gText = reward ? ` · +${reward.awarded} G` : "";
+    statusEl.textContent = `방화벽 종료! 최종 ${score.toLocaleString()}점 (${cpmText})${gText}`;
     submitArcadeScore("acidrain", score, { metric: `${cpmText} · W${wave}` });
   }
 
@@ -189,11 +190,12 @@ export function initAcidRain() {
     lastTime = now;
     elapsedActiveMs += dt * 1000;
 
-    const speedMul = now < slowUntil ? 0.42 : 1;
+    const earlyMul = elapsedActiveMs < 15000 ? 0.6 : 1;
+    const speedMul = (now < slowUntil ? 0.42 : 1) * earlyMul;
     spawnTimer -= dt;
     if (spawnTimer <= 0) {
       spawnDrop();
-      spawnTimer = Math.max(0.65, 1.85 - wave * 0.11);
+      spawnTimer = elapsedActiveMs < 15000 ? 2.2 : Math.max(0.65, 1.85 - wave * 0.11);
     }
 
     for (let i = drops.length - 1; i >= 0; i--) {
@@ -202,13 +204,16 @@ export function initAcidRain() {
       if (d.y >= canvas.height - 22) {
         burstAt(d.x, canvas.height - 24, "#ff5c70");
         drops.splice(i, 1);
-        hp--;
-        window.cafeAudioPlay?.("thud");
-        updateHud();
-        if (hp <= 0) {
-          draw();
-          finish();
-          return;
+        if (now >= hitInvulnUntil) {
+          hitInvulnUntil = now + 800;
+          hp--;
+          window.cafeAudioPlay?.("thud");
+          updateHud();
+          if (hp <= 0) {
+            draw();
+            finish();
+            return;
+          }
         }
       }
     }
@@ -287,7 +292,8 @@ export function initAcidRain() {
     score = 0; hp = 5; wave = 1; clearedWords = 0; typedChars = 0;
     elapsedActiveMs = 0;
     slowUntil = 0;
-    spawnTimer = 0.2;
+    hitInvulnUntil = 0;
+    spawnTimer = -1.5;
     lastTime = 0;
     state = "playing";
     startBtn.textContent = "재시작";

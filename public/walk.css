@@ -60,7 +60,12 @@
   position: absolute; bottom: 0; left: 0; width: clamp(3px, .35cqw, 6px); aspect-ratio: 1;
   background: #fff5ebcc; border-radius: 1px; opacity: 0;
 }
-.cafe-vapor[data-kind="smoke"] i { background: #dfd0d3d9; box-shadow: 0 0 4px #fbe3d366; }
+.cafe-vapor[data-kind="smoke"] i {
+  width: clamp(4px, .45cqw, 7px);
+  background: #e8e0e6eb;
+  border: 1px solid #5c474255;
+  box-shadow: 0 0 4px #f7efe588;
+}
 .cafe-vapor[data-kind="steam"] i { background: #fff5e4cc; }
 
 .scene-viewport { position: relative; }

@@ -142,8 +142,9 @@ let peers = [];
 let queue = Promise.resolve();
 let connected = false;
 let pendingSeatChanges = 0;
-let pulseTimer;
+let pulseTimer = 0;
 let pulsing = false;
+let pulseErrorCount = 0;
 let journey;
 let firstMove = true;
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -604,7 +605,7 @@ function enterRelaxZone(zoneId, initialMode = "") {
   location.x = cfg.door.x + (Math.random() * 6 - 3);
   location.y = cfg.door.y - 3;
   dirName = "up";
-  myActivity = initialMode || (zoneId === "terrace" ? "coffee" : "smoke");
+  myActivity = initialMode || "";
   window.cafeShowZone?.(zoneId);
   window.cafeAudioSetZone?.(zoneId);
   draw();
@@ -615,7 +616,7 @@ function exitRelaxZone() {
   if (!isOnBreak()) return;
   const prevZone = activeZone;
   activeZone = "hall";
-  if (myActivity === "smoke" || myActivity === "coffee" || myActivity === "candy") myActivity = "";
+  if (myActivity === "smoke" || myActivity === "coffee" || myActivity === "candy" || myActivity.startsWith("lounge:")) myActivity = "";
   pressed.clear();
   stopJoystick();
   path = [];
@@ -648,8 +649,9 @@ function setActivity(nextActivity) {
     const firstBuff = !window.cafeRelaxBuffUntil || window.cafeRelaxBuffUntil < Date.now();
     window.cafeRelaxBuffUntil = Date.now() + 180_000;
     if (firstBuff) {
+      const buffIcon = nextActivity === "smoke" ? "🚬" : nextActivity === "candy" ? "🍭" : "☕";
       document.querySelector(".u070")?.dispatchEvent(new CustomEvent("pcbang-notice", {
-        detail: { message: "☕ 3분간 머리 식힘 버프 발동! (미니게임 G +15%)", kind: "ok" },
+        detail: { message: `${buffIcon} 3분간 머리 식힘 버프 발동! (미니게임 G +15%)`, kind: "ok" },
       }));
     }
   }
@@ -839,20 +841,30 @@ function advanceJourney(dt) {
 }
 
 async function pulse() {
-  if (pulsing) return;
+  if (pulsing || document.hidden) return;
   pulsing = true;
   try {
     const wanted = seating.current();
     const result = await send("sync");
+    pulseErrorCount = 0;
     if (!pendingSeatChanges && wanted === seating.current() && wanted !== result.mine) {
       if (!wanted) await send("release");
       else if ((await send("reserve", wanted)).mine !== wanted) seating.lose(wanted);
     }
   } catch {
+    pulseErrorCount++;
     disconnected();
   } finally {
     pulsing = false;
-    pulseTimer = setTimeout(pulse, document.hidden ? 8500 : !connected ? 3200 : peers.length ? 1150 : 2600);
+    clearTimeout(pulseTimer);
+    if (!document.hidden) {
+      const delay = pulseErrorCount > 0
+        ? Math.min(60_000, 9000 * Math.pow(2, Math.min(3, pulseErrorCount - 1)))
+        : 9000;
+      pulseTimer = setTimeout(pulse, delay);
+    } else {
+      pulseTimer = 0;
+    }
   }
 }
 
@@ -1187,12 +1199,14 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     pressed.clear();
     stopJoystick();
+    clearTimeout(pulseTimer);
+    pulseTimer = 0;
     cancelAnimationFrame(frameId);
     frameId = 0;
     lastFrame = 0;
   } else {
     requestFrame();
-    if (!pulsing) { clearTimeout(pulseTimer); pulse(); }
+    if (!pulsing) { clearTimeout(pulseTimer); pulseTimer = 0; pulse(); }
   }
 });
 

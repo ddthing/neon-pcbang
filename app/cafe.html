@@ -22,6 +22,10 @@
   <link rel="stylesheet" href="./cafe-delivery.css">
   <link rel="stylesheet" href="./cafe-art.css">
   <link rel="stylesheet" href="./cafe-interface.css">
+  <link rel="modulepreload" href="./app.js">
+  <link rel="modulepreload" href="./walk.js">
+  <link rel="modulepreload" href="./corner-shop.js">
+  <link rel="modulepreload" href="./cafe-map.mjs">
   <script src="./pixel-tiles.js" defer></script>
   <script src="./boot.js" defer></script>
   <script src="./audio-engine.js" defer></script>
@@ -109,6 +113,7 @@
             <div class="hud-icon-row">
               <button class="walk-button hud-audio-btn" id="sfx-toggle" type="button" aria-pressed="true" title="효과음 켜기/끄기" aria-label="효과음 켜기/끄기"><svg aria-hidden="true"><use href="./icons.svg#pixel-sound"/></svg></button>
               <button class="walk-button hud-audio-btn" id="hud-rain-toggle" type="button" aria-pressed="false" title="빗소리 켜기/끄기" aria-label="빗소리 켜기/끄기"><svg aria-hidden="true"><use href="./icons.svg#pixel-rain"/></svg></button>
+              <button class="walk-button hud-audio-btn" id="camera-overview-toggle" type="button" aria-pressed="false" title="매장 전체보기 전환" aria-label="매장 전체보기 전환">전체보기</button>
               <button class="walk-button view-button" id="cafe-fullscreen" type="button" aria-pressed="false" title="전체화면 전환" aria-label="전체화면 전환">
                 <svg aria-hidden="true"><use href="./icons.svg#pixel-fullscreen"/></svg>
                 <span>전체화면</span>
@@ -743,6 +748,7 @@
         <button class="walk-button" id="knit-hint" type="button">힌트</button>
         <button class="walk-button" id="knit-reset" type="button">새판</button>
       </div>
+      <p class="knit-pattern-caption mono" id="knit-pattern-caption">1단계 도안</p>
       <canvas class="knit-loom" id="knit-loom" width="320" height="236" aria-label="픽셀 뜨개질 액자와 실 감김"></canvas>
       <div class="knit-dock" id="knit-dock" aria-label="활성 실타래 도크"></div>
       <div class="knit-tray-grid" id="knit-tray" aria-label="7x7 대기 실타래 그리드"></div>
@@ -785,8 +791,8 @@
       <div class="dialog-head"><h2 id="cafe-board-title">길모퉁이 게시판</h2><button class="close" type="button" data-close aria-label="게시판 닫기">×</button></div>
       <label>상태로 보기
         <select id="cafe-board-filter">
-          <option value="">전체</option><option value="pending">대기</option><option value="accepted">반영</option>
-          <option value="closed">꺼져</option><option value="held">보류</option>
+          <option value="">전체</option><option value="pending">접수</option><option value="accepted">반영</option>
+          <option value="closed">종료</option><option value="held">보류</option>
         </select>
       </label>
       <section id="cafe-board-posts" aria-label="게시글" aria-live="polite"></section>

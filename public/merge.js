@@ -66,7 +66,7 @@ export function initMerge() {
   scoreDisplay.replaceChildren(spokenScore);
   const columns = [];
   let best = readBest();
-  let values, score, finished, reachedGoal, swipe;
+  let values, score, finished, reachedGoal, rewarded, swipe;
   let confettiFrame = 0;
 
   // Lucian #018 rolls a strip of ten digits per place value.
@@ -251,7 +251,7 @@ export function initMerge() {
     board.querySelectorAll(".u022").forEach((effect) => effect.remove());
     values = createMergeBoard();
     score = 0;
-    reachedGoal = finished = false;
+    reachedGoal = finished = rewarded = false;
     status.textContent = "타일을 한쪽으로 밀어 보세요.";
     paint();
   }
@@ -307,7 +307,10 @@ export function initMerge() {
       if (score >= 256) {
         submitArcadeScore("merge", score, { metric: `최대 ${Math.max(...values)}` });
       }
-      if (won) window.cafeEarnPoints?.(40, "2048 달성 보너스");
+      if (!rewarded) {
+        rewarded = true;
+        window.cafeRewardGameEnd?.("merge", score, { winBonus: won, label: won ? "2048 달성 보너스" : "2048 플레이" });
+      }
     }
     status.textContent = won
       ? (finished ? "2048 달성! 더 움직일 수 없어요." : "2048 달성! 더 큰 타일에도 도전해 보세요.")

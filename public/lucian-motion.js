@@ -220,7 +220,11 @@ function connectCafeSwitch(root, requestChange) {
     void el.offsetWidth;
     el.classList.remove('enter');
     layout();
+    clearTimeout(push._liveTimer);
     live.textContent = k === 'err' ? '' : message;
+    if (live.textContent) {
+      push._liveTimer = setTimeout(function () { live.textContent = ''; }, 1200);
+    }
     startLoop();
     el.querySelector('.u070-x').addEventListener('click', function () { remove(t); });
     // 옆으로 밀어 닫기

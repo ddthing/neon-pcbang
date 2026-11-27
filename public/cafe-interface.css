@@ -128,6 +128,9 @@
 }
 .cafe-fullscreen #pc-launcher[hidden] { display: none !important; }
 .cafe-fullscreen :is(.floor-top, .pc-statusbar, .pc-taskbar) { background: var(--interface-screen); color: var(--interface-ink); }
+.cafe-fullscreen #floor-kiosk :is(.floor-top p, .floor-toolbar strong, .floor-toolbar p span, .floor-legend li) {
+  color: #3d2c28;
+}
 .cafe-fullscreen #avatar-wardrobe :is(.dialog-inner, .wardrobe-stage, .wardrobe-stepper, .wardrobe-val, .wardrobe-name-row, .walk-button, input, .enter, #wardrobe-preview) {
   background: var(--interface-paper);
   color: var(--interface-ink);
@@ -380,7 +383,7 @@
 @media (max-width: 768px), (pointer: coarse) {
   .cafe-camera-nav {
     position: fixed;
-    inset: max(71px, calc(64px + env(safe-area-inset-top))) 8px auto;
+    inset: max(82px, calc(76px + env(safe-area-inset-top))) 8px auto;
     z-index: 21;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -412,6 +415,7 @@
   .cafe-fullscreen .room-head { top: max(4px, env(safe-area-inset-top)); left: 6px; right: 6px; gap: 5px; }
   .cafe-fullscreen .room-head-left { min-width: 0; }
   .cafe-fullscreen .room-hud { margin-left: auto; }
+  .cafe-fullscreen .hud-icon-row { flex-wrap: nowrap; }
   .cafe-fullscreen .hud-status-row { gap: 4px; }
   .cafe-fullscreen .game-view-actions { gap: 3px; }
   .cafe-fullscreen .game-view-actions .walk-button { min-height: 40px; padding-inline: 6px; }

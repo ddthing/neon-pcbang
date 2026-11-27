@@ -292,7 +292,9 @@ function renderRoom() {
     marker.textContent = seat.code;
     marker.setAttribute("aria-label", seat.code + " 내 PC 열기");
     const tierInfo = SEAT_TIERS[seat.tier || room.space];
-    const label = homeRoom.label + " · " + seat.code + (tierInfo ? ` (${tierInfo.label})` : "");
+    const label = !tierInfo || tierInfo.label === homeRoom.label
+      ? `${seat.code} · ${homeRoom.label}`
+      : `${seat.code} · ${homeRoom.label} (${tierInfo.label})`;
     $("#ticket-seat").textContent = label;
     $("#pc-seat").textContent = label;
     $("#room-hint").textContent = activeBreakZone
@@ -536,6 +538,7 @@ restorePill?.addEventListener("click", () => openDesktop(true));
 const startMenu = $("#pc-start");
 const launcher = $("#pc-launcher");
 const launcherClose = $("#pc-launcher-close");
+let reopenLauncherAfterGame = false;
 function setLauncherOpen(open, focusTitle = false) {
   if (!launcher) return;
   launcher.hidden = !open;
@@ -547,6 +550,7 @@ function setLauncherOpen(open, focusTitle = false) {
 desktop.addEventListener("close", () => {
   if (desktop.open) return;
   startMenu.open = false;
+  reopenLauncherAfterGame = false;
   setLauncherOpen(false);
 });
 desktop.addEventListener("cancel", (event) => {
@@ -575,6 +579,7 @@ document.querySelectorAll("[data-launcher]").forEach((button) => {
   });
 });
 launcherClose?.addEventListener("click", () => {
+  reopenLauncherAfterGame = false;
   setLauncherOpen(false);
   document.querySelector(".pc-shortcut[data-launcher]")?.focus();
 });
@@ -702,13 +707,26 @@ const requestedGames = new Set();
 window.openCafeWindow = openCafeWindow;
 window.closeCafeWindow = closeCafeWindow;
 
+for (const gameId of Object.keys(gameLoaders)) {
+  const gameDialog = document.getElementById(gameId);
+  gameDialog?.addEventListener("close", () => {
+    if (reopenLauncherAfterGame && desktop.open) {
+      reopenLauncherAfterGame = false;
+      setLauncherOpen(true, true);
+    }
+  });
+}
+
 document.querySelectorAll("[data-open]").forEach((button) => {
   button.addEventListener("click", () => {
     const source = cafeWindowOrigin(button);
     if (hub.contains(button) && hub.open) hub.close();
-    if (launcher && launcher.contains(button)) setLauncherOpen(false);
     const next = document.getElementById(button.dataset.open);
     if (!next) return;
+    if (launcher && launcher.contains(button)) {
+      reopenLauncherAfterGame = Boolean(gameLoaders[next.id]);
+      setLauncherOpen(false);
+    }
     const origin = button.closest("dialog");
     if (origin?.matches("#snacks, #snack-board, #snack-coupon, #snack-gift")) origin.close();
     if (!next.open) {

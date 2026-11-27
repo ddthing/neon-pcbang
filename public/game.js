@@ -217,9 +217,9 @@ export function initArcade() {
         }
         updateHud();
         if (!bricks.length) {
-          window.cafeEarnPoints?.(25, `벽돌깨기 라운드 ${round} 클리어`);
+          const reward = window.cafeRewardGameEnd?.("arcade", score, { winBonus: true, label: `벽돌깨기 라운드 ${round} 클리어` });
           submitArcadeScore("arcade", score, { metric: `R${round}` });
-          setState("next", "다음 라운드", "라운드 클리어! 아이템과 함께 다음 스테이지로 가요.");
+          setState("next", "다음 라운드", `라운드 클리어!${reward ? ` (+${reward.awarded} G)` : ""} 다음 스테이지로 가요.`);
           action.focus();
           return;
         }
@@ -245,7 +245,8 @@ export function initArcade() {
       updateHud();
       if (lives === 0) {
         if (score >= 120) submitArcadeScore("arcade", score, { metric: `R${round}` });
-        setState("finished", "다시 도전", `게임 끝! 최종 ${score}점`);
+        const reward = window.cafeRewardGameEnd?.("arcade", score, { label: "벽돌깨기 플레이" });
+        setState("finished", "다시 도전", `게임 끝! 최종 ${score}점${reward ? ` · +${reward.awarded} G` : ""}`);
       } else {
         resetBalls();
         setState("aiming", "공 발사", "←→ / 마우스로 조준 후 클릭 또는 Space로 공을 발사하세요!");
@@ -474,14 +475,17 @@ export function initMines() {
     syncClock();
     if (next === "won") {
       window.cafeAudioPlay?.("chime");
-      const bonus = currentTierKey === "hard" ? 55 : currentTierKey === "medium" ? 35 : 20;
-      window.cafeEarnPoints?.(bonus, `지뢰찾기 ${TIERS[currentTierKey].label} 클리어`);
+      const tierScore = currentTierKey === "hard" ? 450 : currentTierKey === "medium" ? 250 : 120;
+      const reward = window.cafeRewardGameEnd?.("mines", tierScore, { winBonus: true, label: `지뢰찾기 ${TIERS[currentTierKey].label} 클리어` });
+      if (reward) status.textContent = `${message} (+${reward.awarded} G)`;
       submitArcadeScore("mines", clearSec, {
         mode: currentTierKey,
         metric: `${TIERS[currentTierKey].label} ${formatSeconds(clearSec)}`,
       });
     } else {
       window.cafeAudioPlay?.("thud");
+      const reward = window.cafeRewardGameEnd?.("mines", opened * 10, { label: "지뢰찾기 도전" });
+      if (reward) status.textContent = `${message} (+${reward.awarded} G)`;
     }
   }
 

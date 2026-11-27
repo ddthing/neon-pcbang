@@ -117,7 +117,7 @@ export function initPvp() {
   function recordWin(gameName) {
     wins++;
     try { localStorage.setItem(winsKey, String(wins)); } catch {}
-    window.cafeEarnPoints?.(35, "대국 승리 보너스");
+    window.cafeRewardGameEnd?.("pvp", 350, { winBonus: true, label: "대국 승리 보너스" });
     submitArcadeScore("pvp", wins, { mode: gameName, metric: `누적 ${wins}승` });
   }
 
@@ -163,6 +163,7 @@ export function initPvp() {
         if (idx < 0) {
           activeMatch.status = "finished";
           activeMatch.winner = "draw";
+          window.cafeRewardGameEnd?.("pvp", 80, { label: "대국 참가 보너스" });
           statusEl.textContent = "놓을 수 있는 자리가 없어 무승부예요.";
           drawBoard();
           return;
@@ -174,7 +175,8 @@ export function initPvp() {
         if (hasFiveInARow(activeMatch.state.board, idx, 2, restrictWhite)) {
           activeMatch.status = "finished";
           activeMatch.winner = "guest";
-          statusEl.textContent = "고양이 알바 AI 승리! 🐱 '냐하하 한 수 배웠냥!'";
+          const reward = window.cafeRewardGameEnd?.("pvp", 60, { label: "대국 도전 보너스" });
+          statusEl.textContent = `고양이 알바 AI 승리! 🐱 '냐하하 한 수 배웠냥!'${reward ? ` (+${reward.awarded} G)` : ""}`;
         } else {
           activeMatch.turn = "host";
           statusEl.textContent = "내 차례(흑돌●)! 빈 교차점에 착수하세요.";
@@ -193,7 +195,8 @@ export function initPvp() {
               statusEl.textContent = "🎉 승리! 알바냥의 돌을 모두 밀어냈어요!";
               recordWin("alkkagi");
             } else {
-              statusEl.textContent = sim.winner === "draw" ? "동시 장외 무승부!" : "고양이 알바 AI 승리! 다시 도전해 보세요.";
+              const reward = window.cafeRewardGameEnd?.("pvp", 60, { label: "알까기 도전 보너스" });
+              statusEl.textContent = (sim.winner === "draw" ? "동시 장외 무승부!" : "고양이 알바 AI 승리! 다시 도전해 보세요.") + (reward ? ` (+${reward.awarded} G)` : "");
             }
           } else {
             activeMatch.turn = "host";
@@ -564,7 +567,8 @@ export function initPvp() {
             statusEl.textContent = "🎉 알까기 승리! 완벽한 샷이었어요!";
             recordWin("alkkagi");
           } else {
-            statusEl.textContent = sim.winner === "draw" ? "동시 장외 무승부!" : "아쉽게 내 돌이 나갔어요!";
+            const reward = window.cafeRewardGameEnd?.("pvp", 60, { label: "알까기 도전 보너스" });
+            statusEl.textContent = (sim.winner === "draw" ? "동시 장외 무승부!" : "아쉽게 내 돌이 나갔어요!") + (reward ? ` (+${reward.awarded} G)` : "");
           }
         } else {
           activeMatch.turn = "guest";

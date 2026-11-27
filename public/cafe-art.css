@@ -9,13 +9,13 @@
 }
 .scene.camera-glide { transition: transform 180ms ease-out; }
 
-.cafe-art-base, .cafe-art-effects, .cafe-art-chair, .cafe-art-prop-front {
+.cafe-art-base, .cafe-art-effects, .cafe-art-chair, .cafe-art-chairs, .cafe-art-prop-front {
   position: absolute;
   pointer-events: none;
   image-rendering: pixelated;
 }
 
-.cafe-art-base, .cafe-art-effects {
+.cafe-art-base, .cafe-art-effects, .cafe-art-chairs {
   inset: 0;
   width: 100%;
   height: 100%;

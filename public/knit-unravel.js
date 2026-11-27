@@ -27,6 +27,7 @@ export function initKnitUnravel() {
   const spoolsEl = document.getElementById("knit-spools");
   const scoreEl = document.getElementById("knit-score");
   const progressFillEl = document.getElementById("knit-progress-fill");
+  const captionEl = document.getElementById("knit-pattern-caption");
   const statusEl = document.getElementById("knit-status");
   const undoBtn = document.getElementById("knit-undo");
   const hintBtn = document.getElementById("knit-hint");
@@ -195,6 +196,7 @@ export function initKnitUnravel() {
     const doneRatio = game.totalStitches
       ? Math.round(((game.totalStitches - game.remainingStitches) / game.totalStitches) * 100)
       : 100;
+    if (captionEl) captionEl.textContent = `${game.stage}탄 도안 · ${game.patternName}`;
     spoolsEl.textContent = `${game.completedSpools} / ${game.totalSpools}`;
     scoreEl.textContent = game.score.toLocaleString();
     progressFillEl.style.width = `${doneRatio}%`;
@@ -266,7 +268,9 @@ export function initKnitUnravel() {
     if (isKnitWon(game) && !wonHandled) {
       wonHandled = true;
       window.cafeAudioPlay?.("chime");
-      statusEl.textContent = `🎉 ${game.stage}단계 「${game.patternName}」 완성! (+${game.score}점)`;
+      const reward = window.cafeRewardGameEnd?.("knit", game.score, { winBonus: true, label: "뜨개 실풀기 완성" });
+      const gText = reward ? ` · +${reward.awarded} G` : "";
+      statusEl.textContent = `🎉 ${game.stage}단계 「${game.patternName}」 완성! (+${game.score}점${gText})`;
       submitArcadeScore("knit", game.score, { mode: rankMode(), metric: `${game.stage}탄 ${doneRatio}%` });
     } else if (!wonHandled && isKnitStuck(game)) {
       statusEl.textContent = "⚠️ 도크가 막혔어요! 되돌리기, +1 슬롯 또는 가위 도우미를 사용해 보세요.";
@@ -275,8 +279,15 @@ export function initKnitUnravel() {
 
   // Only called on discrete tray changes (NEVER during the 60fps unravel loop!) so rapid clicks never drop!
   function renderTray() {
-    const frag = [];
+    let lastUsedRow = -1;
     for (let r = 0; r < TRAY_ROWS; r++) {
+      for (let c = 0; c < TRAY_COLS; c++) {
+        if (game.tray[r][c]) lastUsedRow = r;
+      }
+    }
+    const visibleRows = Math.min(TRAY_ROWS, Math.max(3, lastUsedRow + 2));
+    const frag = [];
+    for (let r = 0; r < visibleRows; r++) {
       for (let c = 0; c < TRAY_COLS; c++) {
         const cell = game.tray[r][c];
         const btn = document.createElement("button");

@@ -8,14 +8,14 @@
   border: 3px solid #a4b3a6; border-radius: 11px; background: #363330;
 }
 .floor-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 17px; background: #423e39; border-bottom: 1px solid #635b53; }
-.floor-top p { color: var(--mint); font-size: 10px; letter-spacing: .14em; }
+.floor-top p { color: #3d2c28; font-size: 10px; font-weight: 800; letter-spacing: .14em; }
 .floor-top h2 { margin: 2px 0 0; outline: none; font-size: 24px; }
 .floor-layout { display: grid; grid-template-columns: minmax(0, 1fr) 224px; gap: 12px; padding: 12px; align-items: start; }
 .floor-map { min-width: 0; }
 .floor-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 7px; margin-bottom: 8px; }
 .floor-toolbar p { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 9px; }
 .floor-toolbar strong { font-size: 14px; }
-.floor-toolbar p span { color: var(--sub); font-size: 11px; }
+.floor-toolbar p span { color: #3d2c28; font-size: 11px; font-weight: 700; }
 .floor-control { flex-shrink: 0; border: 1px solid #6b6259; border-radius: 4px; padding: 6px 9px; background: #4d4640; font-size: 12px; }
 .floor-scroll { max-width: 100%; overflow: auto; border: 1px solid #72685d; border-radius: 5px; background: #2e2b28; }
 .floor-scroll:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }

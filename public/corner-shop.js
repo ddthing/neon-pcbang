@@ -673,9 +673,9 @@ window.cafeEatOrder = async (orderId) => {
   }
 };
 
-window.cafeEarnPoints = async (amount = 25, reason = "미니게임 보너스") => {
+window.cafeEarnPoints = async (amount = 25, reason = "미니게임 보너스", opts = {}) => {
   const hasBuff = Number(window.cafeRelaxBuffUntil || 0) > Date.now();
-  const boosted = hasBuff ? Math.round(amount * 1.15) : amount;
+  const boosted = !opts.alreadyBoosted && hasBuff ? Math.max(amount + 1, Math.floor(amount * 1.15)) : amount;
   document.dispatchEvent(new CustomEvent("cafe-mission", { detail: { id: "game" } }));
   try {
     const result = await request("earn", { amount: boosted });
@@ -684,6 +684,16 @@ window.cafeEarnPoints = async (amount = 25, reason = "미니게임 보너스") =
       detail: { message: `🪙 ${reason}${hasBuff ? " (머리 식힘 +15%!)" : ""} +${boosted} G 적립!`, kind: "ok" },
     }));
   } catch {}
+};
+
+window.cafeRewardGameEnd = (gameId, score = 0, opts = {}) => {
+  const cleanScore = Math.max(0, Number(score) || 0);
+  const base = Math.min(60, Math.max(5, Math.floor(cleanScore / 10)) + (opts.winBonus ? 10 : 0));
+  const hasBuff = Number(window.cafeRelaxBuffUntil || 0) > Date.now();
+  const awarded = hasBuff ? Math.max(base + 1, Math.floor(base * 1.15)) : base;
+  document.dispatchEvent(new CustomEvent("cafe-mission", { detail: { id: "game", gameId } }));
+  void window.cafeEarnPoints(awarded, opts.label || "미니게임 완료", { alreadyBoosted: true });
+  return { base, awarded, hasBuff };
 };
 
 window.cafeSpendPoints = async (cost, reason = "책상 꾸미기") => {

@@ -96,7 +96,7 @@ export function initSudoku() {
       window.cafeAudioPlay?.("chime");
       const sec = Math.max(10, Math.floor((performance.now() - startedAt) / 1000));
       const pts = Math.max(100, (55 - Number(level.value)) * 80 - sec);
-      window.cafeEarnPoints?.(35, "스도쿠 퍼즐 완성");
+      window.cafeRewardGameEnd?.("sudoku", pts, { winBonus: true, label: "스도쿠 퍼즐 완성" });
       submitArcadeScore("sudoku", pts, { mode: level.value, metric: `${Math.floor(sec / 60)}분 ${sec % 60}초` });
     }
 

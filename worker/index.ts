@@ -21,7 +21,13 @@ const worker = {
       return first;
     }
     if (pathname !== "/" && pathname !== "/world.js" && !pathname.startsWith("/api/") && /\.[a-z0-9]+$/i.test(pathname) && env.ASSETS) {
-      return env.ASSETS.fetch(request);
+      const assetResponse = await env.ASSETS.fetch(request);
+      if (pathname.startsWith("/assets/") && assetResponse.status === 200) {
+        const headers = new Headers(assetResponse.headers);
+        headers.set("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
+        return new Response(assetResponse.body, { status: assetResponse.status, statusText: assetResponse.statusText, headers });
+      }
+      return assetResponse;
     }
     let binding = ctx.props?.CONNECTORS;
     // Local preview emulates the same request-scoped capability. This branch and

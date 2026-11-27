@@ -3,6 +3,7 @@ import { CAFE_TIME_ZONE, formatCafeTime } from "./cafe-clock.mjs";
 const badge = document.getElementById("window-weather");
 
 const geoKey = "cafe-user-geo-v1";
+const weatherCacheKey = "cafe-weather-cache-v1";
 const names = { clear: "맑음", cloud: "흐림", rain: "비", snow: "눈", storm: "뇌우", fog: "안개" };
 const phaseNames = { dawn: "아침", day: "낮", dusk: "노을", night: "밤" };
 let weather = null;
@@ -10,6 +11,20 @@ let updated = 0;
 let pending = false;
 let retryAt = 0;
 let geoAttempted = false;
+
+function loadWeatherCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(weatherCacheKey));
+    if (cached?.data && Number.isFinite(cached.at) && Date.now() - cached.at < 30 * 60_000) {
+      weather = cached.data;
+      updated = cached.at;
+    }
+  } catch {}
+}
+
+function saveWeatherCache(data, at) {
+  try { localStorage.setItem(weatherCacheKey, JSON.stringify({ data, at })); } catch {}
+}
 
 function readCachedGeo() {
   try {
@@ -96,6 +111,7 @@ async function refresh() {
     weather = data;
     updated = Date.now();
     retryAt = updated + 5 * 60000;
+    saveWeatherCache(data, updated);
   } catch {
     retryAt = Date.now() + 60000;
   } finally {
@@ -104,6 +120,7 @@ async function refresh() {
   }
 }
 
+loadWeatherCache();
 paintSky();
 requestBrowserLocation();
 refresh();

@@ -7,6 +7,7 @@ export function createCafeCamera(scene) {
   const viewport = scene.parentElement;
   const fullscreen = document.getElementById("cafe-fullscreen");
   const pcButton = document.getElementById("game-view-pc");
+  const overviewBtn = document.querySelector?.("#camera-overview-toggle");
   const small = matchMedia("(max-width: 768px), (pointer: coarse)");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   const pointers = new Map();
@@ -75,6 +76,11 @@ export function createCafeCamera(scene) {
     scene.style.setProperty("--camera-width", worldWidth + "px");
     scene.style.setProperty("--camera-height", worldHeight + "px");
     viewport.style.setProperty("--world-pixel", pixel + "px");
+    if (overviewBtn?.setAttribute) {
+      const isOverview = mode ? zoom <= 2 : scale === 1;
+      overviewBtn.setAttribute("aria-pressed", String(isOverview));
+      overviewBtn.textContent = isOverview ? "확대보기" : "전체보기";
+    }
     recenter(mode || worldWidth > width || worldHeight > height ? focus : center);
   }
 
@@ -212,6 +218,17 @@ export function createCafeCamera(scene) {
     manual = false;
   }).observe(scene, { attributes: true, attributeFilter: ["data-space"] });
   pcButton.addEventListener("click", () => document.getElementById("open-monitor").click());
+  overviewBtn?.addEventListener("click", () => {
+    if (mode) {
+      zoom = zoom <= 2 ? 3 : 2;
+    } else {
+      const currentScale = desktopZoom ?? Number(viewport.dataset.cameraScale || 2);
+      desktopZoom = currentScale === 1 ? 2 : 1;
+    }
+    manual = false;
+    resize();
+    scene.focus?.({ preventScroll: true });
+  });
   resize();
   return { follow };
 }

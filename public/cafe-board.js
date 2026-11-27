@@ -3,7 +3,7 @@ const filter = document.getElementById("cafe-board-filter");
 const posts = document.getElementById("cafe-board-posts");
 const form = document.getElementById("cafe-board-form");
 const message = document.getElementById("cafe-board-message");
-const statuses = { pending: "대기", accepted: "반영", closed: "꺼져", held: "보류" };
+const statuses = { pending: "접수", accepted: "반영", closed: "종료", held: "보류" };
 let serial = 0;
 
 async function request(data, status) {
