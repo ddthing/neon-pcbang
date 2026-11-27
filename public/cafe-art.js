@@ -82,30 +82,54 @@ function foreground(layer, x, y, depth) {
   avatars.append(layer);
 }
 
-const displayRows = [
-  ["soda_coke", "soda_pepsi", "soda_fanta", "soda_sprite", "boba_taro", "boba_strawberry", "boba_matcha"],
-  ["cake_strawberry", "cake_matcha", "cake_cheese", "cake_chocolate", "pastry_bread", "pastry_croissant", "pastry_brioche"],
-  ["onigiri_1", "onigiri_3", "onigiri_5", "coffee_foam", "fruit_strawberry", "jam_peach", "pastry_pretzel"],
-];
-
 function paintShop() {
   const { x, y, w, h } = LANDMARKS.counter;
+  // Crisp enclosed kitchen & snack-bar bay (clear distinction from main wooden hall floor)
+  rect(base, x - 2, y - 2, w + 4, h + 4, PAL.k);
   T.floor(base, x, y, w, h, true);
-  T.prop(base, "menu_board_S", x + 16, y - 32, "lavender");
-  T.prop(base, "shelf_wall_S", x + 64, y - 32, "wood");
-  T.prop(base, "fridge_drinks_S", x + 112, y - 16, "mint");
-  T.prop(base, "prep_table_S", x + 16, y + 16, "wood");
-  T.prop(base, "sink_double_S", x + 80, y + 16, "cream");
-  T.prop(base, "stove_S", x + 48, y + 16, "lavender");
-  T.prop(base, "espresso_S", x + 112, y + 16, "rose");
-  const front = makeCanvas("cafe-art-prop-front", w, 32);
-  const ctx = front.getContext("2d");
-  for (let col = 0; col < w; col += 16) T.prop(ctx, "counter_S", col, 0, "wood");
-  displayRows[2].forEach((id, index) => T.food(ctx, id, index * 16 + 16, 0));
-  foreground(front, x, y + 48, y + 70);
-  for (const [row, items] of displayRows.slice(0, 2).entries()) {
-    items.forEach((id, index) => T.food(base, id, x + 16 + index * 16, y + row * 16 - 8));
+  // Back wall + left upper stub (leaves clerk exit open at bottom-left) + right enclosing wall
+  T.partition(base, { x, y, w, h: 16 }, true);
+  T.partition(base, { x, y: y + 16, w: 16, h: 32 }, true);
+  T.partition(base, { x: x + w - 16, y: y + 16, w: 16, h: h - 16 }, true);
+
+  // Cozy pastel striped awning & "매점" signboard along back wall
+  const signW = 96;
+  const signX = x + Math.round((w - signW) / 2);
+  const signY = y - 6;
+  rect(base, signX - 2, signY - 2, signW + 4, 16, PAL.k);
+  for (let i = 0; i < signW; i += 8) {
+    rect(base, signX + i, signY, 8, 12, (i / 8) % 2 === 0 ? PAL.r3 : PAL.p3);
   }
+  rect(base, signX + 12, signY + 1, signW - 24, 10, PAL.k);
+  rect(base, signX + 13, signY + 2, signW - 26, 8, PAL.p3);
+  base.save();
+  base.fillStyle = PAL.k;
+  base.font = "bold 8px sans-serif";
+  base.textAlign = "center";
+  base.textBaseline = "middle";
+  base.fillText("매점 · SNACK", x + w / 2, signY + 6.5);
+  base.restore();
+
+  // Properly aligned back kitchen fixtures (all feet aligned at y + 48)
+  T.prop(base, "fridge_drinks_S", x + 16, y, "mint");
+  T.prop(base, "stove_S", x + 32, y + 16, "lavender");
+  T.prop(base, "prep_table_S", x + 48, y + 16, "wood");
+  T.prop(base, "sink_double_S", x + 80, y, "cream");
+  T.prop(base, "espresso_S", x + 112, y + 16, "rose");
+  T.prop(base, "mat_S", x, y + 48, "wood");
+
+  // Front service counter with POS register, cups, glass bakery showcase & pastry tray (zero loose floor food!)
+  const counterW = w - 32;
+  const front = makeCanvas("cafe-art-prop-front", counterW, 32);
+  const ctx = front.getContext("2d");
+  for (let col = 0; col < counterW; col += 16) T.prop(ctx, "counter_S", col, 0, "wood");
+  T.prop(ctx, "register_S", 0, 0, "cream");
+  T.prop(ctx, "cups_stack_S", 16, 0, "cream");
+  T.prop(ctx, "cake_case_S", 48, 0, "rose");
+  T.prop(ctx, "cake_case_S", 64, 0, "mint");
+  T.prop(ctx, "pastry_tray_S", 80, 0, "wood");
+  T.prop(ctx, "napkins_S", 96, 0, "cream");
+  foreground(front, x + 16, y + 48, y + 70);
 }
 
 function paintLoungeSeat(name, x, y, tone, label) {
@@ -352,8 +376,8 @@ function paintEffects(now) {
     overlay.restore();
   }
   if (area === "hall" && clerk.dataset.mode === "cook" && !clerk.hidden) {
-    T.animation(overlay, "stove", LANDMARKS.counter.x + 48, LANDMARKS.counter.y + 16, Math.floor(now / 125));
-    T.animation(overlay, "steam", LANDMARKS.counter.x + 48, LANDMARKS.counter.y, Math.floor(now / 125));
+    T.animation(overlay, "stove", LANDMARKS.counter.x + 32, LANDMARKS.counter.y + 16, Math.floor(now / 125));
+    T.animation(overlay, "steam", LANDMARKS.counter.x + 32, LANDMARKS.counter.y, Math.floor(now / 125));
   }
   if (area === "hall" && !motion.matches && now - doorAt < 650) {
     const { x, y, w } = LANDMARKS.entrance;
