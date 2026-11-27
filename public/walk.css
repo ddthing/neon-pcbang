@@ -137,7 +137,7 @@
 }
 .scene[data-space="terrace"] .relax-chip { border-color: #b86f4c; background: #6b4738; color: #fff0e0; }
 .relax-chip:hover { filter: brightness(1.1); }
-.relax-chip[aria-pressed="true"] { border-color: #ffe7a8; background: #569e7c; color: #ffffff; }
+.relax-chip[aria-pressed="true"] { border-color: #ffe7a8; background: #569e7c; color: #f7efe5; }
 .relax-exit { border-color: #f6cf73; background: #b86f4c; color: #fff9f2; }
 
 /* Avatar Wardrobe Modal */
@@ -177,7 +177,7 @@
   display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px;
   padding: 0 8px; border-radius: 5px; background: #3b2d31; border: 1px solid #6e525a;
 }
-.wardrobe-dot { width: 11px; height: 11px; border-radius: 2px; border: 1px solid #ffffff66; flex-shrink: 0; }
+.wardrobe-dot { width: 11px; height: 11px; border-radius: 2px; border: 1px solid #f7efe588; flex-shrink: 0; }
 .wardrobe-name { font-size: 12px; font-weight: 750; color: #fff5eb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wardrobe-idx { margin-left: auto; font-size: 10px; color: #cfb097; flex-shrink: 0; }
 @media (max-width: 600px) {

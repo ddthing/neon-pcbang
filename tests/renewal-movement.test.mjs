@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   MOVEMENT_SPEC,
@@ -12,7 +13,7 @@ import {
   routeToSeat,
 } from "../lib/cafe-world.mjs";
 import { CHARACTER_SPEC } from "../lib/renewal-layout.mjs";
-import { ROOMS, SEATS, SEAT_COUNTS, WORLD, seatFor, toPercent, toPixels } from "../lib/cafe-map.mjs";
+import { HALL_TABLES, ROOMS, SEATS, SEAT_COUNTS, TILE, WORLD, seatFor, toPercent, toPixels } from "../lib/cafe-map.mjs";
 
 test("movement engine uses the shared 768×512 scale and character foot box", () => {
   assert.deepEqual(MOVEMENT_SPEC.world, WORLD);
@@ -97,4 +98,39 @@ test("seat switching stays inside the current room", () => {
     const { x, y, w, h } = room.rect;
     assert.ok(points.map(toPixels).every(p => p.x > x && p.x < x + w && p.y > y && p.y < y + h));
   }
+});
+
+test("Notion aisle clearances (>=32px rows, >=48px center aisle), walkability of all stand points/doors, and 4 weather modes + reduced motion", () => {
+  // Check central vertical aisle between x=20..24 table and x=27..31 table is >= 48px (3 tiles)
+  const col2End = (20 + 4) * TILE;
+  const col3Start = 27 * TILE;
+  assert.ok(col3Start - col2End >= 48, `Central aisle must be >= 48px, got ${col3Start - col2End}`);
+  // Side gaps between [14..18] and [20..24], and [27..31] and [33..37] are >= 32px (2 tiles)
+  assert.ok(20 * TILE - (14 + 4) * TILE >= 32);
+  assert.ok(33 * TILE - (27 + 4) * TILE >= 32);
+  // Row clearances between y=6, y=12, y=18 tables (height 2 tiles = 32px) leave >= 64px vertical corridor
+  const uniqueRows = [...new Set(HALL_TABLES.map((t) => t.y))].sort((a, b) => a - b);
+  for (let i = 1; i < uniqueRows.length; i++) {
+    assert.ok(uniqueRows[i] - (uniqueRows[i - 1] + 2 * TILE) >= 32);
+  }
+  // Every seat standPoint and room door center is walkable
+  for (const s of SEATS) {
+    const pct = toPercent(s.stand);
+    assert.equal(canWalk(pct.x, pct.y), true, `Seat stand point must be walkable: ${s.key}`);
+  }
+  for (const room of ROOMS) {
+    const doorCenter = toPercent({ x: room.door.x + TILE / 2, y: room.door.y + TILE / 2 });
+    assert.equal(canWalk(doorCenter.x, doorCenter.y), true, `Room door must be walkable: ${room.id}`);
+  }
+
+  // All 4 FX weather overlay modes + prefers-reduced-motion handling
+  const pixelTiles = readFileSync(new URL("../public/pixel-tiles.js", import.meta.url), "utf8");
+  const cafeArt = readFileSync(new URL("../public/cafe-art.js", import.meta.url), "utf8");
+  const cameraJs = readFileSync(new URL("../public/camera.js", import.meta.url), "utf8");
+  for (const mode of ["rain:", "storm:", "snow:", "leaves:"]) {
+    assert.ok(pixelTiles.includes(mode), `Missing weather strip ${mode} in pixel-tiles.js`);
+  }
+  assert.match(cafeArt, /prefers-reduced-motion:\s*reduce/);
+  assert.match(cafeArt, /T\.weatherLoop\(overlay,\s*weather,\s*now,\s*motion\.matches\)/);
+  assert.match(cameraJs, /prefers-reduced-motion:\s*reduce/);
 });

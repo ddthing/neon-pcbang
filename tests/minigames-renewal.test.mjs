@@ -449,3 +449,40 @@ test("PvP Tactical AI wins, blocks split-4 threats in Omok, and selects safe kno
   assert.equal(shot.sim.stones.find((s) => s.id === "h1").alive, false);
   assert.equal(shot.sim.stones.find((s) => s.id === "g1").alive, true);
 });
+
+test("Concept 3 pastel palette & warm-brown outlines forbid pure #000/#fff tokens and include full asset credits + drizzle deploy path", () => {
+  const checkedPaths = [
+    "../public/cafe-interface.css",
+    "../public/corner-shop.css",
+    "../public/walk.css",
+    "../public/pc.css",
+    "../public/pixel-tiles.js",
+    "../public/avatar-sprites.js",
+    "../public/knit-unravel.js",
+  ];
+  const pureHexPattern = /(#000000|#000\b|#ffffff|#fff\b)/i;
+  for (const rel of checkedPaths) {
+    const content = readFileSync(new URL(rel, import.meta.url), "utf8");
+    assert.equal(pureHexPattern.test(content), false, `Found prohibited pure black/white color in ${rel}`);
+  }
+  const interfaceCss = readFileSync(new URL("../public/cafe-interface.css", import.meta.url), "utf8");
+  assert.match(interfaceCss, /--interface-ink:\s*#5c4742/);
+  assert.match(interfaceCss, /--interface-paper:\s*#f7efe5/);
+  assert.match(interfaceCss, /\.cafe-fullscreen :is\(dialog,/);
+
+  const html = readFileSync(new URL("../app/cafe.html", import.meta.url), "utf8");
+  for (const credit of [
+    "Office Interior Pack by Maru",
+    "Bedroom Stuff by Kakapo Pixels",
+    "Downtown Eats &amp; Nights by dotplays",
+    "reodesuxz",
+    "5yvalia",
+    "alexkovacsart",
+    "CC BY 4.0",
+  ]) {
+    assert.ok(html.includes(credit), `Missing credit text "${credit}" in app/cafe.html`);
+  }
+
+  const deployYml = readFileSync(new URL("../.github/workflows/deploy.yml", import.meta.url), "utf8");
+  assert.match(deployYml, /"drizzle\/\*\*"/);
+});

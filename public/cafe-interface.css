@@ -99,13 +99,34 @@
 }
 .cafe-fullscreen :is(.hud-icon-row, .game-view-actions, .hud-chat-pill) svg { color: currentColor; }
 
-.cafe-fullscreen :is(#floor-kiosk, #avatar-wardrobe, #snacks, #snack-board, #snack-coupon, #snack-gift, #pc-desktop, #cafe-menu) {
+.cafe-fullscreen :is(dialog, #floor-kiosk, #avatar-wardrobe, #snacks, #snack-board, #snack-coupon, #snack-gift, #pc-desktop, #cafe-menu) {
   border: 2px solid var(--interface-border);
   border-radius: 0;
   box-shadow: none;
   background: var(--interface-paper);
   color: var(--interface-ink);
 }
+.cafe-fullscreen dialog::backdrop {
+  background: rgba(92, 71, 66, 0.36);
+  backdrop-filter: none;
+}
+.cafe-fullscreen dialog :is(.panel-copy, .panel-index, .panel-index span, .dialog-note, .timer-note, .game-status, .game-hud, .focus-settings, .focus-sound, h2, label, summary) {
+  color: var(--interface-ink);
+}
+.cafe-fullscreen dialog :is(.close, .walk-button, .primary, .secondary, select, input, textarea, .arcade-lb, .pc-launcher, .pc-cafe, #order-menu, .knit-top-bar, .knit-pill, .knit-dock, .knit-tray-grid) {
+  border-color: var(--interface-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+.cafe-fullscreen dialog :is(.close, .walk-button, .secondary, select, input, textarea, .arcade-lb, .pc-launcher, .pc-cafe) {
+  background: var(--interface-paper);
+  color: var(--interface-ink);
+}
+.cafe-fullscreen dialog :is(.walk-button.stage-key, .walk-button[aria-pressed="true"], .primary, .close:hover, .walk-button:hover) {
+  background: var(--interface-screen);
+  color: var(--interface-ink);
+}
+.cafe-fullscreen #pc-launcher[hidden] { display: none !important; }
 .cafe-fullscreen :is(.floor-top, .pc-statusbar, .pc-taskbar) { background: var(--interface-screen); color: var(--interface-ink); }
 .cafe-fullscreen #avatar-wardrobe :is(.dialog-inner, .wardrobe-stage, .wardrobe-stepper, .wardrobe-val, .wardrobe-name-row, .walk-button, input, .enter, #wardrobe-preview) {
   background: var(--interface-paper);

@@ -145,7 +145,7 @@ export function initKnitUnravel() {
       lctx.save();
       lctx.lineCap = "round";
       lctx.lineWidth = 3.5;
-      lctx.strokeStyle = "#261c29";
+      lctx.strokeStyle = "#5c4742";
       lctx.beginPath();
       lctx.moveTo(sx, sy);
       lctx.quadraticCurveTo(cx, cy, dx, dy);
@@ -162,7 +162,7 @@ export function initKnitUnravel() {
       const u = 1 - ease;
       const bx = u * u * sx + 2 * u * ease * cx + ease * ease * dx;
       const by = u * u * sy + 2 * u * ease * cy + ease * ease * dy;
-      lctx.fillStyle = "#ffffff";
+      lctx.fillStyle = "#fff7ed";
       lctx.fillRect(Math.round(bx) - 2, Math.round(by) - 2, 4, 4);
       lctx.fillStyle = pal.fill;
       lctx.fillRect(Math.round(bx) - 1, Math.round(by) - 1, 2, 2);

@@ -405,3 +405,37 @@ test("board creates both kinds of posts and restricts status changes to moderato
     sqlite.close();
   }
 });
+
+test("legacy out-of-range seat keys like hall:50 are rejected on reserve and sanitized to null on sync", async () => {
+  const { db, sqlite } = makeFullV2Db();
+  try {
+    const legacyToken = randomUUID();
+    const observerToken = randomUUID();
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(legacyToken));
+    const legacyId = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+
+    // Simulate pre-renewal D1 row seated at hall:50
+    sqlite.prepare(
+      `INSERT INTO cafe_visitors (id, name, color, x, y, facing, seat, wave, zone, avatar, activity, expires)
+       VALUES (?, ?, 0, 50, 50, 1, 'hall:50', 0, 'hall', '000000', '', ?)`,
+    ).run(legacyId, "기존손님", baseTime + 30_000);
+
+    const syncRes = await (await presence(postJson("https://pcbang.test/api/presence", {
+      token: legacyToken, name: "기존손님", action: "sync", x: 50, y: 50,
+    }), db, {}, baseTime)).json();
+    assert.equal(syncRes.mine, null);
+    assert.equal(syncRes.visitors.some((v) => v.seat === "hall:50"), false);
+
+    const obsRes = await (await presence(postJson("https://pcbang.test/api/presence", {
+      token: observerToken, name: "신규손님", action: "sync", x: 50, y: 50,
+    }), db, {}, baseTime + 5)).json();
+    assert.equal(obsRes.visitors.some((v) => v.seat === "hall:50"), false);
+
+    const badReserve = await presence(postJson("https://pcbang.test/api/presence", {
+      token: observerToken, name: "신규손님", action: "reserve", seat: "hall:50", x: 50, y: 50,
+    }), db, {}, baseTime + 10);
+    assert.equal(badReserve.status, 400);
+  } finally {
+    sqlite.close();
+  }
+});
