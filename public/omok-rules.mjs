@@ -1,5 +1,6 @@
 export const OMOK_SIZE = 15;
 export const OMOK_DIRECTIONS = [[0, 1], [1, 0], [1, 1], [1, -1]];
+export const OMOK_RESTRICTED_STONES = Object.freeze([1]);
 
 function indexAt(row, col) {
   return row >= 0 && row < OMOK_SIZE && col >= 0 && col < OMOK_SIZE ? row * OMOK_SIZE + col : -1;
@@ -59,4 +60,37 @@ export function hasFiveInARow(board, index, stone, restrictWhite = false) {
   return stone === 2 && !restrictWhite
     ? lengths.some(length => length >= 5)
     : lengths.includes(5) && lengths.every(length => length <= 5);
+}
+
+/**
+ * Check Omok move legality and win outcome under optional stone restriction list.
+ * Default restricts black only (`OMOK_RESTRICTED_STONES = [1]`); white restriction is optional.
+ */
+export function omokMoveVerdict(board, index, stone, restricted = OMOK_RESTRICTED_STONES) {
+  if (!Number.isInteger(index) || index < 0 || index >= OMOK_SIZE * OMOK_SIZE || board[index] !== 0) {
+    return { ok: false, win: false, reason: "occupied" };
+  }
+  const limited = restricted.includes(stone);
+  const lengths = lineLengths(board, index, stone);
+  if (lengths.includes(5) && (!limited || lengths.every((len) => len <= 5))) {
+    return { ok: true, win: true, reason: "" };
+  }
+  if (lengths.some((len) => len > 5)) {
+    return limited ? { ok: false, win: false, reason: "overline" } : { ok: true, win: true, reason: "" };
+  }
+  if (limited) {
+    let threes = 0;
+    for (const [dr, dc] of OMOK_DIRECTIONS) {
+      if (hasOpenThree(board, index, stone, dr, dc) && ++threes === 2) {
+        return { ok: false, win: false, reason: "double-three" };
+      }
+    }
+  }
+  return { ok: true, win: false, reason: "" };
+}
+
+export function omokForbiddenMessage(reason) {
+  if (reason === "double-three") return "쌍삼(3-3) 자리라 둘 수 없어요. 다른 곳에 두세요.";
+  if (reason === "overline") return "육목(6개 이상)이 되는 자리라 둘 수 없어요.";
+  return "둘 수 없는 자리예요.";
 }

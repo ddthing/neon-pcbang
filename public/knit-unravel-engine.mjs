@@ -292,6 +292,85 @@ export function isSingleReachable(tray, r, c, { ignoreIce = false } = {}) {
   return false;
 }
 
+// ── 선택 규칙 "column" (건의: 맨 위 실만 활성화 + 아래 실타래를 위로 올림) ──────────────
+// 기본 규칙 "path" 는 위 함수(빈 칸 길 찾기)를 그대로 쓴다. "column" 은 각 세로줄의 맨 위 실타래만
+// 꺼낼 수 있고, 꺼내면 아래 실타래가 위로 올라온다. 옆줄이 비었다고 아래 칸이 열리지 않는다.
+export const KNIT_RULES = Object.freeze(["path", "column"]);
+
+function columnTopRow(tray, c) {
+  for (let r = 0; r < TRAY_ROWS; r++) {
+    if (tray[r][c]) return r;
+  }
+  return -1;
+}
+
+export function isColumnTop(tray, r, c, { ignoreIce = false } = {}) {
+  const cell = tray[r]?.[c];
+  if (!cell || cell.type !== "spool" || (!ignoreIce && cell.ice > 0)) return false;
+  return columnTopRow(tray, c) === r;
+}
+
+function singleReach(game, r, c, options) {
+  return game.rule === "column" ? isColumnTop(game.tray, r, c, options) : isSingleReachable(game.tray, r, c, options);
+}
+
+function frozenColumnTopIds(tray) {
+  const ids = new Set();
+  for (let c = 0; c < TRAY_COLS; c++) {
+    const r = columnTopRow(tray, c);
+    const cell = r >= 0 ? tray[r][c] : null;
+    if (cell?.type === "spool" && cell.ice > 0) ids.add(cell.id);
+  }
+  return ids;
+}
+
+// 세로줄을 위로 당겨 빈칸을 메우고(배출구는 제자리), 맨 위로 올라온 실타래의 ?·얼음을 정리한다.
+// meltIds: 이번 수 이전부터 이미 맨 위에 있던 얼음 실타래 → 한 겹 녹는다.
+function settleColumns(game, meltIds = new Set()) {
+  const tray = game.tray;
+  for (let pass = 0; pass <= TRAY_ROWS; pass++) {
+    let changed = false;
+    for (let c = 0; c < TRAY_COLS; c++) {
+      let write = 0;
+      for (let r = 0; r < TRAY_ROWS; r++) {
+        const cell = tray[r][c];
+        if (!cell) continue;
+        if (cell.type === "dispenser") { write = r + 1; continue; }
+        if (r !== write) {
+          tray[write][c] = cell;
+          tray[r][c] = null;
+          changed = true;
+        }
+        write++;
+      }
+    }
+    for (let r = 1; r < TRAY_ROWS; r++) {
+      for (let c = 0; c < TRAY_COLS; c++) {
+        const cell = tray[r][c];
+        if (cell?.type === "dispenser" && tray[r - 1][c] === null) {
+          if (cell.queue.length) tray[r - 1][c] = cell.queue.shift();
+          if (!cell.queue.length) tray[r][c] = null;
+          changed = true;
+        }
+      }
+    }
+    if (!changed) break;
+  }
+  const tops = [];
+  for (let c = 0; c < TRAY_COLS; c++) {
+    const r = columnTopRow(tray, c);
+    const cell = r >= 0 ? tray[r][c] : null;
+    if (cell?.type !== "spool") continue;
+    cell.mystery = false;
+    if (cell.ice > 0 && meltIds.has(cell.id)) cell.ice--;
+    tops.push(cell);
+  }
+  // 맨 위가 전부 얼음뿐이면 더 둘 수가 없으므로 한꺼번에 녹인다(막힘 방지).
+  if (tops.length && tops.every((cell) => cell.ice > 0)) {
+    for (const cell of tops) cell.ice = 0;
+  }
+}
+
 export function findPairPartner(tray, r, c) {
   const cell = tray[r]?.[c];
   if (!cell?.pairId) return null;
@@ -308,13 +387,17 @@ export function findPairPartner(tray, r, c) {
 export function isCellReachable(game, r, c) {
   const cell = game.tray[r]?.[c];
   if (!cell || cell.type !== "spool" || cell.ice > 0) return false;
-  if (!cell.pairId) return isSingleReachable(game.tray, r, c);
+  if (!cell.pairId) return singleReach(game, r, c);
   const partner = findPairPartner(game.tray, r, c);
-  if (!partner) return isSingleReachable(game.tray, r, c);
+  if (!partner) return singleReach(game, r, c);
   if (partner.cell.ice > 0) return false;
-  const r1 = isSingleReachable(game.tray, r, c);
-  const r2 = isSingleReachable(game.tray, partner.r, partner.c);
+  const r1 = singleReach(game, r, c);
+  const r2 = singleReach(game, partner.r, partner.c);
   if (r1 && r2) return true;
+  if (game.rule === "column") {
+    // 같은 세로줄에 위아래로 붙은 짝만, 위쪽이 맨 위일 때 함께 꺼낼 수 있다.
+    return c === partner.c && Math.abs(r - partner.r) === 1 && (r1 || r2);
+  }
   // Adjacent stacked pair: if front piece clears, partner directly behind becomes reachable!
   const adjacent = Math.abs(r - partner.r) + Math.abs(c - partner.c) === 1;
   return adjacent && (r1 || r2);
@@ -367,7 +450,14 @@ export function stepKnitUnravel(game, maxStitches = 1) {
   return pulled;
 }
 
-export function createKnitStage(stageNumber = 1) {
+export function createKnitStage(stageNumber = 1, { rule = "path" } = {}) {
+  const game = buildKnitStage(stageNumber);
+  game.rule = rule === "column" ? "column" : "path";
+  if (game.rule === "column") settleColumns(game);
+  return game;
+}
+
+function buildKnitStage(stageNumber) {
   const stage = Math.max(1, Math.min(KNIT_STAGE_COUNT, Math.floor(stageNumber)));
   const pattern = KNIT_PATTERNS[(stage - 1) % KNIT_PATTERNS.length];
   const tapestry = parseTapestry(pattern);
@@ -545,7 +635,11 @@ export function undoKnit(game) {
   return true;
 }
 
-function triggerNeighborsAfterPick(game, coords) {
+function triggerNeighborsAfterPick(game, coords, meltIds) {
+  if (game.rule === "column") {
+    settleColumns(game, meltIds);
+    return;
+  }
   // Dispensers push into their empty cell above (r - 1, c) first
   for (let r = 1; r < TRAY_ROWS; r++) {
     for (let c = 0; c < TRAY_COLS; c++) {
@@ -594,6 +688,7 @@ export function pickKnitCell(game, r, c) {
 
   game.history.push(snapshotGame(game));
 
+  const meltIds = game.rule === "column" ? frozenColumnTopIds(game.tray) : undefined;
   const pickedCoords = [[r, c]];
   game.dock[openSlots[0]] = {
     id: cell.id,
@@ -616,7 +711,7 @@ export function pickKnitCell(game, r, c) {
 
   game.moves++;
   game.score += 15 * pickedCoords.length;
-  triggerNeighborsAfterPick(game, pickedCoords);
+  triggerNeighborsAfterPick(game, pickedCoords, meltIds);
   return { ok: true, count: pickedCoords.length };
 }
 
@@ -643,6 +738,7 @@ export function useKnitBooster(game, kind, target = null) {
     game.history.push(snapshotGame(game));
     cell.ice = 0;
     cell.mystery = false;
+    const meltIds = game.rule === "column" ? frozenColumnTopIds(game.tray) : undefined;
     const picked = [[r, c]];
     game.dock[open[0]] = { id: cell.id, color: cell.color, capacity: cell.capacity, remaining: cell.remaining };
     game.tray[r][c] = null;
@@ -654,7 +750,7 @@ export function useKnitBooster(game, kind, target = null) {
     game.boosters.glove--;
     game.armedBooster = null;
     game.moves++;
-    triggerNeighborsAfterPick(game, picked);
+    triggerNeighborsAfterPick(game, picked, meltIds);
     return { ok: true };
   }
 

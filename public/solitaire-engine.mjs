@@ -7,6 +7,11 @@ export function isRedSuit(suit) {
   return suit === "hearts" || suit === "diamonds";
 }
 
+// 버린 카드 더미에서 펼쳐 보일 장수: 1장 뽑기는 1장, 3장 뽑기는 3장.
+export function wasteFanCount(drawCount) {
+  return drawCount === 3 ? 3 : 1;
+}
+
 export function createDeck(seed = null) {
   const deck = [];
   for (const suit of SUITS) {

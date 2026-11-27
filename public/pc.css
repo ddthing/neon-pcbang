@@ -491,6 +491,32 @@
 .knit-cell.spool.paired::after {
   content: ""; position: absolute; inset: 2px; border: 2px dotted #f2c64b; border-radius: 5px; pointer-events: none;
 }
+/* 묶인 실·잠긴 실을 색이 아닌 모양으로도 구분한다 (매듭 뱃지 · 밧줄 띠 · 자물쇠 + 빗금) */
+.knit-knot {
+  position: absolute; top: -3px; right: -3px; z-index: 2; min-width: 12px; height: 12px; padding: 0 2px;
+  display: grid; place-items: center; border: 1px solid #261c29; border-radius: 6px 6px 2px 2px;
+  background: #f2c64b; color: #261c29; font: 900 8px/1 var(--mono); pointer-events: none;
+}
+.knit-cell.spool.paired[data-link]::before {
+  content: ""; position: absolute; z-index: 1; pointer-events: none; border: 1px solid #261c29;
+  background: repeating-linear-gradient(90deg, #f2c64b 0 3px, #bd8928 3px 6px);
+}
+.knit-cell.spool.paired[data-link="right"]::before { left: 100%; top: calc(50% - 3px); width: 5px; height: 6px; }
+.knit-cell.spool.paired[data-link="left"]::before { right: 100%; top: calc(50% - 3px); width: 5px; height: 6px; }
+.knit-cell.spool.paired[data-link="down"]::before { top: 100%; left: calc(50% - 3px); width: 6px; height: 5px; }
+.knit-cell.spool.paired[data-link="up"]::before { bottom: 100%; left: calc(50% - 3px); width: 6px; height: 5px; }
+.knit-cell.spool.blocked {
+  background-image: repeating-linear-gradient(135deg, #261c2966 0 2px, transparent 2px 6px) !important;
+}
+.knit-lock {
+  position: absolute; left: 1px; bottom: 1px; width: 7px; height: 5px; border-radius: 1px;
+  background: #fff3dc; box-shadow: 0 0 0 1px #261c29; pointer-events: none;
+}
+.knit-lock::before {
+  content: ""; position: absolute; left: 1px; bottom: 100%; width: 3px; height: 3px;
+  border: 1px solid #fff3dc; border-bottom: 0; border-radius: 2px 2px 0 0; box-shadow: 0 -1px 0 0 #261c29;
+}
+#knit-rule[aria-pressed="true"] { background: #569e7c; border-color: #ffdf85; color: #fff9f2; }
 .knit-cell.dispenser {
   background: #4e4261; border: 2px solid #8d82a8; color: #fff5e2;
 }

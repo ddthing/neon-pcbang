@@ -1,7 +1,7 @@
 // Seat-to-Seat Real-Time Multiplayer Arena (Omok 15x15 & Alkkagi Physics + Cat Clerk AI)
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
 import { chooseAlkkagiAiShot, chooseOmokAiMove } from "./pvp-ai.mjs";
-import { hasFiveInARow, omokForbiddenMove } from "./omok-rules.mjs";
+import { hasFiveInARow, omokForbiddenMessage, omokForbiddenMove } from "./omok-rules.mjs";
 
 function stepLocalAlkkagi(stonesInput, stoneId, rawVx, rawVy) {
   const R = 4.2;
@@ -271,9 +271,22 @@ export function initPvp() {
       }
       if (hoverCell >= 0 && activeMatch.status === "playing" && activeMatch.turn === activeMatch.role && activeMatch.state.board[hoverCell] === 0) {
         const hr = Math.floor(hoverCell / 15), hc = hoverCell % 15;
-        ctx.globalAlpha = 0.42;
-        drawStone(pad + hc * step, pad + hr * step, step * 0.43, activeMatch.role === "host");
-        ctx.globalAlpha = 1;
+        const hx = pad + hc * step, hy = pad + hr * step;
+        const hoverStone = activeMatch.role === "host" ? 1 : 2;
+        if (!omokForbiddenMove(activeMatch.state.board, hoverCell, hoverStone, activeMatch.state.restrictWhite)) {
+          ctx.globalAlpha = 0.42;
+          drawStone(hx, hy, step * 0.43, activeMatch.role === "host");
+          ctx.globalAlpha = 1;
+        } else {
+          // 금수 자리는 돌 대신 빨간 X 로 표시한다(색 + 모양).
+          const k = step * 0.3;
+          ctx.strokeStyle = "#b52b27";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(hx - k, hy - k); ctx.lineTo(hx + k, hy + k);
+          ctx.moveTo(hx + k, hy - k); ctx.lineTo(hx - k, hy + k);
+          ctx.stroke();
+        }
       }
       activeMatch.state.board.forEach((cell, idx) => {
         if (!cell) return;
@@ -468,7 +481,8 @@ export function initPvp() {
       const stone = activeMatch.role === "host" ? 1 : 2;
       const violation = omokForbiddenMove(activeMatch.state.board, index, stone, restrictWhite);
       if (violation) {
-        statusEl.textContent = violation === "overline" ? "6개 이상 연속인 장목은 금수예요." : "열린 3이 두 방향 생기는 쌍삼은 금수예요.";
+        window.cafeAudioPlay?.("tick");
+        statusEl.textContent = "🚫 " + omokForbiddenMessage(violation);
         return;
       }
 

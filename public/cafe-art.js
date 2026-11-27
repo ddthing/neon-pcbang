@@ -146,7 +146,10 @@ function paintHall() {
   for (const room of ROOMS) {
     const { x, y, w, h } = room.rect;
     T.rug(base, x + 16, y + 16, w - 32, h - 16, accents[room.space]);
-    for (const part of roomPartitions(room)) T.partition(base, part, room.space === "squad" || room.space === "team");
+    for (const part of roomPartitions(room)) {
+      const useWood = part.h === 16 || room.space === "squad" || room.space === "team";
+      T.partition(base, part, useWood);
+    }
     T.prop(base, "picture_S", room.door.x, room.door.y - 32, "rose");
   }
 
@@ -164,14 +167,15 @@ function paintHall() {
   T.partition(base, { x: booth.x, y: booth.y + 16, w: 16, h: 32 });
   T.prop(base, "bench_S", booth.x + 16, booth.y, "mint");
   T.prop(base, "hood_S", booth.x + 16, booth.y - 16, "cream");
-  T.door(base, booth.x + 16, booth.y + 32, 32, 3);
+  T.prop(base, "mat_S", booth.x + 16, booth.y + 32, "mint");
+  T.jamb(base, booth.x + 16, booth.y + 48, 16);
   T.workstation(base, "ashtray", booth.x + 16, booth.y + 16, 1);
 
   const { kiosk, board, entrance, terrace } = LANDMARKS;
   T.workstation(base, "kiosk", kiosk.x, kiosk.y, 1);
   T.prop(base, "menu_board_S", board.x, board.y - 16, "rose");
   T.prop(base, "mat_S", entrance.x, entrance.y - 16, "rose");
-  T.door(base, entrance.x, entrance.y - 8, entrance.w, 0);
+  T.jamb(base, entrance.x, entrance.y, 16);
   T.prop(base, "mat_S", terrace.x, terrace.y, "mint");
   T.prop(base, "plant_tall_S", 704, 432, "mint");
   T.prop(base, "plant_small_S", 208, 368, "mint");
@@ -191,30 +195,64 @@ function paintHall() {
 
 function paintBreakArea() {
   const outside = area === "terrace";
-  if (outside) {
-    T.skyline(base, 0, 0, WIDTH, 248, lastPhase);
-    T.floor(base, 48, 256, 672, 256, true, false, "terracotta");
-    T.partition(base, { x: 48, y: 240, w: 672, h: 16 }, true);
-    T.prop(base, "bench_S", 384, 272, "mint");
-    T.prop(base, "side_table_S", 416, 304, "wood");
-    T.workstation(base, "ashtray", 416, 304, 1);
-    T.prop(base, "plant_tall_S", 624, 288, "mint");
-    T.prop(base, "plant_tall_S", 576, 352, "mint");
-  } else {
-    T.floor(base, 48, 256, 672, 240);
-    T.wall(base, 48, 160, 672, 96, "lavender");
-    glass.push(...T.windowPanel(base, 112, 176, 544, 48));
-    T.rug(base, 176, 256, 224, 96, "rose");
-    T.prop(base, "sofa2_S", 192, 256, "rose");
-    T.prop(base, "table_round_S", 240, 288, "wood");
-    T.workstation(base, "ashtray", 240, 288, 1);
-    T.prop(base, "plant_tall_S", 592, 224, "mint");
-  }
   const config = relaxZones[area];
   const machine = pixel(config.spots.find(({ mode }) => mode === (outside ? "coffee" : "candy")));
-  T.workstation(base, "vending", T.snap(machine.x - 16), T.snap(machine.y - 64), 2);
   const door = pixel(config.door);
-  T.door(base, T.snap(door.x - 16), T.snap(door.y - 16), 32, 3);
+  const doorX = T.snap(door.x - 16);
+
+  if (outside) {
+    // 2F Outdoor Rooftop Terrace: open sky/skyline + balustrade + warm wood deck + cozy café cluster
+    T.skyline(base, 0, 0, WIDTH, 240, lastPhase);
+    T.floor(base, 48, 256, 672, 240, true, false, "tile");
+    T.floor(base, 128, 256, 512, 128, false, false, "wood");
+    T.rug(base, 256, 288, 240, 80, "mint");
+    // Balustrade & perimeter patio borders with bottom doorway at relaxZones.terrace.door
+    T.partition(base, { x: 112, y: 240, w: 544, h: 16 }, true);
+    T.partition(base, { x: 112, y: 256, w: 16, h: 144 }, true);
+    T.partition(base, { x: 640, y: 256, w: 16, h: 144 }, true);
+    if (doorX > 128) T.partition(base, { x: 128, y: 384, w: doorX - 128, h: 16 }, true);
+    if (doorX + 32 < 640) T.partition(base, { x: doorX + 32, y: 384, w: 640 - (doorX + 32), h: 16 }, true);
+    T.jamb(base, doorX, 384, 16);
+    T.prop(base, "mat_S", doorX, 368, "mint");
+    // Skyline benches, cafe table cluster, lanterns, plants & coffee machine
+    T.prop(base, "bench_S", 272, 264, "mint");
+    T.prop(base, "bench_S", 432, 264, "lavender");
+    T.prop(base, "table_round_S", 192, 320, "wood");
+    T.prop(base, "armchair_E", 160, 320, "mint");
+    T.prop(base, "side_table_S", 512, 288, "wood");
+    T.workstation(base, "ashtray", 528, 280, 1);
+    T.prop(base, "plant_tall_S", 128, 336, "mint");
+    T.prop(base, "plant_tall_S", 608, 336, "mint");
+    T.prop(base, "plant_small_S", 608, 264, "mint");
+    for (const lx of [224, 384, 544]) T.prop(base, "pendant_S", lx, 224, "cream");
+  } else {
+    // Indoor Smoking Booth: enclosed 4 walls + panoramic skyline windows + exhaust hoods + plush lounge
+    T.floor(base, 80, 240, 608, 112);
+    T.wall(base, 64, 144, 640, 96, "cream");
+    glass.push(...T.windowPanel(base, 144, 160, 480, 48));
+    for (const hx of [208, 352, 560]) T.prop(base, "hood_S", hx, 160, "cream");
+    T.prop(base, "picture_S", 96, 160, "rose");
+    T.prop(base, "picture_S", 640, 160, "rose");
+    T.partition(base, { x: 64, y: 240, w: 16, h: 128 }, true);
+    T.partition(base, { x: 688, y: 240, w: 16, h: 128 }, true);
+    if (doorX > 80) T.partition(base, { x: 80, y: 352, w: doorX - 80, h: 16 }, true);
+    if (doorX + 32 < 688) T.partition(base, { x: doorX + 32, y: 352, w: 688 - (doorX + 32), h: 16 }, true);
+    T.jamb(base, doorX, 352, 16);
+    T.prop(base, "mat_S", doorX, 336, "rose");
+
+    T.rug(base, 112, 256, 208, 80, "rose");
+    T.prop(base, "sofa2_S", 128, 256, "rose");
+    T.prop(base, "table_round_S", 176, 288, "wood");
+    T.prop(base, "armchair_E", 224, 288, "mint");
+    T.prop(base, "bench_S", 288, 256, "lavender");
+    T.prop(base, "bench_S", 496, 256, "mint");
+    T.workstation(base, "ashtray", 344, 232, 1);
+    T.workstation(base, "ashtray", 592, 232, 1);
+    T.prop(base, "plant_tall_S", 96, 304, "mint");
+    T.prop(base, "plant_tall_S", 656, 304, "mint");
+    T.prop(base, "plant_small_S", 416, 256, "mint");
+  }
+  T.workstation(base, "vending", T.snap(machine.x - 16), T.snap(machine.y - 64), 2);
 }
 
 function paintBase() {
@@ -256,16 +294,25 @@ function paintEffects(now) {
     else rect(overlay, x + 1, y + 1, w - 2, 2, PAL.t3);
   }
   if (area === "hall" && night) T.animation(overlay, "neon_open", 368, 32, Math.floor(now / (motion.matches ? 480 : 160)));
-  T.weatherLoop(overlay, weather, now, motion.matches);
-  if (area === "terrace" && weather !== "clear") T.weatherLoop(overlay, "wind", now, motion.matches);
+  if (area === "terrace") {
+    T.weatherLoop(overlay, weather, now, motion.matches);
+    if (weather !== "clear") T.weatherLoop(overlay, "wind", now, motion.matches);
+  } else if (glass.length) {
+    // Indoor rooms (hall & booth): clip rain/snow/leaves strictly to exterior glass windows
+    overlay.save();
+    overlay.beginPath();
+    for (const pane of glass) overlay.rect(pane.x, pane.y, pane.w, pane.h);
+    overlay.clip();
+    T.weatherLoop(overlay, weather, now, motion.matches);
+    overlay.restore();
+  }
   if (area === "hall" && clerk.dataset.mode === "cook" && !clerk.hidden) {
     T.animation(overlay, "stove", LANDMARKS.counter.x + 48, LANDMARKS.counter.y + 16, Math.floor(now / 125));
     T.animation(overlay, "steam", LANDMARKS.counter.x + 48, LANDMARKS.counter.y, Math.floor(now / 125));
   }
   if (area === "hall" && !motion.matches && now - doorAt < 650) {
     const { x, y, w } = LANDMARKS.entrance;
-    const age = now - doorAt;
-    T.door(overlay, x, y - 8, w, Math.min(3, Math.floor(Math.min(age, 650 - age) / 70)));
+    rect(overlay, x + 3, y, w - 6, 12, "rgba(255, 226, 173, 0.35)");
   }
 }
 

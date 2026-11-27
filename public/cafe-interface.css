@@ -58,7 +58,7 @@
 }
 .cafe-fullscreen :is(
   .stage-room-door, .proximity-prompt, .cafe-nickname, .cafe-activity-pill, .seat-journey,
-  .kiosk-pin span, .snack-counter, .seat-marker, .cafe-speech-bubble, .cafe-chat-feedback,
+  .kiosk-pin span, .seat-marker, .cafe-speech-bubble, .cafe-chat-feedback,
   .cafe-chat-options-panel, .cafe-chat-mute-player, .cafe-chat-form input
 ) {
   border: 2px solid var(--interface-border);

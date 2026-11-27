@@ -43,6 +43,7 @@ try {
         "renewal-seat-picker.mjs", "renewal-slice.html", "renewal-slice.js", "walk.js",
         "app.js", "pc.css", "sudoku.js", "solitaire.js", "solitaire-engine.mjs",
         "knit-unravel.js", "knit-unravel-engine.mjs", "cafe-layout.js", "pixel-tiles.js", "avatar-sprites.js", "pvp-ai.mjs", "pvp.js",
+        "omok-rules.mjs", "merge.js", "merge-board.js", "sudoku-board.js",
       ].map(async (path) => {
         const expected = await readFile(new URL("../public/" + path, import.meta.url));
         const response = await request("/" + path, { headers });

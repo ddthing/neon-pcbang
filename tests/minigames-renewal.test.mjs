@@ -485,4 +485,9 @@ test("Concept 3 pastel palette & warm-brown outlines forbid pure #000/#fff token
 
   const deployYml = readFileSync(new URL("../.github/workflows/deploy.yml", import.meta.url), "utf8");
   assert.match(deployYml, /"drizzle\/\*\*"/);
+
+  // Indoor scenes clip weatherLoop strictly to window glass rects & snack-counter stays transparent
+  const cafeArt = readFileSync(new URL("../public/cafe-art.js", import.meta.url), "utf8");
+  assert.match(cafeArt, /overlay\.clip\(\)/);
+  assert.equal(/\.kiosk-pin span,\s*\.snack-counter/.test(interfaceCss), false, "snack-counter must not use opaque box fill");
 });

@@ -62,6 +62,8 @@
 .merge-cell[data-value="4096"] .merge-number, .merge-cell[data-value="8192"] .merge-number {
   font-size: .83em;
 }
+/* 슬라이딩 모션용 유령 타일: transform 으로만 움직인다 */
+.merge-board .merge-ghost { position: absolute; z-index: 2; aspect-ratio: auto; pointer-events: none; will-change: transform; }
 .merge-board .u022 { position: absolute; inset: 0; z-index: 1; transform: scale(.55); pointer-events: none; }
 .merge-board .u022-ring {
   position: absolute; left: 50%; top: 50%; width: 140px; height: 140px; margin: -70px; border-radius: 50%;

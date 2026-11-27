@@ -1,5 +1,4 @@
 // Pure Tactical AI Engine for Omok (15x15 Split-Pattern + 2-Ply Alpha-Beta) & Alkkagi (Physics Lookahead)
-
 import { OMOK_SIZE as SIZE, OMOK_DIRECTIONS as DIRS, hasFiveInARow, omokForbiddenMove } from "./omok-rules.mjs";
 export { hasFiveInARow };
 

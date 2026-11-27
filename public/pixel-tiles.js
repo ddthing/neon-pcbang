@@ -194,12 +194,39 @@
     tiles(ctx, "partitions", x, y, w, h, "authored", () => [sourceX, 0]);
   }
 
-  function rug(ctx, x, y, w, h, tone) {
-    const { atlas: [sx, sy] } = catalog.objects.rug_S;
-    tiles(ctx, "objects", x, y, w, h, tone, (row, col, rows, columns) => [
-      sx + (col === 0 ? 0 : col === columns - 1 ? 32 : 16),
-      sy + (row === rows - 1 ? 16 : 0),
-    ]);
+  function rug(ctx, x, y, w, h, tone = "rose") {
+    const left = snap(x), top = snap(y), rw = snap(w), rh = snap(h);
+    const ramp = ramps[tone] || ramps.rose;
+    ctx.fillStyle = PAL.k;
+    ctx.fillRect(left, top, rw, rh);
+    ctx.fillStyle = ramp[1];
+    ctx.fillRect(left + 1, top + 1, Math.max(0, rw - 2), Math.max(0, rh - 2));
+    ctx.fillStyle = PAL.p2;
+    ctx.fillRect(left + 3, top + 3, Math.max(0, rw - 6), Math.max(0, rh - 6));
+    ctx.fillStyle = ramp[2];
+    ctx.fillRect(left + 5, top + 5, Math.max(0, rw - 10), Math.max(0, rh - 10));
+    // Soft woven pastel checker knots inside the rug (no horizontal stripe bands)
+    ctx.fillStyle = ramp[1];
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    for (let py = top + 7; py < top + rh - 7; py += 6) {
+      for (let px = left + 7 + ((py / 6) % 2) * 3; px < left + rw - 7; px += 6) {
+        ctx.fillRect(px, py, 2, 2);
+      }
+    }
+    ctx.restore();
+  }
+
+  function jamb(ctx, x, y, h = TILE) {
+    const lx = snap(x), ty = snap(y), jh = snap(h);
+    ctx.fillStyle = PAL.k;
+    ctx.fillRect(lx, ty, 3, jh);
+    ctx.fillStyle = PAL.w1;
+    ctx.fillRect(lx + 1, ty + 1, 2, Math.max(0, jh - 2));
+    ctx.fillStyle = PAL.k;
+    ctx.fillRect(lx + TILE * 2 - 3, ty, 3, jh);
+    ctx.fillStyle = PAL.w1;
+    ctx.fillRect(lx + TILE * 2 - 3, ty + 1, 2, Math.max(0, jh - 2));
   }
 
   function skyline(ctx, x, y, w, h, phase) {
@@ -294,7 +321,7 @@
   }
 
   window.cafePixelTiles = {
-    ready, PAL, snap, prop, floor, wall, windowPanel, door, chairPosition, chairFront,
+    ready, PAL, snap, prop, floor, wall, windowPanel, door, jamb, chairPosition, chairFront,
     workstation, desk, seatObject, furnitureFront, food, weatherLoop, animation, marginTile, partition, rug, skyline,
   };
 })();

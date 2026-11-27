@@ -40,22 +40,28 @@ function getLine(direction, line) {
   });
 }
 
-function moveLine(board, nextBoard, indices, merged) {
-  const tiles = indices.map((index) => board[index]).filter((value) => value !== 0);
+// slides: 화면에서 미끄러지는 모션을 그리기 위한 기록. { from, to, value } (from === to 인 제자리 타일은 넣지 않는다)
+function moveLine(board, nextBoard, indices, merged, slides) {
+  const sources = indices.filter((index) => board[index] !== 0);
+  const tiles = sources.map((index) => board[index]);
   const shifted = [];
   let score = 0;
 
   for (let index = 0; index < tiles.length; index += 1) {
     const value = tiles[index];
+    const to = indices[shifted.length];
 
     if (value === tiles[index + 1]) {
       const mergedValue = value * 2;
       shifted.push(mergedValue);
       score += mergedValue;
-      merged.push(indices[shifted.length - 1]);
+      merged.push(to);
+      if (sources[index] !== to) slides.push({ from: sources[index], to, value });
+      slides.push({ from: sources[index + 1], to, value });
       index += 1;
     } else {
       shifted.push(value);
+      if (sources[index] !== to) slides.push({ from: sources[index], to, value });
     }
   }
 
@@ -76,16 +82,17 @@ export function moveMergeBoard(board, direction, random = Math.random) {
 
   const nextBoard = Array(CELL_COUNT).fill(0);
   const merged = [];
+  const slides = [];
   let score = 0;
 
   for (let line = 0; line < BOARD_SIZE; line += 1) {
-    score += moveLine(board, nextBoard, getLine(direction, line), merged);
+    score += moveLine(board, nextBoard, getLine(direction, line), merged, slides);
   }
 
   const changed = nextBoard.some((value, index) => value !== board[index]);
   const spawned = changed ? spawnTile(nextBoard, random) : null;
 
-  return { board: nextBoard, changed, score, merged, spawned };
+  return { board: nextBoard, changed, score, merged, spawned, slides };
 }
 
 export function canMoveMergeBoard(board) {
