@@ -31,71 +31,77 @@
 .pc-statusbar .close { width: 30px; height: 28px; font-size: 20px; }
 .pc-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .pc-workspace {
-  position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) minmax(175px, 232px);
-  grid-template-rows: 1fr auto; align-items: start; gap: 12px; min-height: clamp(420px, 58dvh, 620px);
-  padding: clamp(8px, 2vw, 18px); background: #6f8276;
+  position: relative; isolation: isolate; display: grid; grid-template-columns: auto minmax(0, 1fr) 248px;
+  align-items: start; gap: 12px; height: clamp(460px, 64dvh, 620px); overflow: hidden;
+  padding: clamp(10px, 1.8vw, 18px); background: #6f8276;
 }
 .pc-wallpaper, .wall-preview { object-fit: cover; }
 .pc-wallpaper { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; }
+.wallpaper-life { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
 .pc-wallpaper.pixel, .wall-preview.pixel { image-rendering: pixelated; }
 .pc-workspace::after {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: linear-gradient(180deg, #1b222438, transparent 44%, #18211d52);
 }
-.pc-shortcuts { display: grid; gap: 5px; justify-items: start; }
+.pc-shortcuts { grid-column: 1; grid-row: 1; display: grid; gap: 6px; justify-items: start; justify-self: start; align-self: start; z-index: 2; }
 .pc-shortcut {
   display: grid; justify-items: center; gap: 4px; width: 78px; min-height: 62px; padding: 5px 3px;
-  border: 1px solid transparent; border-radius: 5px; background: none;
-  color: #fffaf0; font-size: 11px; font-weight: 750; text-shadow: 0 1px 3px #171b19, 0 0 6px #171b19;
+  border: 2px solid #5c4742; border-radius: 0; background: #f7efe5e6;
+  color: #3d2c28; font-size: 11px; font-weight: 800; text-shadow: none;
 }
-.pc-shortcut:hover, .pc-shortcut:focus-visible { border-color: #eef5e284; background: #26332c66; }
-.pc-shortcut .pc-app-icon { text-shadow: none; box-shadow: 0 2px 4px #222b2280; border: 1px solid #f5f6e880; }
+.pc-shortcut:hover, .pc-shortcut:focus-visible { border-color: #5c4742; background: #c8b6e2; }
+.pc-shortcut .pc-app-icon { text-shadow: none; box-shadow: none; border: 2px solid #5c4742; }
 
 .pc-cafe, .pc-launcher {
-  border: 1px solid #c7aeb388; border-radius: 7px; background: #3b2d31f2; color: #fbe3d3;
-  box-shadow: 0 8px 24px #24191c80;
+  border: 2px solid #5c4742; border-radius: 0; background: #f7efe5; color: #3d2c28;
+  box-shadow: none;
 }
-.pc-cafe { padding: 10px; }
+.pc-cafe { grid-column: 3; grid-row: 1; width: 100%; justify-self: end; align-self: start; z-index: 2; padding: 10px; }
 .pc-panel-heading { display: flex; align-items: center; gap: 6px; }
-.pc-panel-heading h3 { font-size: 12px; margin: 0; }
-.pc-panel-heading h3:focus-visible { outline: 1px solid var(--mint); outline-offset: 3px; }
-.pc-panel-heading > svg { width: 16px; height: 16px; color: #f6cf73; }
-.pc-panel-heading > span:last-child:not(.pc-status-dot) { margin-left: auto; color: #ffe7a8; font-size: 10px; font-weight: 800; }
+.pc-panel-heading h3 { font-size: 12px; margin: 0; color: #3d2c28; }
+.pc-panel-heading h3:focus-visible { outline: 2px solid #5c4742; outline-offset: 2px; }
+.pc-panel-heading > svg { width: 16px; height: 16px; color: #5c4742; }
+.pc-panel-heading > span:last-child:not(.pc-status-dot) { margin-left: auto; color: #3d2c28; font-size: 10px; font-weight: 800; }
 #pc-seat {
-  margin: 7px 0 4px; padding: 6px 4px; background: #9e7b8233; border-radius: 4px;
-  font-size: 11px; font-weight: 750; text-align: center;
+  margin: 7px 0 4px; padding: 6px 4px; background: #eee4f5; border: 2px solid #5c4742; border-radius: 0;
+  color: #3d2c28; font-size: 11px; font-weight: 800; text-align: center;
 }
-.pc-cafe dl { display: flex; align-items: center; justify-content: space-between; gap: 5px; margin: 6px 0 7px; font-size: 11px; }
-.pc-cafe dd { margin: 0; color: #ffe7a8; }
+.pc-cafe dl { display: flex; align-items: center; justify-content: space-between; gap: 5px; margin: 6px 0 7px; font-size: 11px; color: #3d2c28; }
+.pc-cafe dd { margin: 0; color: #3d2c28; font-weight: 800; }
 .pc-cafe .enter { min-height: 33px; font-size: 11px; }
 .pc-cafe .enter svg { width: 14px; height: 14px; }
 .pc-sub-btn {
   width: 100%; margin-top: 5px; min-height: 29px; padding: 4px 7px;
-  border: 1px solid #b86f4c; border-radius: 4px; background: #5c3f34; color: #fbe3d3; font-size: 11px; font-weight: 750;
+  border: 2px solid #5c4742; border-radius: 0; background: #f4c2d7; color: #3d2c28; font-size: 11px; font-weight: 800;
 }
-.pc-sub-btn:hover { background: #734e40; }
+.pc-sub-btn:hover { background: #c8b6e2; }
 .pc-break-row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px; }
 .pc-break-btn {
-  min-height: 28px; padding: 3px 4px; border: 1px solid #7e5e68; border-radius: 4px;
-  background: #543e45; color: #fbe3d3; font-size: 10px; font-weight: 700;
+  min-height: 28px; padding: 3px 4px; border: 2px solid #5c4742; border-radius: 0;
+  background: #f7efe5; color: #3d2c28; font-size: 10px; font-weight: 750;
 }
-.pc-break-btn:hover { background: #6b4e57; }
-#pc-order-summary { margin-top: 5px; color: #e5d2c5; font-size: 10px; text-align: center; }
-.pc-end { display: block; margin: 5px auto 0; padding: 5px 6px 0; border: 0; color: #dfd0d3; background: none; font-size: 10px; text-decoration: underline; text-underline-offset: 2px; }
+.pc-break-btn:hover { background: #c8b6e2; }
+#pc-order-summary { margin-top: 5px; color: #5c4742; font-size: 10px; text-align: center; font-weight: 700; }
+.pc-end { display: block; margin: 6px auto 0; padding: 4px 8px; border: 1px solid #5c4742; color: #3d2c28; background: #eee4f5; font-size: 10px; font-weight: 750; }
 
-/* 11-Game Click-to-Open Launcher + Pixel Atlas Icons */
+/* 11-Game Click-to-Open Floating Popup Launcher + Pixel Atlas Icons */
 .pc-launcher {
-  grid-column: 1 / -1; width: min(860px, 100%); align-self: end; padding: 10px;
-  border-color: #dc9666; background: #33262af5;
+  position: absolute; inset: 14px; margin: auto; width: min(820px, calc(100% - 28px));
+  max-height: calc(100% - 28px); height: fit-content; overflow-y: auto; z-index: 8; padding: 0;
+  border: 2px solid #5c4742; background: #f7efe5; color: #3d2c28;
 }
 .pc-launcher[hidden] { display: none !important; }
-.pc-launcher .pc-panel-heading { margin-bottom: 8px; }
-.pc-launcher-close {
-  display: inline-grid; place-items: center; width: 30px; height: 30px; margin-left: 6px;
-  border: 1px solid #9e7b82; border-radius: 5px; background: #4c383d; color: #fbe3d3;
-  font-size: 18px; line-height: 1; cursor: pointer;
+.pc-launcher .pc-panel-heading {
+  padding: 8px 12px; margin: 0; border-bottom: 2px solid #5c4742;
+  background: #c8b6e2; color: #3d2c28;
 }
-.pc-launcher-close:hover { background: #6e525a; border-color: #ffe7a8; }
+.pc-launcher .pc-apps { padding: 10px; }
+.pc-launcher-close {
+  display: inline-grid; place-items: center; width: 28px; height: 28px; margin-left: 6px;
+  border: 2px solid #5c4742; border-radius: 0; background: #f7efe5; color: #3d2c28;
+  font-size: 18px; font-weight: 800; line-height: 1; cursor: pointer;
+}
+.pc-launcher-close:hover { background: #f4c2d7; }
 .pc-task[aria-expanded="true"] { background: #569e7c; color: #fff9f2; border-color: #f6cf73; }
 .pc-shortcut[aria-expanded="true"] { border-color: #f6cf73; background: #2d4438a6; }
 .pc-apps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
@@ -570,9 +576,11 @@
   #knit .knit-cell { font-size: 9px; }
   #knit .knit-boosters { margin-top: 3px; gap: 4px; }
   #knit .knit-booster { min-height: 32px; font-size: 11px; }
-  .pc-workspace { grid-template-columns: 1fr; padding: 10px; gap: 10px; min-height: 0; }
-  .pc-shortcuts { grid-template-columns: repeat(4, minmax(0, 1fr)); justify-items: center; width: 100%; }
+  .pc-workspace { grid-template-columns: 1fr; height: auto; min-height: 380px; overflow: visible; padding: 10px; gap: 10px; }
+  .pc-shortcuts { grid-column: 1; grid-row: 1; grid-template-columns: repeat(4, minmax(0, 1fr)); justify-items: center; width: 100%; }
   .pc-shortcut { width: 100%; min-height: 58px; }
+  .pc-cafe { grid-column: 1; grid-row: 2; }
+  .pc-launcher { position: fixed; inset: 10px; width: auto; max-height: calc(100dvh - 20px); }
   .pc-taskbar { flex-wrap: wrap; }
   .tetris-touch-pad .walk-button { min-height: 44px; min-width: 48px; touch-action: manipulation; }
   .tycoon-tickets { grid-template-columns: 1fr; }

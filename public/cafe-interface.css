@@ -181,11 +181,53 @@
 .cafe-fullscreen .pc-app {
   border: 2px solid var(--interface-border);
   border-radius: 0;
-  color: var(--interface-ink);
+  color: #3d2c28;
   background: var(--interface-paper);
 }
 .cafe-fullscreen .pc-app:hover { background: var(--interface-screen); }
 .cafe-fullscreen .pc-app:focus-visible { outline: 2px solid var(--interface-ink); }
+.cafe-fullscreen #pc-desktop :is(.pc-statusbar > span, .pc-bezel, #pc-clock, .pc-panel-heading h3, .pc-panel-heading > span, .pc-cafe dt, .pc-cafe dd, #pc-order-summary, .pc-end) {
+  color: #3d2c28;
+}
+.cafe-fullscreen #pc-desktop :is(.pc-statusbar, .pc-taskbar, .pc-bezel) {
+  border-color: #5c4742;
+}
+.cafe-fullscreen #pc-desktop .pc-task {
+  background: #f7efe5;
+  color: #3d2c28;
+  border: 2px solid #5c4742;
+  border-radius: 0;
+  box-shadow: none;
+}
+.cafe-fullscreen #pc-desktop .pc-task:hover,
+.cafe-fullscreen #pc-desktop .pc-task[aria-expanded="true"] {
+  background: #f4c2d7;
+  color: #3d2c28;
+}
+.cafe-fullscreen #pc-desktop .pc-start summary {
+  background: #9bb9a6;
+  color: #3d2c28;
+  border: 2px solid #5c4742;
+  border-radius: 0;
+  box-shadow: none;
+}
+.cafe-fullscreen #pc-desktop .pc-start-menu {
+  background: #f7efe5;
+  border: 2px solid #5c4742;
+  border-radius: 0;
+  box-shadow: none;
+}
+.cafe-fullscreen #pc-desktop .pc-start-menu button { color: #3d2c28; }
+.cafe-fullscreen #pc-desktop .pc-start-menu button:hover { background: #c8b6e2; color: #3d2c28; }
+.cafe-fullscreen #floor-kiosk :is(.floor-control, #floor-zoom, #floor-back) {
+  background: #f7efe5;
+  color: #3d2c28;
+  border: 2px solid #5c4742;
+  border-radius: 0;
+}
+.cafe-fullscreen #floor-kiosk :is(.floor-control, #floor-zoom, #floor-back):hover {
+  background: #c8b6e2;
+}
 
 .world-seat-targets {
   position: absolute;
