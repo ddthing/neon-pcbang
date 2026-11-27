@@ -9,9 +9,9 @@ const SHAPES = {
   I: { color: "#89c4e1", hi: "#dcf2fc", cells: [[0,1],[1,1],[2,1],[3,1]], size: 4 },
   O: { color: "#f6cf73", hi: "#fff2c2", cells: [[1,0],[2,0],[1,1],[2,1]], size: 4 },
   T: { color: "#c7aeb3", hi: "#f5ebed", cells: [[1,0],[0,1],[1,1],[2,1]], size: 3 },
-  S: { color: "#8ea147", hi: "#d2e09b", cells: [[1,0],[2,0],[0,1],[1,1]], size: 3 },
-  Z: { color: "#e8748c", hi: "#fcc7d3", cells: [[0,0],[1,0],[1,1],[2,1]], size: 3 },
-  J: { color: "#569e7c", hi: "#b2dec9", cells: [[0,0],[0,1],[1,1],[2,1]], size: 3 },
+  S: { color: "#99bc9b", hi: "#d9ebd5", cells: [[1,0],[2,0],[0,1],[1,1]], size: 3 },
+  Z: { color: "#e18fa5", hi: "#fcc7d3", cells: [[0,0],[1,0],[1,1],[2,1]], size: 3 },
+  J: { color: "#a999cd", hi: "#d8caee", cells: [[0,0],[0,1],[1,1],[2,1]], size: 3 },
   L: { color: "#dc9666", hi: "#fbe3d3", cells: [[2,0],[0,1],[1,1],[2,1]], size: 3 },
 };
 const TYPES = Object.keys(SHAPES);
@@ -221,13 +221,15 @@ export function initTetris() {
   function drawBlock(targetCtx, px, py, size, type, alpha = 1) {
     const def = SHAPES[type];
     targetCtx.globalAlpha = alpha;
-    targetCtx.fillStyle = def.color;
+    targetCtx.fillStyle = "#5c4742";
     targetCtx.fillRect(px + 1, py + 1, size - 2, size - 2);
+    targetCtx.fillStyle = def.color;
+    targetCtx.fillRect(px + 2, py + 2, size - 4, size - 4);
     targetCtx.fillStyle = def.hi;
     targetCtx.fillRect(px + 2, py + 2, size - 5, 3);
     targetCtx.fillRect(px + 2, py + 2, 3, size - 5);
-    targetCtx.fillStyle = "#14161d66";
-    targetCtx.fillRect(px + 2, py + size - 4, size - 3, 3);
+    targetCtx.fillStyle = "#5c474244";
+    targetCtx.fillRect(px + 2, py + size - 4, size - 4, 2);
     targetCtx.globalAlpha = 1;
   }
 
@@ -242,19 +244,19 @@ export function initTetris() {
   }
 
   function drawSidePanels() {
-    holdCtx.fillStyle = "#191c24";
+    holdCtx.fillStyle = "#eee4f5";
     holdCtx.fillRect(0, 0, holdCanvas.width, holdCanvas.height);
     drawMiniPiece(holdCtx, holdCanvas.width, holdCanvas.height, holdType, 4);
 
-    nextCtx.fillStyle = "#191c24";
+    nextCtx.fillStyle = "#eee4f5";
     nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
     queue.slice(0, 3).forEach((t, i) => drawMiniPiece(nextCtx, nextCanvas.width, 46, t, i * 44));
   }
 
   function draw() {
-    ctx.fillStyle = "#171a21";
+    ctx.fillStyle = "#eee4f5";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "#29303d";
+    ctx.strokeStyle = "#d0bfd9";
     ctx.lineWidth = 1;
     for (let x = 0; x <= COLS; x++) {
       ctx.beginPath(); ctx.moveTo(x * CELL, 0); ctx.lineTo(x * CELL, ROWS * CELL); ctx.stroke();
@@ -274,7 +276,7 @@ export function initTetris() {
       ctx.save();
       ctx.setLineDash([2, 2]);
       for (const [cx, cy] of active.cells) {
-        ctx.strokeStyle = SHAPES[active.type].color + "aa";
+        ctx.strokeStyle = "#77558c";
         ctx.strokeRect((active.x + cx) * CELL + 2, (gy + cy) * CELL + 2, CELL - 4, CELL - 4);
       }
       ctx.restore();
@@ -284,7 +286,7 @@ export function initTetris() {
     }
 
     if (flashTime > 0 && flashRows.length) {
-      ctx.fillStyle = "#ffffffaa";
+      ctx.fillStyle = "#f7efe5aa";
       for (const r of flashRows) ctx.fillRect(0, r * CELL, COLS * CELL, CELL);
     }
   }

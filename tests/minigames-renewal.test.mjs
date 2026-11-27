@@ -301,7 +301,8 @@ test("Sprite-based hall, shared layout, 16×32 avatars and wardrobe controls are
   assert.ok(!avatarJs.includes("pellipse"), "avatar-sprites.js must use pixel matrices instead of math ellipses");
   assert.match(avatarJs, /const WIDTH = 16;\s*const HEIGHT = 32;/);
   assert.match(pcCss, /\.sudoku-cell\[data-given\]/);
-  assert.match(pcCss, /\.pc-launcher\[hidden\]/);
+  assert.match(html, /<dialog class="pc-launcher" id="pc-launcher" aria-labelledby="pc-launcher-title">/);
+  assert.match(appJs, /openCafeWindow\(launcher, launcherOrigin, source\)/);
   assert.match(shellCss, /\.cafe-joystick\[hidden\]/);
   assert.match(readme, /공동개발자 필독 지침/);
   assert.match(readme, /Single Source of Truth/);
@@ -471,16 +472,19 @@ test("Concept 3 pastel palette & warm-brown outlines forbid pure #000/#fff token
   assert.match(interfaceCss, /\.cafe-fullscreen :is\(dialog,/);
 
   const html = readFileSync(new URL("../app/cafe.html", import.meta.url), "utf8");
+  const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
+  assert.match(html, /<link rel="license" href="[^"]+README\.md#에셋-라이선스">/);
   for (const credit of [
     "Office Interior Pack by Maru",
     "Bedroom Stuff by Kakapo Pixels",
-    "Downtown Eats &amp; Nights by dotplays",
+    "Downtown Eats & Nights FREE by dotplays",
     "reodesuxz",
     "5yvalia",
     "alexkovacsart",
     "CC BY 4.0",
   ]) {
-    assert.ok(html.includes(credit), `Missing credit text "${credit}" in app/cafe.html`);
+    assert.ok(readme.includes(credit), `Missing credit text "${credit}" in README.md`);
+    assert.ok(!html.includes(credit), `Credit text "${credit}" is still displayed in the cafe`);
   }
 
   const deployYml = readFileSync(new URL("../.github/workflows/deploy.yml", import.meta.url), "utf8");

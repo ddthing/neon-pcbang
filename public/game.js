@@ -81,11 +81,11 @@ export function initArcade() {
   {
     const grid = background.getContext("2d");
     const gradient = grid.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, "#1c1f29");
-    gradient.addColorStop(1, "#14181f");
+    gradient.addColorStop(0, "#eee4f5");
+    gradient.addColorStop(1, "#f7efe5");
     grid.fillStyle = gradient;
     grid.fillRect(0, 0, width, height);
-    grid.strokeStyle = "#70f0d614";
+    grid.strokeStyle = "#74597927";
     grid.beginPath();
     for (let x = 0; x <= width; x += 16) { grid.moveTo(x, 0); grid.lineTo(x, height); }
     for (let y = 0; y <= height; y += 16) { grid.moveTo(0, y); grid.lineTo(width, y); }
@@ -95,31 +95,33 @@ export function initArcade() {
   function draw() {
     ctx.drawImage(background, 0, 0);
     for (const brick of bricks) {
-      ctx.fillStyle = brick.color;
+      ctx.fillStyle = "#5c4742";
       ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
-      ctx.fillStyle = brick.hp > 1 ? "#ffffffaa" : "#ffffff55";
+      ctx.fillStyle = brick.color;
+      ctx.fillRect(brick.x + 1, brick.y + 1, brick.width - 2, brick.height - 2);
+      ctx.fillStyle = brick.hp > 1 ? "#f7efe5aa" : "#f7efe555";
       ctx.fillRect(brick.x + 2, brick.y + 2, brick.width - 4, 2);
-      ctx.fillStyle = "#14101866";
-      ctx.fillRect(brick.x, brick.y + brick.height - 3, brick.width, 3);
+      ctx.fillStyle = "#5c474255";
+      ctx.fillRect(brick.x + 1, brick.y + brick.height - 3, brick.width - 2, 2);
     }
     for (const cap of capsules) {
-      ctx.fillStyle = cap.kind === "multi" ? "#70f0d6" : cap.kind === "wide" ? "#ffd166" : "#ff85a1";
+      ctx.fillStyle = cap.kind === "multi" ? "#a5d1bc" : cap.kind === "wide" ? "#ebc58c" : "#eaa7b9";
       ctx.fillRect(cap.x - 9, cap.y - 4, 18, 8);
-      ctx.fillStyle = "#191c24";
+      ctx.fillStyle = "#493646";
       ctx.font = "bold 7px monospace";
       ctx.fillText(cap.kind === "multi" ? "M" : cap.kind === "wide" ? "W" : "+", cap.x - 3, cap.y + 3);
     }
-    ctx.fillStyle = paddle.wideUntil > performance.now() ? "#70f0d6" : "#c5dec2";
+    ctx.fillStyle = "#5c4742";
     ctx.fillRect(paddle.x - paddle.width / 2, paddle.y, paddle.width, paddle.height);
-    ctx.fillStyle = "#ffffffaa";
-    ctx.fillRect(paddle.x - paddle.width / 2 + 3, paddle.y + 1, paddle.width - 6, 2);
+    ctx.fillStyle = paddle.wideUntil > performance.now() ? "#a5d1bc" : "#c5dec2";
+    ctx.fillRect(paddle.x - paddle.width / 2 + 1, paddle.y + 1, paddle.width - 2, paddle.height - 2);
     for (const spark of sparks) {
       ctx.globalAlpha = spark.life / .44;
       ctx.fillStyle = spark.color;
       ctx.fillRect(Math.round(spark.x), Math.round(spark.y), spark.size, spark.size);
     }
     ctx.globalAlpha = 1;
-    ctx.fillStyle = "#fff8eb";
+    ctx.fillStyle = "#614378";
     for (const ball of balls) {
       ctx.fillRect(Math.round(ball.x - ball.r), Math.round(ball.y - ball.r), ball.r * 2, ball.r * 2);
     }

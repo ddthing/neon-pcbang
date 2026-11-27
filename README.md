@@ -46,9 +46,12 @@
 node scripts/install-notion-art.mjs <DowntownEats_FREE> <Weather_FX> <Food_Icons>
 ```
 
-- [Downtown Eats & Nights FREE · dotplays](https://dotplays.itch.io/downtown-eats-and-nights-16x16-top-down-interior-tileset)
-- [Weather & Nature FX · reodesuxz](https://reodesuxz.itch.io/free-pixel-weather-nature-fx-63-assets)
-- [100 Free Pixel Art Foods · alexkovacsart · CC BY 4.0](https://alexkovacsart.itch.io/free-pixel-art-foods)
+### 에셋 라이선스
+
+- Office Interior Pack by Maru, Bedroom Stuff by Kakapo Pixels, Pixel Top-down Cozy House Tileset by reodesuxz, Character Creator by 5yvalia
+- [Downtown Eats & Nights FREE by dotplays](https://dotplays.itch.io/downtown-eats-and-nights-16x16-top-down-interior-tileset)
+- [Weather & Nature FX by reodesuxz](https://reodesuxz.itch.io/free-pixel-weather-nature-fx-63-assets)
+- 100 Free Pixel Art Foods! by alexkovacsart는 게임 화면에서 색을 보정해 사용합니다. [원본 에셋](https://alexkovacsart.itch.io/free-pixel-art-foods) · [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 
 ---
 

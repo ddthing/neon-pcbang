@@ -134,7 +134,6 @@ function openDesktop(fromSeat = false) {
   if (!isSeated()) return;
   desktopReturnFocus = fromSeat ? $("#seat-marker") : document.activeElement;
   window.prepareCafeWallpaper?.();
-  setLauncherOpen(false);
   desktop.classList.add("is-nonmodal");
   desktop.show();
   if (restorePill) restorePill.hidden = true;
@@ -538,51 +537,42 @@ $("#pc-minimize")?.addEventListener("click", () => {
 restorePill?.addEventListener("click", () => openDesktop(true));
 const startMenu = $("#pc-start");
 const launcher = $("#pc-launcher");
-const launcherClose = $("#pc-launcher-close");
-let launcherReturnCard = null;
-function setLauncherOpen(open, focusTitle = false) {
-  if (!launcher) return;
-  launcher.hidden = !open;
-  document.querySelectorAll("[data-launcher]").forEach((btn) => {
-    btn.setAttribute("aria-expanded", String(open));
-  });
-  if (open && focusTitle) $("#pc-launcher-title")?.focus({ preventScroll: true });
-}
+const launcherTriggers = document.querySelectorAll("[data-launcher]");
+let launcherOrigin = null;
 desktop.addEventListener("close", () => {
   if (desktop.open) return;
   startMenu.open = false;
-  launcherReturnCard = null;
-  setLauncherOpen(false);
+  if (launcher.open) launcher.close();
 });
 desktop.addEventListener("cancel", (event) => {
   if (startMenu.open) {
     event.preventDefault();
     startMenu.open = false;
     startMenu.querySelector("summary").focus();
-    return;
-  }
-  if (launcher && !launcher.hidden) {
-    event.preventDefault();
-    setLauncherOpen(false);
-    document.querySelector(".pc-shortcut[data-launcher]")?.focus();
   }
 });
 startMenu.addEventListener("click", (event) => {
   if (event.target.closest("button")) startMenu.open = false;
 });
-document.querySelectorAll("[data-launcher]").forEach((button) => {
+launcherTriggers.forEach((button) => {
   button.setAttribute("aria-expanded", "false");
+  button.setAttribute("aria-haspopup", "dialog");
+  button.setAttribute("aria-controls", launcher.id);
   button.addEventListener("click", () => {
+    if (!desktop.open || launcher.open) return;
+    const source = cafeWindowOrigin(button);
     const fromStartMenu = Boolean(startMenu.contains(button));
     if (fromStartMenu) startMenu.open = false;
-    const nextOpen = fromStartMenu ? true : Boolean(launcher?.hidden);
-    setLauncherOpen(nextOpen, nextOpen);
+    launcherOrigin = fromStartMenu ? startMenu.querySelector("summary") : button;
+    openCafeWindow(launcher, launcherOrigin, source);
+    launcherTriggers.forEach((trigger) => trigger.setAttribute("aria-expanded", "true"));
   });
 });
-launcherClose?.addEventListener("click", () => {
-  launcherReturnCard = null;
-  setLauncherOpen(false);
-  document.querySelector(".pc-shortcut[data-launcher]")?.focus();
+launcher.addEventListener("close", () => {
+  if (launcher.open) return;
+  launcherTriggers.forEach((trigger) => trigger.setAttribute("aria-expanded", "false"));
+  if (desktop.open) launcherOrigin?.focus({ preventScroll: true });
+  launcherOrigin = null;
 });
 floorSelect.addEventListener("change", () => {
   selectedSeat = floorSeats.get(floorSelect.value) ?? null;
@@ -708,28 +698,12 @@ const requestedGames = new Set();
 window.openCafeWindow = openCafeWindow;
 window.closeCafeWindow = closeCafeWindow;
 
-for (const gameId of Object.keys(gameLoaders)) {
-  const gameDialog = document.getElementById(gameId);
-  gameDialog?.addEventListener("close", () => {
-    if (launcherReturnCard && desktop.open) {
-      const card = launcherReturnCard;
-      launcherReturnCard = null;
-      setLauncherOpen(true);
-      card.focus({ preventScroll: true });
-    }
-  });
-}
-
 document.querySelectorAll("[data-open]").forEach((button) => {
   button.addEventListener("click", () => {
     const source = cafeWindowOrigin(button);
     if (hub.contains(button) && hub.open) hub.close();
     const next = document.getElementById(button.dataset.open);
     if (!next) return;
-    if (launcher && launcher.contains(button)) {
-      launcherReturnCard = gameLoaders[next.id] ? button : null;
-      setLauncherOpen(false);
-    }
     const origin = button.closest("dialog");
     if (origin?.matches("#snacks, #snack-board, #snack-coupon, #snack-gift")) origin.close();
     if (!next.open) {
@@ -744,6 +718,9 @@ document.querySelectorAll("[data-open]").forEach((button) => {
     requestedGames.add(next.id);
     next.setAttribute("aria-busy", "true");
     const controls = [...next.querySelector(".dialog-inner").children].filter((el) => !el.inert && !el.matches(".dialog-head"));
+    const restoreFocus = controls.some((element) => element.contains(document.activeElement)) ? document.activeElement : null;
+    const closeButton = next.querySelector(".dialog-head [data-close]");
+    if (restoreFocus) closeButton.focus({ preventScroll: true });
     controls.forEach((el) => { el.inert = true; });
     load().catch(() => {
       requestedGames.delete(next.id);
@@ -752,6 +729,7 @@ document.querySelectorAll("[data-open]").forEach((button) => {
     }).finally(() => {
       controls.forEach((el) => { el.inert = false; });
       next.removeAttribute("aria-busy");
+      if (next.open && document.activeElement === closeButton) restoreFocus?.focus({ preventScroll: true });
     });
   });
 });

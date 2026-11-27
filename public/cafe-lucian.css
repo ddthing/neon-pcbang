@@ -187,7 +187,10 @@ body[data-cafe-light="night"] :is(.u292-f[aria-pressed="true"],.u093-again) { co
 
 .cafe-launcher-gallery.u292 { width: 100%; height: auto; padding: 12px; border-radius: 0; box-shadow: none; }
 .cafe-launcher-gallery .u292-f { min-height: 44px; }
-.cafe-launcher-gallery .pc-apps { display: block; padding: 0; flex: none; }
+.cafe-launcher-gallery .pc-apps { padding: 0; flex: none; gap: 8px; }
+.cafe-launcher-gallery .pc-apps.is-laid-out { display: block; }
+.cafe-launcher-gallery .pc-apps:not(.is-laid-out) .u292-t { position: relative; width: 100% !important; transform: none !important; }
+.cafe-launcher-gallery .pc-apps:not(.is-laid-out) .u292-t.out { display: none; }
 .cafe-launcher-gallery .u292-t { display: grid; place-items: initial; align-items: center; height: 66px; padding: 6px 8px; background: var(--ux-surface-2); color: var(--ux-ink); border-color: var(--ux-line-2); }
 .cafe-launcher-gallery .u292-t small { color: var(--ux-ink-3); }
 .cafe-fullscreen .cafe-launcher-gallery .u292-t:hover { background: var(--ux-surface-3); }

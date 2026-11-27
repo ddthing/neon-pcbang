@@ -193,6 +193,15 @@ export function initKnitUnravel() {
     }
   }
 
+  function replaceControls(root, controls) {
+    const focused = [...root.children].indexOf(document.activeElement);
+    root.replaceChildren(...controls);
+    if (focused < 0) return;
+    const next = controls[focused];
+    const fallback = controls.find((control) => !control.disabled) || hintBtn;
+    (next && !next.disabled ? next : fallback).focus({ preventScroll: true });
+  }
+
   function renderDockAndHud() {
     const doneRatio = game.totalStitches
       ? Math.round(((game.totalStitches - game.remainingStitches) / game.totalStitches) * 100)
@@ -201,6 +210,7 @@ export function initKnitUnravel() {
     spoolsEl.textContent = `${game.completedSpools} / ${game.totalSpools}`;
     scoreEl.textContent = game.score.toLocaleString();
     progressFillEl.style.width = `${doneRatio}%`;
+    progressFillEl.parentElement.setAttribute("aria-valuenow", String(doneRatio));
     selectEl.value = String(game.stage);
     undoBtn.disabled = !game.history.length || wonHandled;
 
@@ -243,6 +253,7 @@ export function initKnitUnravel() {
         });
       } else {
         btn.disabled = true;
+        btn.setAttribute("aria-label", `빈 도크 ${i + 1}번`);
       }
       slots.push(btn);
     }
@@ -264,7 +275,7 @@ export function initKnitUnravel() {
       });
       slots.push(addSlot);
     }
-    dockEl.replaceChildren(...slots);
+    replaceControls(dockEl, slots);
 
     if (isKnitWon(game) && !wonHandled) {
       wonHandled = true;
@@ -320,9 +331,7 @@ export function initKnitUnravel() {
             }
           }
           btn.style.background = cell.mystery ? "#6b6375" : pal.fill;
-          btn.style.color = !cell.mystery && (cell.color === "w" || cell.color === "y" || cell.color === "l")
-            ? "#261c29"
-            : "#fff9f2";
+          btn.style.color = cell.mystery || cell.color === "k" ? "#fff9f2" : "#2e2332";
           btn.dataset.hint = String(Boolean(hintCell && hintCell.r === r && hintCell.c === c));
 
           if (cell.ice > 0) {
@@ -393,7 +402,7 @@ export function initKnitUnravel() {
         frag.push(btn);
       }
     }
-    trayEl.replaceChildren(...frag);
+    replaceControls(trayEl, frag);
   }
 
   function tickLoop(now) {

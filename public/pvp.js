@@ -59,6 +59,13 @@ export function initPvp() {
   const roomsList = document.getElementById("pvp-rooms");
   const modeSelect = document.getElementById("pvp-game-type");
   const whiteRule = document.getElementById("pvp-restrict-white");
+  const keyboardHelp = document.getElementById("pvp-keyboard-help");
+  const keyboardStatus = document.getElementById("pvp-keyboard-status");
+  let keyboardCell = 112;
+  let keyboardStone = 0;
+  let keyboardAngle = 0;
+  let keyboardPower = 10;
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   modeSelect.addEventListener("change", () => {
     whiteRule.parentElement.hidden = modeSelect.value !== "omok";
   });
@@ -135,6 +142,10 @@ export function initPvp() {
   function startAiMatch() {
     clearCafeGameResult(dialog);
     const game = modeSelect.value;
+    keyboardCell = 112;
+    keyboardStone = 0;
+    keyboardAngle = 0;
+    keyboardPower = 10;
     mode = "ai";
     matchId = "";
     leaveBtn.hidden = false;
@@ -224,7 +235,7 @@ export function initPvp() {
   }
 
   function playAlkkagiAnimation(sim, onDone) {
-    if (!sim?.frames?.length) { onDone(); return; }
+    if (reducedMotion.matches || !sim?.frames?.length) { onDone(); return; }
     window.cafeAudioPlay?.("pop");
     animFrames = sim.frames.slice();
     function stepAnim() {
@@ -242,15 +253,15 @@ export function initPvp() {
   function drawStone(px, py, r, isBlack, highlight = false) {
     ctx.fillStyle = "#1a130d55";
     ctx.beginPath(); ctx.arc(px + 1.5, py + 2, r, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = isBlack ? "#22252a" : "#f5f1e6";
+    ctx.fillStyle = isBlack ? "#493646" : "#f7efe5";
     ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = isBlack ? "#101214" : "#b8ae99";
+    ctx.strokeStyle = "#5c4742";
     ctx.lineWidth = 1.2;
     ctx.stroke();
-    ctx.fillStyle = isBlack ? "#687382" : "#ffffff";
+    ctx.fillStyle = isBlack ? "#8c7390" : "#f9e1d9";
     ctx.fillRect(px - r * 0.45, py - r * 0.45, Math.max(2, r * 0.32), Math.max(2, r * 0.32));
     if (highlight) {
-      ctx.strokeStyle = "#f6cf73";
+      ctx.strokeStyle = "#755089";
       ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(px, py, r + 2.5, 0, Math.PI * 2); ctx.stroke();
     }
@@ -258,23 +269,18 @@ export function initPvp() {
 
   function drawBoard(overrideStones = null) {
     const W = canvas.width, H = canvas.height;
-    // Crisp warm kaya-wood goban
-    ctx.fillStyle = "#d8a668";
+    ctx.fillStyle = "#efd4b9";
     ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = "#5c3f20";
+    ctx.strokeStyle = "#5c4742";
     ctx.lineWidth = 4;
     ctx.strokeRect(2, 2, W - 4, H - 4);
 
-    if (!activeMatch) {
-      ctx.fillStyle = "#2b1f14cc";
-      ctx.fillRect(28, H / 2 - 34, W - 56, 68);
-      ctx.fillStyle = "#fff3dc";
-      ctx.font = "bold 14px Pretendard, sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("위에서 공개 대국방을 만들거나", W / 2, H / 2 - 6);
-      ctx.fillText("고양이 알바 AI와 즉시 한 판 두어 보세요!", W / 2, H / 2 + 18);
-      return;
-    }
+    keyboardHelp.hidden = activeMatch?.status !== "playing";
+    if (!activeMatch) return;
+    const instructions = activeMatch.game === "omok"
+      ? "키보드로 두기 · 방향키로 이동, Enter로 착수"
+      : "키보드로 튕기기 · [ ]로 돌 선택, ← →로 각도, ↑ ↓로 세기, Enter로 발사";
+    if (keyboardHelp.textContent !== instructions) keyboardHelp.textContent = instructions;
 
     if (activeMatch.game === "omok") {
       const pad = 20;
@@ -314,6 +320,11 @@ export function initPvp() {
         const r = Math.floor(idx / 15), c = idx % 15;
         drawStone(pad + c * step, pad + r * step, step * 0.44, cell === 1, idx === activeMatch.state.lastMove);
       });
+      if (document.activeElement === canvas && activeMatch.status === "playing") {
+        ctx.strokeStyle = "#614378";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(pad + (keyboardCell % 15) * step - 9, pad + Math.floor(keyboardCell / 15) * step - 9, 18, 18);
+      }
     } else {
       // Alkkagi arena grid + stones
       ctx.strokeStyle = "#8a623655";
@@ -337,12 +348,23 @@ export function initPvp() {
         const sy = (stone.y / 100) * H;
         const vx = sx - curX;
         const vy = sy - curY;
-        ctx.strokeStyle = "#f6cf73";
+        ctx.strokeStyle = "#614378";
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(sx, sy);
         ctx.lineTo(sx + vx * 1.35, sy + vy * 1.35);
         ctx.stroke();
+      } else if (document.activeElement === canvas && !animFrames && activeMatch.turn === activeMatch.role && activeMatch.status === "playing") {
+        const choices = ownStones();
+        const stone = choices[keyboardStone % choices.length];
+        if (stone) {
+          const x = stone.x * W / 100, y = stone.y * H / 100;
+          const { vx, vy } = keyboardShot();
+          ctx.strokeStyle = "#614378";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(x - 18, y - 18, 36, 36);
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + vx * 5, y + vy * 5); ctx.stroke();
+        }
       }
     }
   }
@@ -492,6 +514,57 @@ export function initPvp() {
     };
   }
 
+  function ownStones() {
+    return activeMatch.state.stones.filter((stone) => stone.alive && stone.owner === activeMatch.role);
+  }
+
+  function keyboardShot() {
+    const angle = keyboardAngle * Math.PI / 180;
+    const direction = activeMatch.role === "guest" ? 1 : -1;
+    return { vx: Math.sin(angle) * keyboardPower, vy: direction * Math.cos(angle) * keyboardPower };
+  }
+
+  function announceKeyboardPosition() {
+    if (activeMatch?.status !== "playing") return;
+    if (activeMatch.game === "omok") {
+      const stone = activeMatch.state.board[keyboardCell];
+      keyboardStatus.textContent = `${Math.floor(keyboardCell / 15) + 1}행 ${keyboardCell % 15 + 1}열 · ${stone === 1 ? "흑돌" : stone === 2 ? "백돌" : "빈 교차점"}`;
+    } else {
+      const stones = ownStones();
+      const stone = stones[keyboardStone % stones.length];
+      if (stone) keyboardStatus.textContent = `내 돌 ${keyboardStone % stones.length + 1}번 · 위치 ${Math.round(stone.x)}, ${Math.round(stone.y)} · 각도 ${keyboardAngle}도 · 세기 ${keyboardPower}`;
+    }
+  }
+
+  canvas.addEventListener("focus", () => { announceKeyboardPosition(); drawBoard(); });
+  canvas.addEventListener("blur", () => drawBoard());
+  canvas.addEventListener("keydown", (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey || activeMatch?.status !== "playing" || animFrames) return;
+    const key = event.key;
+    const activate = key === "Enter" || key === " ";
+    if (!activate && !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "[", "]"].includes(key)) return;
+    event.preventDefault();
+    if (activeMatch.game === "omok") {
+      const row = Math.floor(keyboardCell / 15), col = keyboardCell % 15;
+      const nextRow = Math.max(0, Math.min(14, row + (key === "ArrowDown") - (key === "ArrowUp")));
+      const nextCol = Math.max(0, Math.min(14, col + (key === "ArrowRight") - (key === "ArrowLeft")));
+      keyboardCell = nextRow * 15 + nextCol;
+      if (activate && activeMatch.turn === activeMatch.role && !event.repeat) void playOmokAt(keyboardCell);
+    } else if (activeMatch.turn === activeMatch.role) {
+      const stones = ownStones();
+      if (!stones.length) return;
+      keyboardStone = (keyboardStone + (key === "]") - (key === "[") + stones.length) % stones.length;
+      keyboardAngle = (keyboardAngle + 15 * ((key === "ArrowRight") - (key === "ArrowLeft")) + 360) % 360;
+      keyboardPower = Math.max(2, Math.min(16, keyboardPower + (key === "ArrowUp") - (key === "ArrowDown")));
+      if (activate && !event.repeat) {
+        const { vx, vy } = keyboardShot();
+        void playAlkkagiShot(stones[keyboardStone], vx, vy);
+      }
+    }
+    announceKeyboardPosition();
+    drawBoard();
+  });
+
   canvas.addEventListener("pointermove", (e) => {
     if (!activeMatch || activeMatch.status !== "playing") return;
     const { x, y } = canvasCoords(e);
@@ -507,7 +580,7 @@ export function initPvp() {
     }
   });
 
-  canvas.addEventListener("pointerdown", async (e) => {
+  canvas.addEventListener("pointerdown", (e) => {
     if (!activeMatch || activeMatch.status !== "playing" || animFrames) return;
     if (activeMatch.turn !== activeMatch.role) return;
     const { x, y } = canvasCoords(e);
@@ -516,45 +589,10 @@ export function initPvp() {
       const pad = 20, step = (canvas.width - 40) / 14;
       const c = Math.round((x - pad) / step), r = Math.round((y - pad) / step);
       if (r < 0 || r >= 15 || c < 0 || c >= 15) return;
-      const index = r * 15 + c;
-      if (activeMatch.state.board[index] !== 0) return;
-      const { restrictWhite } = activeMatch.state;
-      const stone = activeMatch.role === "host" ? 1 : 2;
-      const violation = omokForbiddenMove(activeMatch.state.board, index, stone, restrictWhite);
-      if (violation) {
-        window.cafeAudioPlay?.("tick");
-        statusEl.textContent = "🚫 " + omokForbiddenMessage(violation);
-        return;
-      }
-
-      if (mode === "ai") {
-        activeMatch.state.board[index] = 1;
-        activeMatch.state.lastMove = index;
-        activeMatch.state.moveCount++;
-        window.cafeAudioPlay?.("tick");
-        if (hasFiveInARow(activeMatch.state.board, index, 1, restrictWhite)) {
-          activeMatch.status = "finished";
-          activeMatch.winner = "host";
-          statusEl.textContent = "🎉 오목 승리! 알바냥을 이겼어요!";
-          recordWin("omok");
-        } else {
-          activeMatch.turn = "guest";
-          statusEl.textContent = "고양이 알바 AI가 수를 고민하고 있어요...";
-          runAiTurn();
-        }
-        drawBoard();
-      } else {
-        try {
-          const res = await api("move", { matchId, index });
-          window.cafeAudioPlay?.("tick");
-          activeMatch = res.match;
-          syncMatchUi();
-        } catch {}
-      }
+      keyboardCell = r * 15 + c;
+      void playOmokAt(keyboardCell);
     } else {
-      // Alkkagi drag aim
-      const myStones = activeMatch.state.stones.filter((s) => s.owner === activeMatch.role && s.alive);
-      const picked = myStones.find((s) => Math.hypot((s.x / 100) * canvas.width - x, (s.y / 100) * canvas.height - y) <= canvas.width * 0.065);
+      const picked = ownStones().find((s) => Math.hypot((s.x / 100) * canvas.width - x, (s.y / 100) * canvas.height - y) <= canvas.width * 0.065);
       if (!picked) return;
       canvas.setPointerCapture(e.pointerId);
       dragShot = { id: e.pointerId, stone: picked, curX: x, curY: y };
@@ -562,7 +600,44 @@ export function initPvp() {
     }
   });
 
-  canvas.addEventListener("pointerup", async (e) => {
+  async function playOmokAt(index) {
+    if (activeMatch.state.board[index] !== 0) return;
+    const { restrictWhite } = activeMatch.state;
+    const stone = activeMatch.role === "host" ? 1 : 2;
+    const violation = omokForbiddenMove(activeMatch.state.board, index, stone, restrictWhite);
+    if (violation) {
+      window.cafeAudioPlay?.("tick");
+      statusEl.textContent = "🚫 " + omokForbiddenMessage(violation);
+      return;
+    }
+
+    if (mode === "ai") {
+      activeMatch.state.board[index] = 1;
+      activeMatch.state.lastMove = index;
+      activeMatch.state.moveCount++;
+      window.cafeAudioPlay?.("tick");
+      if (hasFiveInARow(activeMatch.state.board, index, 1, restrictWhite)) {
+        activeMatch.status = "finished";
+        activeMatch.winner = "host";
+        statusEl.textContent = "🎉 오목 승리! 알바냥을 이겼어요!";
+        recordWin("omok");
+      } else {
+        activeMatch.turn = "guest";
+        statusEl.textContent = "고양이 알바 AI가 수를 고민하고 있어요...";
+        runAiTurn();
+      }
+      drawBoard();
+    } else {
+      try {
+        const res = await api("move", { matchId, index });
+        window.cafeAudioPlay?.("tick");
+        activeMatch = res.match;
+        syncMatchUi();
+      } catch {}
+    }
+  }
+
+  canvas.addEventListener("pointerup", (e) => {
     if (!dragShot || dragShot.id !== e.pointerId) return;
     const { stone, curX, curY } = dragShot;
     dragShot = null;
@@ -571,7 +646,10 @@ export function initPvp() {
     const vx = (sx - curX) * 0.055;
     const vy = (sy - curY) * 0.055;
     if (Math.hypot(vx, vy) < 0.25) { drawBoard(); return; }
+    void playAlkkagiShot(stone, vx, vy);
+  });
 
+  async function playAlkkagiShot(stone, vx, vy) {
     if (mode === "ai") {
       const sim = stepLocalAlkkagi(activeMatch.state.stones, stone.id, vx, vy);
       if (!sim) return;
@@ -605,7 +683,7 @@ export function initPvp() {
         drawBoard();
       }
     }
-  });
+  }
 
   new MutationObserver(() => {
     if (dialog.open) {

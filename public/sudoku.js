@@ -107,7 +107,7 @@ export function initSudoku() {
       ? "🎉 퍼즐 완성! 모든 구역을 완벽하게 채웠어요."
       : hasConflict
         ? "⚠️ 같은 줄이나 구역에 겹치는 숫자가 있어요."
-        : `남은 빈칸 ${empty}개 · 진한 먹색=고정 / 파란색=내 입력`;
+        : `남은 빈칸 ${empty}개`;
 
     const locked = finished || Boolean(givens[active]);
     for (const key of keypad.children) {

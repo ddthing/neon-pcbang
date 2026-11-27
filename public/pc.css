@@ -130,22 +130,16 @@
 
 /* 11-Game Click-to-Open Floating Popup Launcher + Pixel Atlas Icons */
 .pc-launcher {
-  position: absolute; inset: 14px; margin: auto; width: min(820px, calc(100% - 28px));
-  max-height: calc(100% - 28px); height: fit-content; overflow-y: auto; z-index: 8; padding: 0;
+  width: min(820px, calc(100% - 28px));
+  max-height: calc(100dvh - 28px); overflow-y: auto; padding: 0;
   border: 2px solid #5c4742; background: #f7efe5; color: #3d2c28;
 }
-.pc-launcher[hidden] { display: none !important; }
 .pc-launcher .pc-panel-heading {
   padding: 8px 12px; margin: 0; border-bottom: 2px solid #5c4742;
   background: #c8b6e2; color: #3d2c28;
 }
+.pc-launcher .pc-panel-heading h2 { margin: 0; font-size: 18px; }
 .pc-launcher .pc-apps { padding: 10px; }
-.pc-launcher-close {
-  display: inline-grid; place-items: center; width: 28px; height: 28px; margin-left: 6px;
-  border: 2px solid #5c4742; border-radius: 0; background: #f7efe5; color: #3d2c28;
-  font-size: 18px; font-weight: 800; line-height: 1; cursor: pointer;
-}
-.pc-launcher-close:hover { background: #f4c2d7; }
 .pc-task[aria-expanded="true"] { background: #569e7c; color: #fff9f2; border-color: #f6cf73; }
 .pc-shortcut[aria-expanded="true"] { border-color: #f6cf73; background: #2d4438a6; }
 .pc-apps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; align-items: stretch; }
@@ -160,10 +154,6 @@
 .pc-app strong, .pc-app small { display: block; word-break: keep-all; }
 .pc-app strong { font-size: 12px; line-height: 1.25; }
 .pc-app small { margin-top: 2px; color: #73555c; font-size: 10px; line-height: 1.28; }
-.pc-hot {
-  display: inline-block; padding: 1px 4px; margin-left: 3px; border-radius: 3px;
-  background: #569e7c; color: #fff9f2; font: 800 8px/1.2 var(--mono); font-style: normal; vertical-align: 1px;
-}
 .pc-app-icon {
   width: 36px; height: 36px; flex-shrink: 0; display: grid; place-items: center;
   border-radius: 5px; border: 2px solid #5c4742; font-size: 20px; line-height: 1;
@@ -542,7 +532,7 @@
 }
 .knit-cell.spool.reachable:hover { filter: brightness(1.1); }
 .knit-cell.spool.blocked {
-  border-radius: 50%; filter: saturate(0.75) brightness(0.72); cursor: not-allowed;
+  border-radius: 50%; filter: saturate(0.75); cursor: not-allowed;
 }
 .knit-cell.spool.mystery { background: #6b6375 !important; color: #ffec94; }
 .knit-cell.spool.frozen { outline: 2px solid #8ee8fa; outline-offset: -2px; }
@@ -632,7 +622,7 @@
   .pc-shortcuts { grid-column: 1; grid-row: 1; grid-template-columns: repeat(4, minmax(0, 1fr)); justify-items: center; width: 100%; }
   .pc-shortcut { width: 100%; min-height: 58px; }
   .pc-cafe { grid-column: 1; grid-row: 2; }
-  .pc-launcher { position: fixed; inset: 10px; width: auto; max-height: calc(100dvh - 20px); }
+  .pc-launcher { width: calc(100% - 20px); max-height: calc(100dvh - 20px); }
   .pc-taskbar { flex-wrap: wrap; }
   .tetris-touch-pad .walk-button { min-height: 44px; min-width: 48px; touch-action: manipulation; }
   .tycoon-tickets { grid-template-columns: 1fr; }

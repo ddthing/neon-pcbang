@@ -103,8 +103,8 @@ export function initAcidRain() {
     const W = canvas.width, H = canvas.height;
     // Cozy warm evening town sky + pixel roofs
     const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, "#6e525a");
-    grad.addColorStop(1, "#9e7b82");
+    grad.addColorStop(0, "#d0bfe4");
+    grad.addColorStop(1, "#f4d4df");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
@@ -129,13 +129,17 @@ export function initAcidRain() {
     for (const d of drops) {
       const matching = currentInput && d.text.startsWith(currentInput);
       const pillW = Math.max(52, d.text.length * 14 + 14);
-      ctx.fillStyle = matching ? "#569e7cee" : "#4c383ddd";
+      ctx.fillStyle = matching ? "#cbe3d4" : "#f7efe5";
       ctx.fillRect(d.x - pillW / 2, d.y - 14, pillW, 20);
-      ctx.strokeStyle = matching ? "#ffe7a8" : (d.kind !== "normal" ? d.color : "#c7aeb3");
+      ctx.strokeStyle = matching ? "#4a6d56" : "#5c4742";
       ctx.lineWidth = matching ? 1.8 : 1;
       ctx.strokeRect(d.x - pillW / 2, d.y - 14, pillW, 20);
-      ctx.fillStyle = d.color;
+      ctx.fillStyle = "#493646";
       ctx.fillText(d.text, d.x, d.y);
+      if (d.kind !== "normal") {
+        ctx.fillStyle = d.color;
+        ctx.fillRect(d.x - pillW / 2 + 3, d.y - 11, 4, 14);
+      }
     }
 
     for (const sp of sparks) {

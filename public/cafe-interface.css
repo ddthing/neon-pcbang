@@ -126,7 +126,13 @@
   background: var(--interface-screen);
   color: var(--interface-ink);
 }
-.cafe-fullscreen #pc-launcher[hidden] { display: none !important; }
+.cafe-fullscreen .dialog-head:has(> .close:only-child) { justify-content: flex-end; }
+.cafe-fullscreen dialog :is(button, select, input, textarea, summary, canvas, [tabindex]):focus-visible {
+  outline: 2px solid #614378;
+  outline-offset: 2px;
+}
+.cafe-fullscreen dialog :is(input, textarea)::placeholder { color: #6b5268; opacity: 1; }
+.cafe-fullscreen dialog .close { min-width: 36px; min-height: 36px; }
 .cafe-fullscreen :is(.floor-top, .pc-statusbar, .pc-taskbar) { background: var(--interface-screen); color: var(--interface-ink); }
 .cafe-fullscreen #floor-kiosk :is(.floor-top p, .floor-toolbar strong, .floor-toolbar p span, .floor-legend li) {
   color: #3d2c28;
@@ -144,7 +150,6 @@
 .cafe-fullscreen #avatar-wardrobe :is(#wardrobe-preview, .wardrobe-val, .walk-button[aria-pressed="true"], .enter) {
   background: var(--interface-screen);
 }
-.asset-credit a { color: inherit; text-decoration: underline; }
 .cafe-fullscreen #snacks :is(.panel-copy, .panel-index, .panel-index span, .dialog-note, .menu-search, .snack-toppings, .order-receipt strong, .order-receipt p) {
   color: var(--interface-ink);
 }
@@ -261,6 +266,22 @@
 .cafe-fullscreen #pvp .pvp-room-row :is(strong, small) {
   color: #3d2c28;
 }
+.cafe-fullscreen :is(.pvp-empty, .tetris-side, .mine-hud, .mine-hud strong, #mine-time, .sudoku-legend, .merge-progress, .merge-progress strong, .arcade-score, .knit-pill) {
+  color: var(--interface-ink);
+}
+.cafe-fullscreen :is(.knit-pill, .knit-dock, .knit-dock-slot, .knit-booster span, .sol-slot) {
+  color: var(--interface-ink);
+  background: #eee4f5;
+  border-color: var(--interface-border);
+}
+.cafe-fullscreen :is(.knit-dock-slot.locked, .knit-progress-wrap) { background: #d6e6d8; }
+.cafe-fullscreen .knit-dock-rem { text-shadow: none; }
+.cafe-fullscreen .sudoku-keys .walk-button[data-done="true"] { opacity: 1; background: #d6e6d8; }
+.cafe-fullscreen :is(#tetris-canvas, .tetris-side canvas, #game, #acid-canvas, #pvp-canvas, .knit-loom) {
+  background: #eee4f5;
+  border-color: var(--interface-border);
+}
+.cafe-fullscreen :is(.mine-cell,.sudoku-cell):focus-visible { outline-offset: -2px; }
 .cafe-fullscreen .acid-form input {
   background: #fff7ed;
   color: #3d2c28;

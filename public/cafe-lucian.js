@@ -53,12 +53,18 @@ function mountLauncher(root) {
     const visible = tiles.filter((tile) => index === 0 || categories[index][1].includes(tile.dataset.open));
     count.textContent = `${visible.length}개 게임`;
     const width = grid.clientWidth;
-    if (!width) { laidOut = false; return; }
+    if (!width) {
+      laidOut = false;
+      grid.classList.remove("is-laid-out");
+      grid.style.height = "";
+      return;
+    }
     const columns = width >= 540 ? 3 : width >= 310 ? 2 : 1;
     const gap = 8;
     const height = 66;
     const cellWidth = (width - (columns - 1) * gap) / columns;
     grid.style.height = `${Math.ceil(visible.length / columns) * (height + gap) - gap}px`;
+    grid.classList.add("is-laid-out");
     for (const tile of tiles) {
       const slot = visible.indexOf(tile);
       const keep = slot >= 0;
@@ -91,7 +97,7 @@ function mountLauncher(root) {
   }
 
   const launcher = root.closest(".pc-launcher");
-  new MutationObserver(() => apply(selected, false)).observe(launcher, { attributes: true, attributeFilter: ["hidden"] });
+  new MutationObserver(() => apply(selected, false)).observe(launcher, { attributes: true, attributeFilter: ["open"] });
   let lastWidth = 0;
   new ResizeObserver(() => {
     if (grid.clientWidth === lastWidth) return;
