@@ -2,6 +2,15 @@
 // 1. initBungeoppang() - 길모퉁이 붕어빵 포차 (6-mold cast-iron pastry tycoon)
 // 2. initSnackTycoon() - 알바냥의 매점 러시 (Korean PC Bang open-kitchen recipe tycoon)
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
+import { showCafeGameResult } from "./cafe-game-result.js";
+import { setFoodPixel } from "./food-pixels.js";
+
+function foodIcon(id) {
+  const icon = document.createElement("span");
+  icon.className = "game-food-pixel";
+  setFoodPixel(icon, id);
+  return icon;
+}
 
 // ============================================================================
 // 1. BUNGEOPPANG TYCOON (길모퉁이 붕어빵 포차)
@@ -153,6 +162,7 @@ export function initBungeoppang() {
     if (customer) {
       const parts = Object.entries(customer.req).filter(([, n]) => n > 0).map(([k, n]) => `${FILLINGS[k].badge} ×${n}`);
       orderEl.innerHTML = `<strong>${customer.who}</strong><span>주문: ${parts.join(" + ")}</span>`;
+      orderEl.firstElementChild.prepend(foodIcon("pastry"), " ");
       const exact = Object.keys(FILLINGS).every((k) => bag[k] >= customer.req[k]);
       serveBtn.disabled = !running || !exact;
     } else {
@@ -207,7 +217,8 @@ export function initBungeoppang() {
       const reward = window.cafeRewardGameEnd?.("bungeoppang", score, { label: "붕어빵 포차 알바" });
       const gText = reward ? ` · +${reward.awarded} G` : "";
       statusEl.textContent = `영업 종료! 총 ${servedCount}명 서빙 · ${score.toLocaleString()}점 달성!${gText}`;
-      submitArcadeScore("bungeoppang", score, { metric: `${servedCount}봉투 완판` });
+      const record = submitArcadeScore("bungeoppang", score, { metric: `${servedCount}봉투 완판` });
+      showCafeGameResult(dialog, { title: "포차 영업 종료", metric: `${score.toLocaleString()}점 · ${servedCount}명 서빙`, record: score > 0 ? record : null, action: startBtn });
     }
     renderUi();
   }
@@ -330,7 +341,9 @@ export function initSnackTycoon() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "walk-button tycoon-ing";
-    btn.textContent = ing.label;
+    const sprite = { skewer: "skewer", cheese: "cheese", cider: "cider", peachtea: "peach", shot: "coffee" }[ing.id];
+    if (sprite) btn.append(foodIcon(sprite));
+    btn.append(sprite ? ing.label.split(" ").slice(1).join(" ") : ing.label);
     btn.addEventListener("click", () => {
       if (!running) {
         statusEl.textContent = "[알바 시작] 버튼을 눌러 오픈키친을 가동하세요!";
@@ -353,6 +366,7 @@ export function initSnackTycoon() {
       const card = document.createElement("div");
       card.className = "tycoon-ticket" + (idx === 0 ? " is-next" : "");
       card.innerHTML = `<span class="mono">${t.seat}</span><strong>${t.recipe.name}</strong><small>${t.recipe.hint}</small>`;
+      card.querySelector("strong").prepend(foodIcon(t.recipe.id === "cheeseskewer" ? "skewer" : t.recipe.id), " ");
       return card;
     }));
 
@@ -407,7 +421,8 @@ export function initSnackTycoon() {
       const reward = window.cafeRewardGameEnd?.("tycoon", score, { label: "알바냥 매점 러시" });
       const gText = reward ? ` · +${reward.awarded} G` : "";
       statusEl.textContent = `교대 시간! 총 ${delivered}건 배달 · ${score.toLocaleString()}점 달성!${gText}`;
-      submitArcadeScore("tycoon", score, { metric: `${delivered}건 조리` });
+      const record = submitArcadeScore("tycoon", score, { metric: `${delivered}건 조리` });
+      showCafeGameResult(dialog, { title: "매점 교대 시간", metric: `${score.toLocaleString()}점 · ${delivered}건 배달`, record: score > 0 ? record : null, action: startBtn });
     }
     render();
   }

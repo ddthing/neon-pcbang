@@ -34,6 +34,7 @@ try {
       assert.match(await page.text(), /src="\.\/app\.js" type="module"/, "Game page must load the cafe entry point");
       await Promise.all([
         "cafe-art.js", "cafe-art.css", "cafe-interface.css", "camera.js",
+        "cafe-lucian.js", "cafe-lucian.css", "cafe-game-result.js",
         "cafe-map.mjs", "cafe-clock.mjs", "cafe-board.js", "omok-rules.mjs", "boot.js",
         "assets/chars/clerk.png", "assets/original/cream-frame.png",
         "assets/downtown/catalog.json", "assets/downtown/sprites/objects.png",

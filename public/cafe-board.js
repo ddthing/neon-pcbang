@@ -1,3 +1,4 @@
+/* Lucian UX/UI Prompt #092 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#092 */
 const dialog = document.getElementById("cafe-board");
 const filter = document.getElementById("cafe-board-filter");
 const posts = document.getElementById("cafe-board-posts");
@@ -50,6 +51,24 @@ function makeWelcomePost() {
   return article;
 }
 
+function makeEmptyFilter(status) {
+  const view = document.createElement("div");
+  view.className = "ux u092 cafe-board-empty";
+  view.innerHTML = `<div class="u092-none">
+    <div class="u092-art" aria-hidden="true"><svg viewBox="0 0 150 92"><path class="u092-shelf" d="M8 30h134M8 56h134M8 82h134"/><g class="u092-lens"><circle cx="34" cy="38" r="20"/><path class="gl" d="M24 30a12 12 0 0 1 8-5"/><path d="M48 52l14 14"/></g></svg></div>
+    <p class="u092-nt">이 상태에 해당하는 글이 없어요.</p>
+    <div class="u092-sgs"><button class="u092-sg" type="button" style="--i:0"><s></s> 필터 풀기</button></div>
+  </div>`;
+  view.querySelector("s").textContent = statuses[status];
+  view.querySelector("button").addEventListener("click", () => {
+    filter.value = "";
+    filter.focus();
+    void refresh();
+  });
+  requestAnimationFrame(() => { if (view.isConnected) view.classList.add("empty"); });
+  return view;
+}
+
 async function refresh() {
   const token = ++serial;
   try {
@@ -58,7 +77,7 @@ async function refresh() {
     const nodes = data.posts.map((post) => makePost(post, data.admin));
     if (!nodes.length && !filter.value) nodes.push(makeWelcomePost());
     if (nodes.length) posts.replaceChildren(...nodes);
-    else posts.textContent = "표시할 글이 없어요.";
+    else posts.replaceChildren(makeEmptyFilter(filter.value));
   } catch {
     if (token === serial) posts.textContent = "게시글을 불러오지 못했어요.";
   }

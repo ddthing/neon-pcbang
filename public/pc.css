@@ -252,13 +252,13 @@
 
 /* Neon Tetris Styles */
 #tetris { width: min(460px, calc(100% - 20px)); }
-.tetris-stage { display: flex; justify-content: center; align-items: flex-start; gap: 10px; margin: 8px 0; }
+.tetris-stage { display: grid; grid-template-columns: minmax(0, 56px) minmax(0, 220px) minmax(0, 56px); justify-content: center; align-items: start; gap: clamp(4px, 2vw, 10px); margin: 8px 0; }
 #tetris-canvas {
   border: 2px solid #4b5c73; border-radius: 5px; background: #171a21;
-  width: min(56vw, 220px); height: auto; image-rendering: pixelated;
+  width: 100%; height: auto; image-rendering: pixelated;
 }
 .tetris-side { display: grid; gap: 4px; text-align: center; font-size: 10px; color: #b7c8d9; }
-.tetris-side canvas { border: 1px solid #414c5e; border-radius: 4px; background: #191c24; image-rendering: pixelated; }
+.tetris-side canvas { width: 100%; height: auto; border: 1px solid #414c5e; border-radius: 4px; background: #191c24; image-rendering: pixelated; }
 .tetris-touch-pad { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin: 8px 0 4px; }
 
 /* Bungeoppang & Cat Snack Tycoon Styles */

@@ -14,6 +14,7 @@ import {
   wasteFanCount,
 } from "./solitaire-engine.mjs";
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
+import { clearCafeGameResult, showCafeGameResult } from "./cafe-game-result.js";
 
 export function initSolitaire() {
   const dialog = document.getElementById("solitaire");
@@ -253,15 +254,17 @@ export function initSolitaire() {
       const bonus = Math.max(0, 600 - elapsedSec * 2);
       const total = game.score + bonus;
       const reward = window.cafeRewardGameEnd?.("solitaire", total, { winBonus: true, label: "코지 솔리테어 클리어" });
-      submitArcadeScore("solitaire", total, {
+      const record = submitArcadeScore("solitaire", total, {
         mode: drawCount === 3 ? "draw3" : "draw1",
         metric: `${formatSec(elapsedSec)} · ${game.moves}수`,
       });
       statusEl.textContent = `🎉 솔리테어 완성! 최종 ${total.toLocaleString()}점 (${formatSec(elapsedSec)})${reward ? ` · +${reward.awarded} G` : ""}`;
+      showCafeGameResult(dialog, { title: "솔리테어 완성", metric: `${total.toLocaleString()}점 · ${game.moves}수`, win: true, record: total > 0 ? record : null, action: newBtn });
     }
   }
 
   function reset(nextDraw = drawCount) {
+    clearCafeGameResult(dialog);
     drawCount = nextDraw;
     clearInterval(clockId);
     clearInterval(autoTimer);

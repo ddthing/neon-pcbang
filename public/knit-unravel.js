@@ -17,6 +17,7 @@ import {
   useKnitBooster,
 } from "./knit-unravel-engine.mjs";
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
+import { clearCafeGameResult, showCafeGameResult } from "./cafe-game-result.js";
 
 export function initKnitUnravel() {
   const dialog = document.getElementById("knit");
@@ -271,7 +272,8 @@ export function initKnitUnravel() {
       const reward = window.cafeRewardGameEnd?.("knit", game.score, { winBonus: true, label: "뜨개 실풀기 완성" });
       const gText = reward ? ` · +${reward.awarded} G` : "";
       statusEl.textContent = `🎉 ${game.stage}단계 「${game.patternName}」 완성! (+${game.score}점${gText})`;
-      submitArcadeScore("knit", game.score, { mode: rankMode(), metric: `${game.stage}탄 ${doneRatio}%` });
+      const record = submitArcadeScore("knit", game.score, { mode: rankMode(), metric: `${game.stage}탄 ${doneRatio}%` });
+      showCafeGameResult(dialog, { title: `${game.stage}단계 실풀기 완성`, metric: `${game.patternName} · ${game.score.toLocaleString()}점`, win: true, record: game.score > 0 ? record : null, action: resetBtn });
     } else if (!wonHandled && isKnitStuck(game)) {
       statusEl.textContent = "⚠️ 도크가 막혔어요! 되돌리기, +1 슬롯 또는 가위 도우미를 사용해 보세요.";
     }
@@ -441,6 +443,7 @@ export function initKnitUnravel() {
   }
 
   function loadStage(stage) {
+    clearCafeGameResult(dialog);
     currentStage = stage;
     game = createKnitStage(stage, { rule });
     hintCell = null;

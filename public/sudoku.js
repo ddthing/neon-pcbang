@@ -1,5 +1,6 @@
 import { clearSudokuPeerNotes, makeSudoku, restoreSudokuPeerNotes, sudokuPeers } from "./sudoku-board.js";
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
+import { clearCafeGameResult, showCafeGameResult } from "./cafe-game-result.js";
 
 export function initSudoku() {
   const dialog = document.getElementById("sudoku");
@@ -97,7 +98,9 @@ export function initSudoku() {
       const sec = Math.max(10, Math.floor((performance.now() - startedAt) / 1000));
       const pts = Math.max(100, (55 - Number(level.value)) * 80 - sec);
       window.cafeRewardGameEnd?.("sudoku", pts, { winBonus: true, label: "스도쿠 퍼즐 완성" });
-      submitArcadeScore("sudoku", pts, { mode: level.value, metric: `${Math.floor(sec / 60)}분 ${sec % 60}초` });
+      const metric = `${Math.floor(sec / 60)}분 ${sec % 60}초`;
+      const record = submitArcadeScore("sudoku", pts, { mode: level.value, metric });
+      showCafeGameResult(dialog, { title: "스도쿠 완성", metric: `${pts.toLocaleString()}점 · ${metric}`, win: true, record, action: "sudoku-new" });
     }
 
     status.textContent = finished
@@ -122,6 +125,7 @@ export function initSudoku() {
   }
 
   function start(moveFocus = false) {
+    clearCafeGameResult(dialog);
     givens = makeSudoku(Number(level.value));
     values = givens.slice();
     notes = cells.map(() => new Set());

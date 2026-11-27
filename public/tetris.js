@@ -1,5 +1,6 @@
 // Neon Block Drop (Authentic 7-Bag SRS Tetris with Hold, Next 3, Ghost Piece, Combo & Hall Leaderboard)
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
+import { showCafeGameResult } from "./cafe-game-result.js";
 
 const COLS = 10;
 const ROWS = 20;
@@ -213,7 +214,8 @@ export function initTetris() {
     const reward = window.cafeRewardGameEnd?.("tetris", score, { label: "테트리스 플레이" });
     const gText = reward ? ` · +${reward.awarded} G${reward.hasBuff ? " (버프)" : ""}` : "";
     statusEl.textContent = `게임 오버! 최종 ${score.toLocaleString()}점 (${lines}줄)${gText}`;
-    submitArcadeScore("tetris", score, { metric: `${lines}줄 · Lv.${level}` });
+    const record = submitArcadeScore("tetris", score, { metric: `${lines}줄 · Lv.${level}` });
+    showCafeGameResult(dialog, { title: "블록 드롭 종료", metric: `${score.toLocaleString()}점 · ${lines}줄`, record: score > 0 ? record : null, action: actionBtn });
   }
 
   function drawBlock(targetCtx, px, py, size, type, alpha = 1) {

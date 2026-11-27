@@ -3,6 +3,7 @@
 /* Lucian UX/UI Prompt #093 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#093 */
 import { BOARD_SIZE, createMergeBoard, moveMergeBoard, canMoveMergeBoard } from "./merge-board.js";
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
+import { showCafeGameResult } from "./cafe-game-result.js";
 
 const goal = 2048;
 const bestKey = "neon-pcbang-merge-best";
@@ -304,9 +305,9 @@ export function initMerge() {
       celebrate();
     }
     if (won || finished) {
-      if (score >= 256) {
-        submitArcadeScore("merge", score, { metric: `최대 ${Math.max(...values)}` });
-      }
+      const max = Math.max(...values);
+      const record = score >= 256 ? submitArcadeScore("merge", score, { metric: `최대 ${max}` }) : null;
+      showCafeGameResult(dialog, { title: won ? "2048 달성" : "2048 종료", metric: `${score.toLocaleString()}점 · 최고 타일 ${max}`, win: won, record, action: "merge-reset" });
       if (!rewarded) {
         rewarded = true;
         window.cafeRewardGameEnd?.("merge", score, { winBonus: won, label: won ? "2048 달성 보너스" : "2048 플레이" });

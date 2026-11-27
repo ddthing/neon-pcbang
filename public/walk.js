@@ -2,6 +2,7 @@ import "./app.js";
 import { canWalkInSpace, clearSegmentInSpace, entrance, kiosk, pathTo, routeToSeat, roomPortals, relaxPortals, relaxZones } from "./world.js";
 import { LANDMARKS, SEATS, center, toPercent } from "./cafe-map.mjs";
 import { createCafeCamera } from "./camera.js";
+import { mountAvatarPalette, mountNicknameCounter } from "./cafe-lucian.js";
 import { AVATAR_WARDROBE, encodeAvatarCode, getAvatarSheetUrl, normalizeAvatarCode, renderAvatarPortrait, renderAvatarPreview } from "./avatar-sprites.js";
 
 const scene = document.querySelector(".scene");
@@ -924,11 +925,16 @@ function initWardrobe() {
   const categories = [
     ["skin", "캐릭터", AVATAR_WARDROBE.skins],
     ["hair", "헤어 스타일", AVATAR_WARDROBE.hairs],
-    ["hairColor", "헤어 색상", AVATAR_WARDROBE.hairColors],
     ["outfit", "의상 코디", AVATAR_WARDROBE.outfits],
     ["headset", "모자·헤드셋", AVATAR_WARDROBE.headsets],
     ["accessory", "안경·목도리", AVATAR_WARDROBE.accessories],
   ];
+  const syncNickname = mountNicknameCounter(nameInput);
+  const palette = mountAvatarPalette(modal.querySelector(".u020-stage"), AVATAR_WARDROBE.hairColors, (index) => {
+    draft.hairColor = index;
+    window.cafeAudioPlay?.("tick");
+    repaintPreview();
+  });
 
   function currentDir() {
     return dirs[previewDirIdx]?.[0] || "down";
@@ -936,6 +942,7 @@ function initWardrobe() {
 
   function repaintPreview() {
     renderAvatarPreview(preview, encodeAvatarCode(draft), previewAction, previewTick % 4, currentDir());
+    palette.sync(draft.hairColor);
     if (dirLabel) dirLabel.textContent = dirs[previewDirIdx]?.[1] || "정면";
     for (const [key, , list] of categories) {
       const row = controlsRoot.querySelector(`[data-part="${key}"]`);
@@ -996,6 +1003,7 @@ function initWardrobe() {
     group.append(label, prevBtn, val, nextBtn);
     return group;
   }));
+  controlsRoot.after(palette.root);
 
   rotLeft?.addEventListener("click", () => {
     previewDirIdx = (previewDirIdx - 1 + dirs.length) % dirs.length;
@@ -1053,6 +1061,7 @@ function initWardrobe() {
 
   const openModal = (trigger, entryMode = false) => {
     draft = { ...avatarConfig };
+    syncNickname();
     modal.dataset.mode = entryMode ? "entry" : "edit";
     if (titleEl) titleEl.textContent = entryMode ? "길모퉁이PC방 입장 준비" : "내 캐릭터 옷장";
     if (saveBtn) saveBtn.textContent = entryMode ? "🎮 이 캐릭터로 PC방 입장하기" : "이 스타일로 갈아입기";
@@ -1062,12 +1071,13 @@ function initWardrobe() {
     clearInterval(previewTimer);
     previewTimer = setInterval(() => {
       if (!modal.open) { clearInterval(previewTimer); return; }
+      if (reducedMotion.matches) return;
       previewTick++;
       renderAvatarPreview(preview, encodeAvatarCode(draft), previewAction, previewTick % 4, currentDir());
     }, 260);
   };
   openBtn.addEventListener("click", () => openModal(openBtn, false));
-  hudProfileBtn?.addEventListener("click", () => openModal(hudProfileBtn, false));
+  document.getElementById("profile-wardrobe")?.addEventListener("click", () => openModal(hudProfileBtn, false));
 
   modal.addEventListener("cancel", (event) => {
     if (modal.dataset.mode === "entry") event.preventDefault();

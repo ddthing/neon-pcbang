@@ -1,6 +1,7 @@
 import { formatCafeTime } from "./cafe-clock.mjs";
 import "./cafe-layout.js";
 import "./cafe-art.js";
+import { mountLucianCafe } from "./cafe-lucian.js";
 import { LANDMARKS, ROOMS, SEATS, SEAT_TIERS, center, seatCode, seatFor, toPercent } from "./cafe-map.mjs";
 "use strict";
 
@@ -538,7 +539,7 @@ restorePill?.addEventListener("click", () => openDesktop(true));
 const startMenu = $("#pc-start");
 const launcher = $("#pc-launcher");
 const launcherClose = $("#pc-launcher-close");
-let reopenLauncherAfterGame = false;
+let launcherReturnCard = null;
 function setLauncherOpen(open, focusTitle = false) {
   if (!launcher) return;
   launcher.hidden = !open;
@@ -550,7 +551,7 @@ function setLauncherOpen(open, focusTitle = false) {
 desktop.addEventListener("close", () => {
   if (desktop.open) return;
   startMenu.open = false;
-  reopenLauncherAfterGame = false;
+  launcherReturnCard = null;
   setLauncherOpen(false);
 });
 desktop.addEventListener("cancel", (event) => {
@@ -579,7 +580,7 @@ document.querySelectorAll("[data-launcher]").forEach((button) => {
   });
 });
 launcherClose?.addEventListener("click", () => {
-  reopenLauncherAfterGame = false;
+  launcherReturnCard = null;
   setLauncherOpen(false);
   document.querySelector(".pc-shortcut[data-launcher]")?.focus();
 });
@@ -710,9 +711,11 @@ window.closeCafeWindow = closeCafeWindow;
 for (const gameId of Object.keys(gameLoaders)) {
   const gameDialog = document.getElementById(gameId);
   gameDialog?.addEventListener("close", () => {
-    if (reopenLauncherAfterGame && desktop.open) {
-      reopenLauncherAfterGame = false;
-      setLauncherOpen(true, true);
+    if (launcherReturnCard && desktop.open) {
+      const card = launcherReturnCard;
+      launcherReturnCard = null;
+      setLauncherOpen(true);
+      card.focus({ preventScroll: true });
     }
   });
 }
@@ -724,7 +727,7 @@ document.querySelectorAll("[data-open]").forEach((button) => {
     const next = document.getElementById(button.dataset.open);
     if (!next) return;
     if (launcher && launcher.contains(button)) {
-      reopenLauncherAfterGame = Boolean(gameLoaders[next.id]);
+      launcherReturnCard = gameLoaders[next.id] ? button : null;
       setLauncherOpen(false);
     }
     const origin = button.closest("dialog");
@@ -739,10 +742,16 @@ document.querySelectorAll("[data-open]").forEach((button) => {
     const load = gameLoaders[next.id];
     if (!load || requestedGames.has(next.id)) return;
     requestedGames.add(next.id);
+    next.setAttribute("aria-busy", "true");
+    const controls = [...next.querySelector(".dialog-inner").children].filter((el) => !el.inert && !el.matches(".dialog-head"));
+    controls.forEach((el) => { el.inert = true; });
     load().catch(() => {
       requestedGames.delete(next.id);
       const st = next.querySelector(".game-status");
       if (st) st.textContent = "게임을 불러오지 못했어요. 페이지를 새로고침해 주세요.";
+    }).finally(() => {
+      controls.forEach((el) => { el.inert = false; });
+      next.removeAttribute("aria-busy");
     });
   });
 });
@@ -1271,6 +1280,7 @@ document.addEventListener("keydown", (event) => {
   else if (event.key === "3") $("#cafe-wave")?.click();
 });
 
+mountLucianCafe();
 renderMissions();
 renderRoom();
 renderTimer();

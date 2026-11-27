@@ -1,5 +1,6 @@
 // Seoul Midnight Neon Acid Rain Typing Defense (with Mechanical Switch Audio: Blue / Brown / Red)
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
+import { showCafeGameResult } from "./cafe-game-result.js";
 
 const WORDS = [
   "길모퉁이", "얼박사", "짜계치", "아샷추", "소떡소떡", "우리동네", "코지카페", "비오는날",
@@ -154,7 +155,8 @@ export function initAcidRain() {
     const reward = window.cafeRewardGameEnd?.("acidrain", score, { label: "네온 산성비 방어" });
     const gText = reward ? ` · +${reward.awarded} G` : "";
     statusEl.textContent = `방화벽 종료! 최종 ${score.toLocaleString()}점 (${cpmText})${gText}`;
-    submitArcadeScore("acidrain", score, { metric: `${cpmText} · W${wave}` });
+    const record = submitArcadeScore("acidrain", score, { metric: `${cpmText} · W${wave}` });
+    showCafeGameResult(dialog, { title: "방어 종료", metric: `${score.toLocaleString()}점 · ${cpmText}`, record: score > 0 ? record : null, action: startBtn });
   }
 
   function pauseGame() {

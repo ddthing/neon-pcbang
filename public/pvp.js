@@ -1,5 +1,6 @@
 // Seat-to-Seat Real-Time Multiplayer Arena (Omok 15x15 & Alkkagi Physics + Cat Clerk AI)
 import { mountLeaderboardBox, submitArcadeScore } from "./arcade-leaderboard.js";
+import { clearCafeGameResult, showCafeGameResult } from "./cafe-game-result.js";
 import { chooseAlkkagiAiShot, chooseOmokAiMove } from "./pvp-ai.mjs";
 import { hasFiveInARow, omokForbiddenMessage, omokForbiddenMove } from "./omok-rules.mjs";
 
@@ -118,10 +119,21 @@ export function initPvp() {
     wins++;
     try { localStorage.setItem(winsKey, String(wins)); } catch {}
     window.cafeRewardGameEnd?.("pvp", 350, { winBonus: true, label: "대국 승리 보너스" });
-    submitArcadeScore("pvp", wins, { mode: gameName, metric: `누적 ${wins}승` });
+    const record = submitArcadeScore("pvp", wins, { mode: gameName, metric: `누적 ${wins}승` });
+    showCafeGameResult(dialog, { title: gameName === "alkkagi" ? "알까기 승리" : "오목 승리", metric: `누적 ${wins}승`, win: true, record, action: mode === "ai" ? aiBtn : leaveBtn, nextLabel: mode === "ai" ? "다시 하기" : "대국장으로" });
+  }
+
+  function showOtherResult() {
+    showCafeGameResult(dialog, {
+      title: activeMatch.winner === "draw" ? "무승부" : "대국 종료",
+      metric: statusEl.textContent,
+      action: mode === "ai" ? aiBtn : leaveBtn,
+      nextLabel: mode === "ai" ? "다시 하기" : "대국장으로",
+    });
   }
 
   function startAiMatch() {
+    clearCafeGameResult(dialog);
     const game = modeSelect.value;
     mode = "ai";
     matchId = "";
@@ -165,6 +177,7 @@ export function initPvp() {
           activeMatch.winner = "draw";
           window.cafeRewardGameEnd?.("pvp", 80, { label: "대국 참가 보너스" });
           statusEl.textContent = "놓을 수 있는 자리가 없어 무승부예요.";
+          showOtherResult();
           drawBoard();
           return;
         }
@@ -177,6 +190,7 @@ export function initPvp() {
           activeMatch.winner = "guest";
           const reward = window.cafeRewardGameEnd?.("pvp", 60, { label: "대국 도전 보너스" });
           statusEl.textContent = `고양이 알바 AI 승리! 🐱 '냐하하 한 수 배웠냥!'${reward ? ` (+${reward.awarded} G)` : ""}`;
+          showOtherResult();
         } else {
           activeMatch.turn = "host";
           statusEl.textContent = "내 차례(흑돌●)! 빈 교차점에 착수하세요.";
@@ -197,6 +211,7 @@ export function initPvp() {
             } else {
               const reward = window.cafeRewardGameEnd?.("pvp", 60, { label: "알까기 도전 보너스" });
               statusEl.textContent = (sim.winner === "draw" ? "동시 장외 무승부!" : "고양이 알바 AI 승리! 다시 도전해 보세요.") + (reward ? ` (+${reward.awarded} G)` : "");
+              showOtherResult();
             }
           } else {
             activeMatch.turn = "host";
@@ -374,25 +389,26 @@ export function initPvp() {
     }));
   }
 
-  let rewardedMatchId = "";
+  let presentedMatchId = "";
   function syncMatchUi() {
     if (!activeMatch) { drawBoard(); return; }
     const gName = activeMatch.game === "alkkagi" ? "알까기" : "오목";
     if (activeMatch.status === "waiting") {
       statusEl.textContent = `[${gName}] 상대 손님 입장을 기다리는 중... (${activeMatch.hostName})`;
     } else if (activeMatch.status === "finished") {
+      const present = activeMatch.id !== presentedMatchId && activeMatch.role !== "spectator";
       if (activeMatch.winner === "draw") {
         statusEl.textContent = "무승부! 명승부였어요.";
+        if (present) showOtherResult();
       } else if (activeMatch.winner === activeMatch.role) {
         statusEl.textContent = `🎉 대국 승리! (${activeMatch.hostName} vs ${activeMatch.guestName})`;
-        if (rewardedMatchId !== activeMatch.id) {
-          rewardedMatchId = activeMatch.id;
-          recordWin(activeMatch.game);
-        }
+        if (present) recordWin(activeMatch.game);
       } else {
         const winName = activeMatch.winner === "host" ? activeMatch.hostName : activeMatch.guestName;
         statusEl.textContent = `${winName}님 승리! 한 판 더 도전해 보세요.`;
+        if (present) showOtherResult();
       }
+      if (present) presentedMatchId = activeMatch.id;
     } else {
       const myTurn = activeMatch.turn === activeMatch.role;
       const roleStone = activeMatch.role === "host" ? "흑돌●" : activeMatch.role === "guest" ? "백돌○" : "관전 모드";
@@ -422,6 +438,7 @@ export function initPvp() {
   }
 
   createBtn.addEventListener("click", async () => {
+    clearCafeGameResult(dialog);
     try {
       const res = await api("create", { game: modeSelect.value, targetSeat: seatInviteSelect.value, restrictWhite: whiteRule.checked });
       mode = "online";
@@ -569,6 +586,7 @@ export function initPvp() {
           } else {
             const reward = window.cafeRewardGameEnd?.("pvp", 60, { label: "알까기 도전 보너스" });
             statusEl.textContent = (sim.winner === "draw" ? "동시 장외 무승부!" : "아쉽게 내 돌이 나갔어요!") + (reward ? ` (+${reward.awarded} G)` : "");
+            showOtherResult();
           }
         } else {
           activeMatch.turn = "guest";

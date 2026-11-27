@@ -1,4 +1,4 @@
-const packFoods = { cola: "soda_coke" };
+const packFoods = { cola: "soda_coke", pastry: "pastry_brioche", peach: "jam_peach", cheese: "cake_cheese", cider: "soda_sprite" };
 const originals = new Set([
   "jjagyechi", "rabokki", "spammayo", "chickenmayo", "ramyeon", "rice", "dumplings", "curry",
   "skewer", "hotdog", "tornado", "cheeseball", "menbosha", "fries", "toast", "bungeoppang",
